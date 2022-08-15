@@ -114,7 +114,7 @@ jobs:
       - name: Archive jar files
         uses: actions/upload-artifact@v2
         with:
-          name: reveal-server.jar
+          name: reveal-streams.jar
           path: build/libs/reveal-streams*-SNAPSHOT.jar
           retention-days: 1
 
