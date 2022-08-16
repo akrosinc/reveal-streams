@@ -1,6 +1,6 @@
 FROM openjdk:11
 
-COPY revealserver*-SNAPSHOT.jar reveal-server.jar
+COPY revealstreams*-SNAPSHOT.jar reveal-streams.jar
 
 WORKDIR /
 

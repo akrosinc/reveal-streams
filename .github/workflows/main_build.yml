@@ -144,6 +144,12 @@ jobs:
         with:
           name: reveal-streams.jar
 
+      - name: print working dir contents
+        run: ls -lah ${{ github.workspace }}
+
+      - name: copy artefact to context
+        run: mv reveal*.jar docker-build-openjdk/reveal-streams.jar
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
