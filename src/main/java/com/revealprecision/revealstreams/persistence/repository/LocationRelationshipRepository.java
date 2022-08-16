@@ -1,7 +1,9 @@
 package com.revealprecision.revealstreams.persistence.repository;
 
 
+import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.projection.LocationChildrenCountProjection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,6 +35,28 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
   List<Location> getChildren(@Param("hierarchyIdentifier") UUID hierarchyIdentifier,
       @Param("locationIdentifier") UUID locationIdentifier);
 
+  @Query(value = "select "
+      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "inner join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
+      + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
+      + "where lr.parentLocation.identifier = :parentLocationIdentifier group by lr.identifier")
+  List<PlanLocationDetails> getAssignedLocationDetailsByParentIdAndPlanId(
+      @Param("parentLocationIdentifier") UUID parentLocationIdentifier,
+      @Param("planIdentifier") UUID planIdentifier);
+
+  @Query(value =
+      "select cast(lr.parent_identifier as varchar) as parentIdentifier, count(lr.parent_identifier) as childrenCount from location_relationship lr "
+          + "where lr.location_hierarchy_identifier = :locationHierarchyIdentifier "
+          + "group by lr.parent_identifier", nativeQuery = true)
+  List<LocationChildrenCountProjection> getLocationChildrenCount(UUID locationHierarchyIdentifier);
+
+  @Query(value = "select "
+      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
+      + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
+      + "where lr.parentLocation.identifier is null group by lr.identifier")
+  PlanLocationDetails getRootLocationDetailsByAndPlanId(
+      @Param("planIdentifier") UUID planIdentifier);
 
   @Query(value = "select lr.parentLocation from LocationRelationship lr "
       + "where lr.location.identifier = :locationIdentifier "
@@ -41,7 +65,24 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
       @Param("locationIdentifier") UUID locationIdentifier,
       @Param("hierarchyIdentifier") UUID hierarchyIdentifier);
 
+  @Query(value = "select "
+      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
+      + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
+      + "where lr.parentLocation.identifier = :parentLocationIdentifier group by lr.identifier")
+  List<PlanLocationDetails> getLocationDetailsByParentIdAndPlanId(
+      @Param("parentLocationIdentifier") UUID parentLocationIdentifier,
+      @Param("planIdentifier") UUID planIdentifier);
+
 
   LocationRelationship getLocationRelationshipByLocation_IdentifierAndLocationHierarchy_Identifier(
       UUID locationIdentifier, UUID hierarchyIdentifier);
+
+  @Query(value =
+      "select cast(lr.parent_identifier as varchar) as parentIdentifier, count(lr.parent_identifier) as childrenCount from location_relationship lr "
+          + "inner join plan_locations pl on pl.plan_identifier = :planIdentifier and pl.location_identifier = lr.location_identifier "
+          + "where lr.location_hierarchy_identifier = :locationHierarchyIdentifier "
+          + "group by lr.parent_identifier", nativeQuery = true)
+  List<LocationChildrenCountProjection> getLocationAssignedChildrenCount(
+      UUID locationHierarchyIdentifier, UUID planIdentifier);
 }

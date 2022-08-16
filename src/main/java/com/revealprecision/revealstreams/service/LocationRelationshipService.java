@@ -1,9 +1,11 @@
 package com.revealprecision.revealstreams.service;
 
 
+import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
+import com.revealprecision.revealstreams.persistence.projection.LocationChildrenCountProjection;
 import com.revealprecision.revealstreams.persistence.repository.LocationRelationshipRepository;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +24,32 @@ public class LocationRelationshipService {
 
   }
 
+  public List<LocationChildrenCountProjection> getLocationChildrenCount(
+      UUID locationHierarchyIdentifier) {
+    return locationRelationshipRepository.getLocationChildrenCount(locationHierarchyIdentifier);
+  }
+
+  public List<PlanLocationDetails> getLocationChildrenByLocationParentIdentifierAndPlanIdentifier(
+      UUID parentLocationIdentifiers, UUID planIdentifier) {
+
+    return locationRelationshipRepository.getLocationDetailsByParentIdAndPlanId(
+        parentLocationIdentifiers, planIdentifier);
+  }
+
+  public PlanLocationDetails getRootLocationDetailsByPlanId(UUID planIdentifier) {
+    return locationRelationshipRepository.getRootLocationDetailsByAndPlanId(planIdentifier);
+  }
+
+  public List<LocationChildrenCountProjection> getLocationAssignedChildrenCount(
+      UUID locationHierarchyIdentifier, UUID planIdentifier) {
+    return locationRelationshipRepository.getLocationAssignedChildrenCount(
+        locationHierarchyIdentifier, planIdentifier);
+  }
+  public List<PlanLocationDetails> getAssignedLocationChildrenByLocationParentIdentifierAndPlanIdentifier(
+      UUID parentLocationIdentifiers, UUID planIdentifier) {
+    return locationRelationshipRepository.getAssignedLocationDetailsByParentIdAndPlanId(
+        parentLocationIdentifiers, planIdentifier);
+  }
   public Long getNumberOfChildrenByGeoLevelNameWithinLocationAndHierarchy(
       String geographicLevelName
       , UUID locationIdentifier,

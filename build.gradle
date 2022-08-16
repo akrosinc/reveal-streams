@@ -33,10 +33,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator:2.5.6'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.5.6'
     implementation 'com.cosium.spring.data:spring-data-jpa-entity-graph:2.4.1'
-//    implementation('org.springframework.boot:spring-boot-starter-web:2.5.6') {
-//        exclude module: 'spring-boot-starter-tomcat'
-//    }
-//    implementation 'org.springframework.boot:spring-boot-starter-undertow:2.5.6'
+    implementation('org.springframework.boot:spring-boot-starter-web:2.5.6') {
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    implementation 'org.springframework.boot:spring-boot-starter-undertow:2.5.6'
 
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.apache.kafka:kafka-streams'
@@ -51,7 +51,6 @@ dependencies {
     implementation('org.springdoc:springdoc-openapi-ui:1.5.12')
     implementation 'org.projectlombok:lombok:1.18.16'
     runtimeOnly 'org.postgresql:postgresql:42.3.1'
-    implementation 'org.keycloak:keycloak-spring-boot-starter:15.0.2'
 
     implementation 'org.jboss.resteasy:resteasy-client:5.0.1.Final'
     implementation 'org.jboss.resteasy:resteasy-jaxb-provider:5.0.1.Final'

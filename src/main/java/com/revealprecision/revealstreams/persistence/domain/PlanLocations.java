@@ -1,7 +1,6 @@
 package com.revealprecision.revealstreams.persistence.domain;
 
 import com.revealprecision.revealstreams.enums.EntityStatus;
-import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 import javax.persistence.CascadeType;
@@ -49,5 +48,10 @@ public class PlanLocations extends AbstractAuditableEntity {
   @OneToMany(mappedBy = "planLocations", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<PlanAssignment> planAssignments;
 
-
+  public PlanLocations(UUID identifier, UUID locationIdentifier, UUID planIdentifier) {
+    this.identifier = identifier;
+    this.location = Location.builder().identifier(locationIdentifier).build();
+    this.plan = Plan.builder().identifier(planIdentifier).build();
+    this.setEntityStatus(EntityStatus.ACTIVE);
+  }
 }
