@@ -13,6 +13,7 @@ import com.revealprecision.revealstreams.messaging.message.LocationAssigned;
 import com.revealprecision.revealstreams.messaging.message.LocationRelationshipMessage;
 import com.revealprecision.revealstreams.messaging.message.PlanLocationAssignMessage;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -75,8 +76,10 @@ public class LocationStream {
             locationRelationshipMessage.getLocationHierarchyIdentifier() + "_"
                 + locationRelationshipMessage.getAncestor());
 
-    structures.groupByKey().count(Materialized.as(kafkaProperties.getStoreMap()
-        .get(KafkaConstants.structureCountPerParent)));
+    structures
+        .groupByKey(Grouped.with(Serdes.String(),new JsonSerde<>(LocationRelationshipMessage.class)))
+        .count(Materialized.<String, Long,KeyValueStore<Bytes,byte[]>>as(kafkaProperties.getStoreMap()
+        .get(KafkaConstants.structureCountPerParent)).withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
 
     return locationsImported;
   }
@@ -150,8 +153,10 @@ public class LocationStream {
                 locationAssigned.getPlanIdentifier() + "_" + locationAssigned.getAncestor(),
                 locationAssigned),
             Grouped.with(Serdes.String(), new JsonSerde<>(LocationAssigned.class)))
-        .count(Materialized.as(
-            kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent)));
+        .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as(
+            kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent))
+            .withKeySerde(Serdes.String())
+            .withValueSerde(Serdes.Long()));
 
     count.toStream().peek((k,v)->streamLog.debug("count.toStream() - k: {} v: {}", k,v));
     return locationsAssignedStream;
