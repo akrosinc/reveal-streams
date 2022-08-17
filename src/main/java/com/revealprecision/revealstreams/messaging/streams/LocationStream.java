@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.messaging.streams;
 
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,19 +51,16 @@ public class LocationStream {
   private final KafkaProperties kafkaProperties;
   private final PlanService planService;
   private final Logger streamLog = LoggerFactory.getLogger("stream-file");
+  private final RevealSerdes revealSerdes;
+
 
   @Bean
   KStream<String, LocationRelationshipMessage> getTotalStructures(
       StreamsBuilder streamsBuilder) {
-//
-//    JsonSerde<LocationRelationshipMessage> valueSerde = new JsonSerde<>(
-//        LocationRelationshipMessage.class);
-//    valueSerde.configure(Map.ofEntries(new SimpleEntry<>(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false"),
-//        new SimpleEntry<>(JsonDeserializer.TRUSTED_PACKAGES,"*")),false);
 
     KStream<String, LocationRelationshipMessage> locationsImported = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED)
-//        , Consumed.with(Serdes.String(), valueSerde)
+        , Consumed.with(Serdes.String(), revealSerdes.get(LocationRelationshipMessage.class))
     );
 
     KStream<String, LocationRelationshipMessage> structures = locationsImported
@@ -100,7 +98,7 @@ public class LocationStream {
 
     KStream<String, PlanLocationAssignMessage> locationsAssignedStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED),
-        Consumed.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
+        Consumed.with(Serdes.String(), revealSerdes.get(PlanLocationAssignMessage.class)));
 
     //Doing this so that we can rewind this topic without rewinding to cause task generation from running again....
     locationsAssignedStream.to(kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM));
