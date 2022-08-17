@@ -94,7 +94,7 @@ public class KafkaConfig {
     props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false");
     props.put(JsonDeserializer.TRUSTED_PACKAGES,"*");
     props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-    props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG,JsonSerde.class.getName());
+    props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, JsonSerde.class.getName());
     return new KafkaStreamsConfiguration(props);
   }
 
