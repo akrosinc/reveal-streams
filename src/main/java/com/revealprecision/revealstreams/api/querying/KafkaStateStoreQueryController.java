@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/state-store")
+@RequestMapping("/reveal-streams/state-store")
 @Slf4j
 @RequiredArgsConstructor
 @Profile("Reveal-Streams")
