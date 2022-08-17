@@ -4,6 +4,7 @@ package com.revealprecision.revealstreams.messaging.streams;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.messaging.message.LocationBusinessStatusAggregate;
+import com.revealprecision.revealstreams.messaging.message.LocationFormDataSumAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataContainer;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataUnpackedEvent;
@@ -23,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
@@ -35,6 +37,7 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -456,7 +459,7 @@ public class LocationBusinessStatusStream {
                 .withValueSerde(new JsonSerde<>(OperationalAreaAggregate.class))
                 .withKeySerde(Serdes.String()));
 
-    restructuredOperationalAreaAggregate
+    KTable<String, OperationalAreaVisitedCount> aggregate1 = restructuredOperationalAreaAggregate
         .toStream()
         .mapValues((k, operationalAreaAggregate) -> {
           operationalAreaAggregate.setIdentifier(UUID.fromString(k.split("_")[1]));
@@ -472,8 +475,10 @@ public class LocationBusinessStatusStream {
                 .withValueSerde(new JsonSerde<>(OperationalAreaVisitedCount.class))
                 .withKeySerde(Serdes.String()));
 
-    restructuredOperationalAreaAggregate.toStream().to(kafkaProperties.getTopicMap()
-        .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC));
+    aggregate1.toStream().to(kafkaProperties.getTopicMap()
+        .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC),
+        Produced.with(Serdes.String(),
+            revealSerdes.get(OperationalAreaVisitedCount.class)));
 
     return locationMetadataStream;
   }
