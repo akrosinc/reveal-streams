@@ -2,7 +2,6 @@ package com.revealprecision.revealstreams.api.querying;
 
 
 import com.revealprecision.revealstreams.constants.KafkaConstants;
-import com.revealprecision.revealstreams.messaging.Message;
 import com.revealprecision.revealstreams.messaging.message.LocationBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataCountAggregateEvent;
@@ -30,7 +29,6 @@ import org.apache.kafka.streams.state.QueryableStoreTypes;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +43,6 @@ public class KafkaStateStoreQueryController<T> {
 
   private final StreamsBuilderFactoryBean getKafkaStreams;
   private final KafkaProperties kafkaProperties;
-  private final KafkaTemplate<String, Message> kafkaTemplate;
 
 
   @GetMapping("/userPerformance")

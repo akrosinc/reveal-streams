@@ -54,15 +54,16 @@ public class LocationStream {
   @Bean
   KStream<String, LocationRelationshipMessage> getTotalStructures(
       StreamsBuilder streamsBuilder) {
-
-    JsonSerde<LocationRelationshipMessage> valueSerde = new JsonSerde<>(
-        LocationRelationshipMessage.class);
-    valueSerde.configure(Map.ofEntries(new SimpleEntry<>(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false"),
-        new SimpleEntry<>(JsonDeserializer.TRUSTED_PACKAGES,"*")),false);
+//
+//    JsonSerde<LocationRelationshipMessage> valueSerde = new JsonSerde<>(
+//        LocationRelationshipMessage.class);
+//    valueSerde.configure(Map.ofEntries(new SimpleEntry<>(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false"),
+//        new SimpleEntry<>(JsonDeserializer.TRUSTED_PACKAGES,"*")),false);
 
     KStream<String, LocationRelationshipMessage> locationsImported = streamsBuilder.stream(
-        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED),
-        Consumed.with(Serdes.String(), valueSerde));
+        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED)
+//        , Consumed.with(Serdes.String(), valueSerde)
+    );
 
     KStream<String, LocationRelationshipMessage> structures = locationsImported
         .filter((k, locationRelationshipMessage) -> locationRelationshipMessage.getGeoName().equals(

@@ -1,7 +1,7 @@
 package com.revealprecision.revealstreams.messaging.message.mdalite;
 
 
-import com.revealprecision.revealstreams.messaging.Message;
+import com.revealprecision.revealstreams.messaging.message.Message;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;

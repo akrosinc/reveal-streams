@@ -10,7 +10,7 @@ import static org.apache.kafka.streams.StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CON
 import static org.apache.kafka.streams.StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG;
 import static org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME;
 
-import com.revealprecision.revealstreams.messaging.Message;
+import com.revealprecision.revealstreams.messaging.message.Message;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,6 +93,8 @@ public class KafkaConfig {
     props.put(MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(45*60*1000));
     props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false");
     props.put(JsonDeserializer.TRUSTED_PACKAGES,"*");
+    props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String());
+    props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG,new JsonSerde<Message>());
     return new KafkaStreamsConfiguration(props);
   }
 

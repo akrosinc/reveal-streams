@@ -1,6 +1,6 @@
 package com.revealprecision.revealstreams.messaging.message.mdalite;
 
-import com.revealprecision.revealstreams.messaging.Message;
+import com.revealprecision.revealstreams.messaging.message.Message;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
