@@ -41,6 +41,7 @@ import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.streams.RecoveringDeserializationExceptionHandler;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 @EnableKafka
 @Configuration
@@ -90,6 +91,7 @@ public class KafkaConfig {
     props.put(BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
     props.put(COMMIT_INTERVAL_MS_CONFIG, "5000");
     props.put(MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(45*60*1000));
+    props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false");
     return new KafkaStreamsConfiguration(props);
   }
 
