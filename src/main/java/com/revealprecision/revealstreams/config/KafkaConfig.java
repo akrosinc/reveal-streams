@@ -92,6 +92,7 @@ public class KafkaConfig {
     props.put(COMMIT_INTERVAL_MS_CONFIG, "5000");
     props.put(MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(45*60*1000));
     props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false");
+    props.put(JsonDeserializer.TRUSTED_PACKAGES,"*");
     return new KafkaStreamsConfiguration(props);
   }
 
