@@ -38,6 +38,7 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,7 +199,8 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "aggStream k: {} v: {}", k, v));
     aggStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_AGGREGATE));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_AGGREGATE),
+        Produced.with(Serdes.String(), new JsonSerde<>(LocationFormDataSumAggregateEvent.class)));
 
     KGroupedStream<String, LocationFormDataAggregateEvent> supervisorLocationFormDataAggregateEventKGroupedStream = integerLocationFormDataAggregateEventKStream1
         .filter((k, v) -> v.getSupervisor() != null)
@@ -309,7 +311,9 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "minMaxTableStream k: {} v: {}", k, v));
     minMaxTableStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_MINMAX_AGGREGATE));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_MINMAX_AGGREGATE),
+        Produced.with(Serdes.String(),
+            new JsonSerde<>(LocationFormDataMinMaxAggregateEvent.class)));
 
     KStream<String, FormDataEntityTagValueEvent> countStream = unpackedLocationFormDataStream
         .filter(
@@ -354,7 +358,8 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "countTableStream k: {} v: {}", k, v));
     countTableStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_COUNT_AGGREGATE));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_COUNT_AGGREGATE),
+        Produced.with(Serdes.String(), new JsonSerde<>(LocationFormDataCountAggregateEvent.class)));
 
     return locationFormDataStream;
   }

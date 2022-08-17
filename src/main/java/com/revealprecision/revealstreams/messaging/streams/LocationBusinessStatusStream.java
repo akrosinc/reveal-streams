@@ -41,6 +41,7 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -482,7 +483,8 @@ public class LocationBusinessStatusStream {
                 .withKeySerde(Serdes.String()));
 
     aggregate1.toStream().to(kafkaProperties.getTopicMap()
-        .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC));
+            .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC),
+        Produced.with(Serdes.String(), new JsonSerde<>(OperationalAreaVisitedCount.class)));
 
     return locationMetadataStream;
   }

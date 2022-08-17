@@ -29,7 +29,6 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Named;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.state.KeyValueStore;
@@ -104,7 +103,8 @@ public class LocationStream {
 
     //Doing this so that we can rewind this topic without rewinding to cause task generation from running again....
     locationsAssignedStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM));
+        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM),
+        Produced.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
     return locationsAssignedStream;
   }
 
@@ -155,7 +155,7 @@ public class LocationStream {
         (k, v) -> streamLog.debug("stringLocationAssignedKStream - k: {} v: {}", k, v));
 
     KTable<String, LocationAssigned> tableOfAssignedStructures = stringLocationAssignedKStream
-        .repartition(Repartitioned.with(Serdes.String(),new JsonSerde<>(LocationAssigned.class)))
+        .repartition(Repartitioned.with(Serdes.String(), new JsonSerde<>(LocationAssigned.class)))
         .toTable(Materialized.<String, LocationAssigned, KeyValueStore<Bytes, byte[]>>as(
                 kafkaProperties.getStoreMap()
                     .get(KafkaConstants.tableOfAssignedStructuresWithParentKeyed))
