@@ -3,8 +3,10 @@ package com.revealprecision.revealstreams.messaging.streams;
 
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.revealprecision.revealstreams.messaging.message.LocationAssigned;
 import com.revealprecision.revealstreams.messaging.message.LocationRelationshipMessage;
 import com.revealprecision.revealstreams.messaging.message.PlanLocationAssignMessage;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
@@ -27,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerde;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
@@ -51,9 +55,14 @@ public class LocationStream {
   KStream<String, LocationRelationshipMessage> getTotalStructures(
       StreamsBuilder streamsBuilder) {
 
+    JsonSerde<LocationRelationshipMessage> valueSerde = new JsonSerde<>(
+        LocationRelationshipMessage.class);
+    valueSerde.configure(Map.ofEntries(new SimpleEntry<>(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false"),
+        new SimpleEntry<>(JsonDeserializer.TRUSTED_PACKAGES,"*")),false);
+
     KStream<String, LocationRelationshipMessage> locationsImported = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED),
-        Consumed.with(Serdes.String(), new JsonSerde<>(LocationRelationshipMessage.class)));
+        Consumed.with(Serdes.String(), valueSerde));
 
     KStream<String, LocationRelationshipMessage> structures = locationsImported
         .filter((k, locationRelationshipMessage) -> locationRelationshipMessage.getGeoName().equals(
