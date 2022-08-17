@@ -7,6 +7,7 @@ import com.revealprecision.revealstreams.messaging.TaskEventFactory;
 import com.revealprecision.revealstreams.messaging.message.TaskAggregate;
 import com.revealprecision.revealstreams.messaging.message.TaskEvent;
 import com.revealprecision.revealstreams.messaging.message.TaskLocationPair;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.User;
 import com.revealprecision.revealstreams.props.KafkaProperties;
@@ -48,7 +49,7 @@ public class TaskGenerationStream {
   private final UserService userService;
   private final LocationService locationService;
   private final Logger taskLog = LoggerFactory.getLogger("stream-file");
-
+  private final RevealSerdes revealSerdes;
 
   @Bean
   public KStream<String, TaskEvent> startTaskGeneration(StreamsBuilder streamsBuilder) {
@@ -57,7 +58,7 @@ public class TaskGenerationStream {
     //get Input Tasks
     KStream<String, TaskEvent> taskStream = streamsBuilder
         .stream(kafkaProperties.getTopicMap().get(KafkaConstants.TASK),
-            Consumed.with(Serdes.String(), new JsonSerde<>(TaskEvent.class)))
+            Consumed.with(Serdes.String(), revealSerdes.get(TaskEvent.class)))
         .filter((k, taskEvent) -> taskEvent.getAction().getGoal().getPlan().getPlanTargetTypeEvent()
             .getGeographicLevelName().equals(
                 LocationConstants.STRUCTURE))
@@ -165,7 +166,7 @@ public class TaskGenerationStream {
     //get Input Tasks
     KStream<String, TaskEvent> taskStream = streamsBuilder
         .stream(kafkaProperties.getTopicMap().get(KafkaConstants.TASK),
-            Consumed.with(Serdes.String(), new JsonSerde<>(TaskEvent.class)))
+            Consumed.with(Serdes.String(), revealSerdes.get(TaskEvent.class)))
         .filter(
             (k, taskEvent) -> !taskEvent.getAction().getGoal().getPlan().getPlanTargetTypeEvent()
                 .getGeographicLevelName().equals(
