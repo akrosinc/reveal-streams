@@ -29,7 +29,9 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Named;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,7 +155,7 @@ public class LocationStream {
         (k, v) -> streamLog.debug("stringLocationAssignedKStream - k: {} v: {}", k, v));
 
     KTable<String, LocationAssigned> tableOfAssignedStructures = stringLocationAssignedKStream
-        .repartition()
+        .repartition(Repartitioned.with(Serdes.String(),new JsonSerde<>(LocationAssigned.class)))
         .toTable(Materialized.<String, LocationAssigned, KeyValueStore<Bytes, byte[]>>as(
                 kafkaProperties.getStoreMap()
                     .get(KafkaConstants.tableOfAssignedStructuresWithParentKeyed))
