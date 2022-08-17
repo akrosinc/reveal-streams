@@ -476,9 +476,7 @@ public class LocationBusinessStatusStream {
                 .withKeySerde(Serdes.String()));
 
     aggregate1.toStream().to(kafkaProperties.getTopicMap()
-        .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC),
-        Produced.with(Serdes.String(),
-            revealSerdes.get(OperationalAreaVisitedCount.class)));
+        .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC));
 
     return locationMetadataStream;
   }

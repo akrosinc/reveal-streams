@@ -197,8 +197,7 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "aggStream k: {} v: {}", k, v));
     aggStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_AGGREGATE),
-        Produced.with(Serdes.String(), revealSerdes.get(LocationFormDataSumAggregateEvent.class)));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_AGGREGATE));
 
     KGroupedStream<String, LocationFormDataAggregateEvent> supervisorLocationFormDataAggregateEventKGroupedStream = integerLocationFormDataAggregateEventKStream1
         .filter((k, v) -> v.getSupervisor() != null)
@@ -306,8 +305,7 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "minMaxTableStream k: {} v: {}", k, v));
     minMaxTableStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_MINMAX_AGGREGATE),
-        Produced.with(Serdes.String(), revealSerdes.get(LocationFormDataMinMaxAggregateEvent.class)));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_MINMAX_AGGREGATE));
 
     KStream<String, FormDataEntityTagValueEvent> countStream = unpackedLocationFormDataStream
         .filter(
@@ -351,8 +349,7 @@ public class FormDataStream {
         .peek((k, v) -> formDataLog.debug(
             "countTableStream k: {} v: {}", k, v));
     countTableStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_COUNT_AGGREGATE),
-        Produced.with(Serdes.String(), revealSerdes.get(LocationFormDataCountAggregateEvent.class)));
+        kafkaProperties.getTopicMap().get(KafkaConstants.METADATA_COUNT_AGGREGATE));
 
     return locationFormDataStream;
   }

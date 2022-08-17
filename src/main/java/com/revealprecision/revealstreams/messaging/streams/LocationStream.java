@@ -102,8 +102,7 @@ public class LocationStream {
 
     //Doing this so that we can rewind this topic without rewinding to cause task generation from running again....
     locationsAssignedStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM),
-        Produced.with(Serdes.String(), revealSerdes.get(PlanLocationAssignMessage.class)));
+        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM));
     return locationsAssignedStream;
   }
 
