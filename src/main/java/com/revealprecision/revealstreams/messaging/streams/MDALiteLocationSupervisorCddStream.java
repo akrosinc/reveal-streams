@@ -1,11 +1,11 @@
 package com.revealprecision.revealstreams.messaging.streams;
 
+import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteLocationSupervisorCddEvent;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteLocationSupervisorListAggregation;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteSupervisorCddListAggregation;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.KafkaProperties;
-import com.revealprecision.revealstreams.constants.KafkaConstants;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -46,7 +47,8 @@ public class MDALiteLocationSupervisorCddStream {
 
     KGroupedStream<String, MDALiteLocationSupervisorCddEvent> groupedMdaLiteLocationSupervisorStream = mdaLiteLocationSupervisorCddStream.groupBy(
         (k, v) -> v.getPlanIdentifier() + "_" + v.getLocationHierarchyIdentifier() + "_"
-            + v.getLocationIdentifier());
+            + v.getLocationIdentifier(),
+        Grouped.with(Serdes.String(), new JsonSerde<>(MDALiteLocationSupervisorCddEvent.class)));
 
     KTable<String, MDALiteLocationSupervisorListAggregation> supervisorListKTable = groupedMdaLiteLocationSupervisorStream.aggregate(
         MDALiteLocationSupervisorListAggregation::new, (k, v, agg) -> {
@@ -63,7 +65,8 @@ public class MDALiteLocationSupervisorCddStream {
 
     KGroupedStream<String, MDALiteLocationSupervisorCddEvent> stringMDALiteSupervisorCddEventGroupedStream = mdaLiteLocationSupervisorCddStream.groupBy(
         (k, v) -> v.getPlanIdentifier() + "_" + v.getLocationHierarchyIdentifier() + "_"
-            + v.getLocationIdentifier() + "_" + v.getSupervisorName());
+            + v.getLocationIdentifier() + "_" + v.getSupervisorName(),
+        Grouped.with(Serdes.String(), new JsonSerde<>(MDALiteLocationSupervisorCddEvent.class)));
 
     KTable<String, MDALiteSupervisorCddListAggregation> cddListKTable = stringMDALiteSupervisorCddEventGroupedStream.aggregate(
         MDALiteSupervisorCddListAggregation::new, (k, v, agg) -> {

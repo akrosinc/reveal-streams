@@ -4,7 +4,6 @@ package com.revealprecision.revealstreams.messaging.streams;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.messaging.message.LocationBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.LocationFormDataSumAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataContainer;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationMetadataUnpackedEvent;
@@ -13,8 +12,14 @@ import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggreg
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount.IndividualOperationalAreaCountsByBusinessStatus;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
+import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
+import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.props.BusinessStatusProperties;
+import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
+import com.revealprecision.revealstreams.service.LocationRelationshipService;
+import com.revealprecision.revealstreams.service.LocationService;
+import com.revealprecision.revealstreams.service.PlanService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,7 +29,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
@@ -37,19 +41,13 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.support.serializer.JsonSerde;
-import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
-import com.revealprecision.revealstreams.persistence.domain.Plan;
-import com.revealprecision.revealstreams.service.LocationRelationshipService;
-import com.revealprecision.revealstreams.service.LocationService;
-import com.revealprecision.revealstreams.service.PlanService;
-import com.revealprecision.revealstreams.props.DashboardProperties;
+
 @Configuration
 @Slf4j
 @RequiredArgsConstructor
@@ -118,7 +116,8 @@ public class LocationBusinessStatusStream {
         .filter(
             (k, locationMetadataUnpackedEvent) -> locationMetadataUnpackedEvent.getPlanTargetType()
                 .equals(locationMetadataUnpackedEvent.getEntityGeoLevel()))
-        .mapValues((k, locationMetadataUnpackedEvent) -> getLocationMetadataUnpackedEvent(locationMetadataUnpackedEvent)
+        .mapValues((k, locationMetadataUnpackedEvent) -> getLocationMetadataUnpackedEvent(
+            locationMetadataUnpackedEvent)
         ).selectKey((k, locationMetadataUnpackedEvent) ->
             locationMetadataUnpackedEvent.getPlan() + "_"
                 + locationMetadataUnpackedEvent.getEntityId()
@@ -126,7 +125,8 @@ public class LocationBusinessStatusStream {
 
     filter.peek((k, v) -> streamLog.debug("filter k:{} v:{}", k, v));
 
-    KTable<String, LocationStructureBusinessStatusAggregate> locationStructureBusinessStatusAggregateTable = filter.groupByKey()
+    KTable<String, LocationStructureBusinessStatusAggregate> locationStructureBusinessStatusAggregateTable = filter.groupByKey(
+            Grouped.with(Serdes.String(), new JsonSerde<>(LocationMetadataUnpackedEvent.class)))
         .aggregate(LocationStructureBusinessStatusAggregate::new,
             (key, locationMetadataUnpackedEvent, aggregate) -> getLocationStructureMetadataAggregate(
                 locationMetadataUnpackedEvent, aggregate),
@@ -179,7 +179,8 @@ public class LocationBusinessStatusStream {
 
     KTable<String, LocationStructureBusinessStatusAggregate> aggregate = stringLocationStructureBusinessStatusAggregateKStream1.selectKey(
             (k, v) -> v.getPlan() + "_" + v.getAncestorNode() + "_" + v.getBusinessStatusKey())
-        .groupByKey()
+        .groupByKey(Grouped.with(Serdes.String(),
+            new JsonSerde<>(LocationStructureBusinessStatusAggregate.class)))
         .aggregate(LocationStructureBusinessStatusAggregate::new,
             (k, v, agg) -> {
               if (agg.getStructureSum() == null) {
@@ -210,7 +211,7 @@ public class LocationBusinessStatusStream {
         LocationConstants.STRUCTURE, locationMetadataUnpackedEvent.getEntityId()
         , locationMetadataUnpackedEvent.getHierarchyIdentifier());
 
-    return  LocationMetadataUnpackedEvent.builder()
+    return LocationMetadataUnpackedEvent.builder()
         .hierarchyIdentifier(locationMetadataUnpackedEvent.getHierarchyIdentifier())
         .entityId(locationMetadataUnpackedEvent.getEntityId())
         .metaDataEvent(locationMetadataUnpackedEvent.getMetaDataEvent())
@@ -229,7 +230,8 @@ public class LocationBusinessStatusStream {
     return LocationStructureBusinessStatusAggregate.builder()
         .businessStatus(locationStructureBusinessStatusAggregate.getBusinessStatus())
         .structureCounts(locationStructureBusinessStatusAggregate.getStructureCounts())
-        .previousBusinessStatus(locationStructureBusinessStatusAggregate.getPreviousBusinessStatus())
+        .previousBusinessStatus(
+            locationStructureBusinessStatusAggregate.getPreviousBusinessStatus())
         .plan(locationStructureBusinessStatusAggregate.getPlan())
         .planTargetType(locationStructureBusinessStatusAggregate.getPlanTargetType())
         .entityId(locationStructureBusinessStatusAggregate.getEntityId())
@@ -247,7 +249,8 @@ public class LocationBusinessStatusStream {
     return LocationStructureBusinessStatusAggregate.builder()
         .businessStatus(locationStructureBusinessStatusAggregate.getBusinessStatus())
         .structureCounts(locationStructureBusinessStatusAggregate.getStructureCounts())
-        .previousBusinessStatus(locationStructureBusinessStatusAggregate.getPreviousBusinessStatus())
+        .previousBusinessStatus(
+            locationStructureBusinessStatusAggregate.getPreviousBusinessStatus())
         .plan(locationStructureBusinessStatusAggregate.getPlan())
         .planTargetType(locationStructureBusinessStatusAggregate.getPlanTargetType())
         .entityId(locationStructureBusinessStatusAggregate.getEntityId())
@@ -413,7 +416,8 @@ public class LocationBusinessStatusStream {
 
     KTable<String, LocationBusinessStatusAggregate> latestBusinessStateAggregate = locationMetadataUnpackedPerMetadataItemsWithAncestor
         .groupBy(
-            (k, metadataEventContainer) -> getLocationIdentifierPlanKey(metadataEventContainer))
+            (k, metadataEventContainer) -> getLocationIdentifierPlanKey(metadataEventContainer),
+            Grouped.with(Serdes.String(), new JsonSerde<>(LocationMetadataContainer.class)))
         .aggregate(LocationBusinessStatusAggregate::new,
             (key, metadataEventContainer, aggregate) -> aggregateSetLatestBusinessStatusOnLocation(
                 metadataEventContainer, aggregate),
@@ -450,7 +454,8 @@ public class LocationBusinessStatusStream {
     KTable<String, OperationalAreaAggregate> restructuredOperationalAreaAggregate = latestBusinessStateAggregatePerOperationalArea
         .toStream()
         .flatMapValues(this::getOperationalAreaAggregatesUnpackedByAncestry)
-        .groupBy(this::getAncestorOperationalAreaPlanIdKey)
+        .groupBy(this::getAncestorOperationalAreaPlanIdKey,
+            Grouped.with(Serdes.String(), new JsonSerde<>(OperationalAreaAggregate.class)))
         .aggregate(OperationalAreaAggregate::new,
             (key, operationalAreaAggregate, aggregate) -> restructureOperationalAreaAggregate(
                 operationalAreaAggregate, aggregate),
@@ -465,7 +470,8 @@ public class LocationBusinessStatusStream {
           operationalAreaAggregate.setIdentifier(UUID.fromString(k.split("_")[1]));
           return operationalAreaAggregate;
         })
-        .groupBy((k, entry) -> getAncestryPlanKey(k))
+        .groupBy((k, entry) -> getAncestryPlanKey(k),
+            Grouped.with(Serdes.String(), new JsonSerde<>(OperationalAreaAggregate.class)))
         .aggregate((OperationalAreaVisitedCount::new),
             (k, operationalAreaAggregate, aggregate) -> getAggregatedOperationalAreaVisitedCountForMDA(
                 operationalAreaAggregate, aggregate),

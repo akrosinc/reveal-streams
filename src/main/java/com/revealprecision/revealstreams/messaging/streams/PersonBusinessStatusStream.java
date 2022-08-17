@@ -1,12 +1,27 @@
 package com.revealprecision.revealstreams.messaging.streams;
 
 
+import com.revealprecision.revealstreams.constants.KafkaConstants;
+import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
+import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate.PersonBusinessStatus;
+import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
+import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateStreamTransportEvent;
+import com.revealprecision.revealstreams.messaging.message.MetaDataEvent;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
+import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
+import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate.CurrentState;
+import com.revealprecision.revealstreams.messaging.message.PersonMetadataEvent;
+import com.revealprecision.revealstreams.messaging.message.PersonMetadataUnpackedEvent;
 import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
+import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.props.KafkaProperties;
-import com.revealprecision.revealstreams.constants.KafkaConstants;
+import com.revealprecision.revealstreams.service.LocationHierarchyService;
+import com.revealprecision.revealstreams.service.LocationRelationshipService;
+import com.revealprecision.revealstreams.service.LocationService;
+import com.revealprecision.revealstreams.service.PlanService;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,21 +35,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate.PersonBusinessStatus;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateStreamTransportEvent;
-import com.revealprecision.revealstreams.messaging.message.MetaDataEvent;
-import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate.CurrentState;
-import com.revealprecision.revealstreams.messaging.message.PersonMetadataEvent;
-import com.revealprecision.revealstreams.messaging.message.PersonMetadataUnpackedEvent;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
+import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -47,12 +54,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
-import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
-import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
-import com.revealprecision.revealstreams.service.LocationHierarchyService;
-import com.revealprecision.revealstreams.service.LocationRelationshipService;
-import com.revealprecision.revealstreams.service.LocationService;
-import com.revealprecision.revealstreams.service.PlanService;
 
 @Configuration
 @Slf4j
@@ -336,7 +337,8 @@ public class PersonBusinessStatusStream {
                 .withValueSerde(new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class))
                 .withKeySerde(Serdes.String())
         )
-        .groupBy(KeyValue::pair)
+        .groupBy(KeyValue::pair, Grouped.with(Serdes.String(),
+            new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
         .aggregate(LocationPersonBusinessStateCountAggregate::new,
             (k, v, agg) -> {
               agg.setStructureBusinessStateCountMap(
@@ -357,7 +359,9 @@ public class PersonBusinessStatusStream {
         .filter(
             (k, v) -> locationService.findByIdentifier(UUID.fromString(k.split("_")[2]))
                 .getGeographicLevel().getName().equals("operational"))
-        .groupBy((k, v) -> k.split("_")[0] + "_" + k.split("_")[1] + "_" + v.getAncestor())
+        .groupBy((k, v) -> k.split("_")[0] + "_" + k.split("_")[1] + "_" + v.getAncestor(),
+            Grouped.with(Serdes.String(),
+                new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
         .aggregate(LocationPersonBusinessStateCountAggregate::new,
             (k, v, agg) -> {
 

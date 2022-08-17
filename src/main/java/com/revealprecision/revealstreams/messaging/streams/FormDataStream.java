@@ -17,7 +17,6 @@ import com.revealprecision.revealstreams.messaging.message.LocationFormDataCount
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataMinMaxAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataSumAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.PersonMetadataEvent;
-import com.revealprecision.revealstreams.messaging.message.PlanLocationAssignMessage;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.props.KafkaProperties;
@@ -34,11 +33,11 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +117,8 @@ public class FormDataStream {
 
     date.peek((k, v) -> formDataLog.debug("date k: {} v: {}", k, v));
 
-    KTable<String, LocationFormDataAggregateEvent> integerLocationFormDataAggregate = date.groupByKey()
+    KTable<String, LocationFormDataAggregateEvent> integerLocationFormDataAggregate = date.groupByKey(
+            Grouped.with(Serdes.String(), new JsonSerde<>(FormDataEntityTagValueEvent.class)))
         .aggregate(
             LocationFormDataAggregateEvent::new,
             (k, v, agg) -> {
@@ -174,13 +174,14 @@ public class FormDataStream {
 
     KGroupedStream<String, LocationFormDataAggregateEvent> stringLocationFormDataAggregateEventKGroupedStream = integerLocationFormDataAggregateEventKStream1
         .groupBy((k, locationFormDataAggregateEvent) ->
-            (locationFormDataAggregateEvent.getPlan() == null ? "plan"
-                : locationFormDataAggregateEvent.getPlan()) + "_"
-                + (locationFormDataAggregateEvent.getHierarchyIdentifier() == null
-                ? "locationHierarchy" : locationFormDataAggregateEvent.getHierarchyIdentifier())
-                + "_"
-                + locationFormDataAggregateEvent.getAncestorNode() + "_"
-                + locationFormDataAggregateEvent.getTag());
+                (locationFormDataAggregateEvent.getPlan() == null ? "plan"
+                    : locationFormDataAggregateEvent.getPlan()) + "_"
+                    + (locationFormDataAggregateEvent.getHierarchyIdentifier() == null
+                    ? "locationHierarchy" : locationFormDataAggregateEvent.getHierarchyIdentifier())
+                    + "_"
+                    + locationFormDataAggregateEvent.getAncestorNode() + "_"
+                    + locationFormDataAggregateEvent.getTag(),
+            Grouped.with(Serdes.String(), new JsonSerde<>(LocationFormDataAggregateEvent.class)));
 
     KTable<String, LocationFormDataSumAggregateEvent> locationIntegerSumAggregate = stringLocationFormDataAggregateEventKGroupedStream.aggregate(
         LocationFormDataSumAggregateEvent::new,
@@ -202,11 +203,12 @@ public class FormDataStream {
     KGroupedStream<String, LocationFormDataAggregateEvent> supervisorLocationFormDataAggregateEventKGroupedStream = integerLocationFormDataAggregateEventKStream1
         .filter((k, v) -> v.getSupervisor() != null)
         .groupBy((k, locationFormDataAggregateEvent) ->
-            locationFormDataAggregateEvent.getPlan() + "_"
-                + locationFormDataAggregateEvent.getHierarchyIdentifier() + "_"
-                + locationFormDataAggregateEvent.getAncestorNode() + "_"
-                + locationFormDataAggregateEvent.getTag() + "_"
-                + locationFormDataAggregateEvent.getSupervisor());
+                locationFormDataAggregateEvent.getPlan() + "_"
+                    + locationFormDataAggregateEvent.getHierarchyIdentifier() + "_"
+                    + locationFormDataAggregateEvent.getAncestorNode() + "_"
+                    + locationFormDataAggregateEvent.getTag() + "_"
+                    + locationFormDataAggregateEvent.getSupervisor(),
+            Grouped.with(Serdes.String(), new JsonSerde<>(LocationFormDataAggregateEvent.class)));
 
     KTable<String, LocationFormDataSumAggregateEvent> supervisorLocationIntegerSumAggregate = supervisorLocationFormDataAggregateEventKGroupedStream.aggregate(
         LocationFormDataSumAggregateEvent::new,
@@ -225,12 +227,13 @@ public class FormDataStream {
     KGroupedStream<String, LocationFormDataAggregateEvent> cddLocationFormDataAggregateEventKGroupedStream = integerLocationFormDataAggregateEventKStream1
         .filter((k, v) -> v.getSupervisor() != null && v.getCddName() != null)
         .groupBy((k, locationFormDataAggregateEvent) ->
-            locationFormDataAggregateEvent.getPlan() + "_"
-                + locationFormDataAggregateEvent.getHierarchyIdentifier() + "_"
-                + locationFormDataAggregateEvent.getAncestorNode() + "_"
-                + locationFormDataAggregateEvent.getTag() + "_"
-                + locationFormDataAggregateEvent.getSupervisor() + "_"
-                + locationFormDataAggregateEvent.getCddName());
+                locationFormDataAggregateEvent.getPlan() + "_"
+                    + locationFormDataAggregateEvent.getHierarchyIdentifier() + "_"
+                    + locationFormDataAggregateEvent.getAncestorNode() + "_"
+                    + locationFormDataAggregateEvent.getTag() + "_"
+                    + locationFormDataAggregateEvent.getSupervisor() + "_"
+                    + locationFormDataAggregateEvent.getCddName(),
+            Grouped.with(Serdes.String(), new JsonSerde<>(LocationFormDataAggregateEvent.class)));
 
     KTable<String, LocationFormDataSumAggregateEvent> cddLocationIntegerSumAggregate = cddLocationFormDataAggregateEventKGroupedStream.aggregate(
         LocationFormDataSumAggregateEvent::new,
@@ -273,7 +276,8 @@ public class FormDataStream {
             + v.getDateForScopeDate()
             : ""));
 
-    KTable<String, LocationFormDataMinMaxAggregateEvent> minMaxTable = maxKeyedStream.groupByKey()
+    KTable<String, LocationFormDataMinMaxAggregateEvent> minMaxTable = maxKeyedStream.groupByKey(
+            Grouped.with(Serdes.String(), new JsonSerde<>(FormDataEntityTagValueEvent.class)))
         .aggregate(LocationFormDataMinMaxAggregateEvent::new,
             (k, v, agg) -> {
               double value;
@@ -331,7 +335,8 @@ public class FormDataStream {
             + v.getDateForScopeDate()
             : "") + "_" + v.getValue());
 
-    KTable<String, LocationFormDataCountAggregateEvent> countTable = countKeyedStream.groupByKey()
+    KTable<String, LocationFormDataCountAggregateEvent> countTable = countKeyedStream.groupByKey(
+            Grouped.with(Serdes.String(), new JsonSerde<>(FormDataEntityTagValueEvent.class)))
         .aggregate(LocationFormDataCountAggregateEvent::new,
             (k, v, agg) -> {
               agg.setCount(agg.getCount() + 1);
