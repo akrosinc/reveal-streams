@@ -93,6 +93,8 @@ public class KafkaConfig {
     props.put(MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(45*60*1000));
     props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS,"false");
     props.put(JsonDeserializer.TRUSTED_PACKAGES,"*");
+    props.put(JsonDeserializer.KEY_DEFAULT_TYPE,Serdes.String().getClass().getName());
+    props.put(JsonDeserializer.VALUE_DEFAULT_TYPE,JsonSerde.class.getName());
     props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
     props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, JsonSerde.class.getName());
     return new KafkaStreamsConfiguration(props);
