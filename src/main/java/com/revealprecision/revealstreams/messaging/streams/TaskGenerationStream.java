@@ -1,11 +1,18 @@
 package com.revealprecision.revealstreams.messaging.streams;
 
-import com.revealprecision.revealstreams.exceptions.NotFoundException;
-import com.revealprecision.revealstreams.messaging.TaskEventFactory;
-import com.revealprecision.revealstreams.persistence.domain.Location;
-import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
+import com.revealprecision.revealstreams.exceptions.NotFoundException;
+import com.revealprecision.revealstreams.messaging.TaskEventFactory;
+import com.revealprecision.revealstreams.messaging.message.TaskAggregate;
+import com.revealprecision.revealstreams.messaging.message.TaskEvent;
+import com.revealprecision.revealstreams.messaging.message.TaskLocationPair;
+import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.User;
+import com.revealprecision.revealstreams.props.KafkaProperties;
+import com.revealprecision.revealstreams.service.LocationService;
+import com.revealprecision.revealstreams.service.UserService;
+import com.revealprecision.revealstreams.util.ActionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,9 +21,6 @@ import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.revealprecision.revealstreams.messaging.message.TaskAggregate;
-import com.revealprecision.revealstreams.messaging.message.TaskEvent;
-import com.revealprecision.revealstreams.messaging.message.TaskLocationPair;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -27,16 +31,13 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Named;
+import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.support.serializer.JsonSerde;
-import com.revealprecision.revealstreams.persistence.domain.User;
-import com.revealprecision.revealstreams.service.LocationService;
-import com.revealprecision.revealstreams.service.UserService;
-import com.revealprecision.revealstreams.util.ActionUtils;
 
 @Configuration
 @RequiredArgsConstructor
@@ -124,7 +125,7 @@ public class TaskGenerationStream {
     // create a table of the records for task Events
     // keyed on task + "_" + plan + "_" + ancestor
     stringTaskEventKStream
-        .repartition()
+        .repartition(Repartitioned.with(Serdes.String(), new JsonSerde<>(TaskEvent.class)))
         .toTable(Materialized.<String, TaskEvent, KeyValueStore<Bytes, byte[]>>
                 as(kafkaProperties.getStoreMap().get(KafkaConstants.taskPlanParent))
             .withValueSerde(new JsonSerde<>(TaskEvent.class))
@@ -216,10 +217,11 @@ public class TaskGenerationStream {
 
     taskStream.peek((k, v) -> taskLog.debug("taskStreamLite k: {}, v: {}", k, v));
 
-    taskStream.repartition().toTable(Materialized.<String, TaskEvent, KeyValueStore<Bytes, byte[]>>
-            as(kafkaProperties.getStoreMap().get(KafkaConstants.task))
-        .withValueSerde(new JsonSerde<>(TaskEvent.class))
-        .withKeySerde(Serdes.String()));
+    taskStream.repartition(Repartitioned.with(Serdes.String(), new JsonSerde<>(TaskEvent.class)))
+        .toTable(Materialized.<String, TaskEvent, KeyValueStore<Bytes, byte[]>>
+                as(kafkaProperties.getStoreMap().get(KafkaConstants.task))
+            .withValueSerde(new JsonSerde<>(TaskEvent.class))
+            .withKeySerde(Serdes.String()));
 
     return taskStream;
   }
