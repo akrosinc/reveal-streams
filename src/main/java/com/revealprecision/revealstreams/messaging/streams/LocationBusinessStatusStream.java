@@ -482,9 +482,9 @@ public class LocationBusinessStatusStream {
                 .withValueSerde(new JsonSerde<>(OperationalAreaVisitedCount.class))
                 .withKeySerde(Serdes.String()));
 
-    aggregate1.toStream().to(kafkaProperties.getTopicMap()
+    restructuredOperationalAreaAggregate.toStream().to(kafkaProperties.getTopicMap()
             .get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC),
-        Produced.with(Serdes.String(), new JsonSerde<>(OperationalAreaVisitedCount.class)));
+        Produced.with(Serdes.String(), new JsonSerde<>(OperationalAreaAggregate.class)));
 
     return locationMetadataStream;
   }

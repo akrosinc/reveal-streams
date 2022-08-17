@@ -8,6 +8,7 @@ import com.revealprecision.revealstreams.messaging.message.LocationPersonBusines
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateStreamTransportEvent;
 import com.revealprecision.revealstreams.messaging.message.MetaDataEvent;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
+import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate.CurrentState;
 import com.revealprecision.revealstreams.messaging.message.PersonMetadataEvent;
@@ -404,7 +405,7 @@ public class PersonBusinessStatusStream {
 
     KTable<String, OperationalAreaAggregate> operationalAreaAggregateTable = streamsBuilder.table(
         kafkaProperties.getTopicMap().get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC)
-        , Consumed.with(Serdes.String(), new JsonSerde<>(OperationalAreaAggregate.class)),
+        , Consumed.with(Serdes.String(),revealSerdes.get(OperationalAreaAggregate.class)),
         Materialized.<String, OperationalAreaAggregate, KeyValueStore<Bytes, byte[]>>as(
                 kafkaProperties.getStoreMap()
                     .get(KafkaConstants.tableOfOperationalAreaHierarchiesForPersonStream))
