@@ -112,7 +112,7 @@ public class LocationStream {
     // getting values from plan assignment
     KStream<String, PlanLocationAssignMessage> locationsAssignedStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM),
-        Consumed.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
+        Consumed.with(Serdes.String(), revealSerdes.get(PlanLocationAssignMessage.class)));
 
     locationsAssignedStream.peek((k,v)->streamLog.debug("locationsAssignedStream - k: {} v: {}", k,v));
 

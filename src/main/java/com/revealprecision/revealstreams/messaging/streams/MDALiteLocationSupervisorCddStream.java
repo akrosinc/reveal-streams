@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.messaging.streams;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteLocationSupervisorCddEvent;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteLocationSupervisorListAggregation;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteSupervisorCddListAggregation;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import java.util.UUID;
@@ -30,6 +31,7 @@ public class MDALiteLocationSupervisorCddStream {
 
   private final KafkaProperties kafkaProperties;
   private final Logger formDataLog = LoggerFactory.getLogger("form-data-file");
+  private final RevealSerdes revealSerdes;
 
   @Bean
   KStream<UUID, MDALiteLocationSupervisorCddEvent> supervisorCddEventKStreamProcessor(
@@ -37,7 +39,7 @@ public class MDALiteLocationSupervisorCddStream {
 
     KStream<UUID, MDALiteLocationSupervisorCddEvent> mdaLiteLocationSupervisorCddStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_SUPERVISOR_CDD),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(MDALiteLocationSupervisorCddEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(MDALiteLocationSupervisorCddEvent.class)));
 
     mdaLiteLocationSupervisorCddStream.peek(
         (k, v) -> formDataLog.debug("mdaLiteLocationSupervisorCddStream k:{} ,v:{}", k, v));

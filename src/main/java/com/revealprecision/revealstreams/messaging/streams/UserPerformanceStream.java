@@ -8,6 +8,7 @@ import com.revealprecision.revealstreams.messaging.message.UserPerOrgLevel;
 import com.revealprecision.revealstreams.messaging.message.UserPerformanceAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserPerformanceData;
 import com.revealprecision.revealstreams.messaging.message.UserPerformancePerDate;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import java.time.LocalDateTime;
@@ -45,13 +46,14 @@ public class UserPerformanceStream {
 
   private final KafkaProperties kafkaProperties;
   private final Logger userPerformanceFile = LoggerFactory.getLogger("user-performance-file");
+  private final RevealSerdes revealSerdes;
 
   @Bean
   KStream<String, UserPerformanceData> performanceDataKStream(StreamsBuilder streamsBuilder) {
 
     KStream<String, UserPerformanceData> performanceDataKStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.USER_PERFORMANCE_DATA),
-        Consumed.with(Serdes.String(), new JsonSerde<>(UserPerformanceData.class)));
+        Consumed.with(Serdes.String(), revealSerdes.get(UserPerformanceData.class)));
 
     performanceDataKStream.peek(
         (k, v) -> userPerformanceFile.debug("performanceDataKStream k: {},v: {}", k, v));
@@ -268,7 +270,7 @@ public class UserPerformanceStream {
   KStream<String, UserDataParentChild> parentChildrenDataKStream(StreamsBuilder streamsBuilder) {
     KStream<String, UserDataParentChild> userParentChildStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.USER_PARENT_CHILD),
-        Consumed.with(Serdes.String(), new JsonSerde<>(UserDataParentChild.class)));
+        Consumed.with(Serdes.String(), revealSerdes.get(UserDataParentChild.class)));
 
     KGroupedStream<String, UserDataParentChild> stringUserDataParentChildKGroupedStream = userParentChildStream.groupBy(
         (k, v) -> v.getPlanIdentifier() + "_" + v.getParent().getUserId());

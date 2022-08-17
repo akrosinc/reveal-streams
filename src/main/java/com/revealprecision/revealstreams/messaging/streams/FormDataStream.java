@@ -10,6 +10,7 @@ import static com.revealprecision.revealstreams.enums.SummaryEnum.COUNT;
 import com.revealprecision.revealstreams.constants.EntityTagDataAggregationMethods;
 import com.revealprecision.revealstreams.constants.EntityTagScopes;
 import com.revealprecision.revealstreams.messaging.message.FormDataEntityTagValueEvent;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.factory.LocationFormDataAggregateEventFactory;
@@ -52,6 +53,7 @@ public class FormDataStream {
   private final KafkaProperties kafkaProperties;
   private final LocationRelationshipService locationRelationshipService;
   private final Logger formDataLog = LoggerFactory.getLogger("form-data-file");
+  private final RevealSerdes revealSerdes;
 
   private final LocationHierarchyService locationHierarchyService;
 
@@ -68,7 +70,7 @@ public class FormDataStream {
 
     KStream<UUID, FormDataEntityTagValueEvent> locationFormDataStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.FORM_EVENT_CONSUMPTION),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(FormDataEntityTagValueEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(FormDataEntityTagValueEvent.class)));
 
     locationFormDataStream.peek(
         (k, v) -> formDataLog.debug("locationFormDataStream - k: {} v: {}", k, v));

@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.messaging.streams;
 
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
 import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
@@ -66,13 +67,14 @@ public class PersonBusinessStatusStream {
   private final PlanService planService;
   private final StreamsBuilderFactoryBean getKafkaStreams;
   private final Logger streamLog = LoggerFactory.getLogger("stream-file");
+  private final RevealSerdes revealSerdes;
 
   @Bean
   KStream<UUID, PersonMetadataEvent> personMetadataProcessor(StreamsBuilder streamsBuilder) {
 
     KStream<UUID, PersonMetadataEvent> personMetadataStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PERSON_METADATA_UPDATE),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(PersonMetadataEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(PersonMetadataEvent.class)));
 
     KStream<String, PersonMetadataUnpackedEvent> unpackedPersonMetadataStream = personMetadataStream
         .filter((k, personMetadata) -> personMetadata.getLocationIdList() != null)
@@ -107,7 +109,7 @@ public class PersonBusinessStatusStream {
 
     KStream<UUID, PersonMetadataEvent> personMetadataStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PERSON_METADATA_UPDATE),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(PersonMetadataEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(PersonMetadataEvent.class)));
     personMetadataStream.peek(
         (k, v) -> streamLog.debug("personMetadataStream - k: {} v: {}", k, v));
 

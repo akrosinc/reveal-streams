@@ -11,6 +11,7 @@ import com.revealprecision.revealstreams.messaging.message.LocationStructureBusi
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount.IndividualOperationalAreaCountsByBusinessStatus;
+import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.BusinessStatusProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class LocationBusinessStatusStream {
   private final LocationService locationService;
   private final PlanService planService;
   private final Logger streamLog = LoggerFactory.getLogger("stream-file");
-
+  private final RevealSerdes revealSerdes;
 
   @Bean
   KStream<UUID, LocationMetadataEvent> locationBusinessStatusCountsAggregator(
@@ -67,7 +68,7 @@ public class LocationBusinessStatusStream {
 
     KStream<UUID, LocationMetadataEvent> locationMetadataStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_UPDATE),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(LocationMetadataEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(LocationMetadataEvent.class)));
 
     locationMetadataStream.peek(
         (k, v) -> streamLog.debug("locationMetadataStream - k: {} v: {}", k, v));
@@ -391,7 +392,7 @@ public class LocationBusinessStatusStream {
 
     KStream<UUID, LocationMetadataEvent> locationMetadataStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_UPDATE),
-        Consumed.with(Serdes.UUID(), new JsonSerde<>(LocationMetadataEvent.class)));
+        Consumed.with(Serdes.UUID(), revealSerdes.get(LocationMetadataEvent.class)));
 
     KStream<UUID, LocationMetadataContainer> locationMetadataUnpackedPerMetadataItems = locationMetadataStream
         .flatMapValues(
