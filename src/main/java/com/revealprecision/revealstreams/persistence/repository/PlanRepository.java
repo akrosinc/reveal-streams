@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface PlanRepository extends EntityGraphJpaRepository<Plan, UUID> {
+  Plan findPlanByIdentifier(UUID planIdentifier);
 }

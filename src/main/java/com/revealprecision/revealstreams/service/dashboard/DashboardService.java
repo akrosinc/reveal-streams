@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DashboardService {
 
+
   private final LocationService locationService;
   private final PlanService planService;
   private final MDADashboardService mdaDashboardService;
@@ -47,13 +48,7 @@ public class DashboardService {
 
     ReportTypeEnum reportTypeEnum = LookupUtil.lookup(ReportTypeEnum.class, reportType);
     Plan plan = planService.findPlanByIdentifier(planIdentifier);
-    List<String> applicableReportTypes = ApplicableReportsEnum.valueOf(
-        plan.getInterventionType().getCode()).getReportName();
-    if (!applicableReportTypes.contains(reportTypeEnum.name())) {
-      throw new WrongEnumException(
-          "Report type: '" + reportType + "' is not applicable to plan with identifier: '"
-              + planIdentifier + "'");
-    }
+    checkSupportedReports(reportType, planIdentifier, reportTypeEnum, plan);
     Location parentLocation = null;
     UUID parentIdentifier = null;
 
@@ -72,7 +67,11 @@ public class DashboardService {
     List<PlanLocationDetails> locationDetails = getPlanLocationDetails(
         planIdentifier, parentIdentifier, plan, parentLocation);
 
-    initialDataStores(reportTypeEnum);
+    try {
+      initialDataStores(reportTypeEnum);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     String reportLevel = getReportLevel(plan, parentLocation, parentIdentifierString);
 
@@ -85,6 +84,18 @@ public class DashboardService {
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
         reportTypeEnum, filters);
+  }
+
+  private void checkSupportedReports(String reportType, UUID planIdentifier,
+      ReportTypeEnum reportTypeEnum,
+      Plan plan) {
+    List<String> applicableReportTypes = ApplicableReportsEnum.valueOf(
+        plan.getInterventionType().getCode()).getReportName();
+    if (!applicableReportTypes.contains(reportTypeEnum.name())) {
+      throw new WrongEnumException(
+          "Report type: '" + reportType + "' is not applicable to plan with identifier: '"
+              + planIdentifier + "'");
+    }
   }
 
   private List<RowData> getRowData(Location parentLocation, ReportTypeEnum reportTypeEnum,
@@ -118,8 +129,7 @@ public class DashboardService {
           case WITHIN_STRUCTURE_LEVEL:
           case STRUCTURE_LEVEL:
             return irsDashboardService.getIRSFullCoverageStructureLevelData(plan,
-                loc.getLocation(),
-                parentLocation.getIdentifier());
+                loc.getLocation());
 
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
             return irsDashboardService.getIRSFullDataOperational(plan,
@@ -132,6 +142,7 @@ public class DashboardService {
         switch (reportLevel) {
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case LOWEST_LITE_TOUCH_LEVEL:
+          case IS_ON_PLAN_TARGET:
             return irsLiteDashboardService.getIRSFullDataOperational(plan,
                 loc.getLocation());
 
@@ -149,9 +160,6 @@ public class DashboardService {
                 plan,
                 loc.getLocation(), filters);
           case IS_ON_PLAN_TARGET:
-            return mdaLiteDashboardService.getMDALiteCoverageData(
-                plan,
-                loc.getLocation(), filters);
           case LOWEST_LITE_TOUCH_LEVEL:
           case ALL_OTHER_LEVELS:
             return mdaLiteDashboardService.getMDALiteCoverageData(
@@ -180,7 +188,7 @@ public class DashboardService {
 
       case IRS_LITE_COVERAGE:
         return irsLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
-            rowDataMap, reportLevel);
+            rowDataMap);
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel, filters);
@@ -190,7 +198,7 @@ public class DashboardService {
     return null;
   }
 
-  private void initialDataStores(ReportTypeEnum reportTypeEnum) {
+  private void initialDataStores(ReportTypeEnum reportTypeEnum) throws InterruptedException {
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
         mdaDashboardService.initDataStoresIfNecessary();
@@ -242,7 +250,6 @@ public class DashboardService {
     }
     return locationDetails;
   }
-
 
 
   private String getReportLevel(Plan plan, Location parentLocation, String parentIdentifierString) {

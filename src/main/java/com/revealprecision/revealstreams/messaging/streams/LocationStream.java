@@ -56,9 +56,8 @@ public class LocationStream {
       StreamsBuilder streamsBuilder) {
 
     KStream<String, LocationRelationshipMessage> locationsImported = streamsBuilder.stream(
-        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED)
-        , Consumed.with(Serdes.String(), revealSerdes.get(LocationRelationshipMessage.class))
-    );
+        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED),
+        Consumed.with(Serdes.String(), new JsonSerde<>(LocationRelationshipMessage.class)));
 
     KStream<String, LocationRelationshipMessage> structures = locationsImported
         .filter((k, locationRelationshipMessage) -> locationRelationshipMessage.getGeoName().equals(
@@ -82,13 +81,8 @@ public class LocationStream {
             locationRelationshipMessage.getLocationHierarchyIdentifier() + "_"
                 + locationRelationshipMessage.getAncestor());
 
-    structures
-        .groupByKey(
-            Grouped.with(Serdes.String(), new JsonSerde<>(LocationRelationshipMessage.class)))
-        .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as(
-                kafkaProperties.getStoreMap()
-                    .get(KafkaConstants.structureCountPerParent)).withKeySerde(Serdes.String())
-            .withValueSerde(Serdes.Long()));
+    structures.groupByKey().count(Materialized.as(kafkaProperties.getStoreMap()
+        .get(KafkaConstants.structureCountPerParent)));
 
     return locationsImported;
   }
@@ -99,12 +93,11 @@ public class LocationStream {
 
     KStream<String, PlanLocationAssignMessage> locationsAssignedStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED),
-        Consumed.with(Serdes.String(), revealSerdes.get(PlanLocationAssignMessage.class)));
+        Consumed.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
 
     //Doing this so that we can rewind this topic without rewinding to cause task generation from running again....
     locationsAssignedStream.to(
-        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM),
-        Produced.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
+        kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM));
     return locationsAssignedStream;
   }
 
@@ -115,7 +108,7 @@ public class LocationStream {
     // getting values from plan assignment
     KStream<String, PlanLocationAssignMessage> locationsAssignedStream = streamsBuilder.stream(
         kafkaProperties.getTopicMap().get(KafkaConstants.PLAN_LOCATION_ASSIGNED_STREAM),
-        Consumed.with(Serdes.String(), revealSerdes.get(PlanLocationAssignMessage.class)));
+        Consumed.with(Serdes.String(), new JsonSerde<>(PlanLocationAssignMessage.class)));
 
     locationsAssignedStream.peek(
         (k, v) -> streamLog.debug("locationsAssignedStream - k: {} v: {}", k, v));
@@ -155,7 +148,7 @@ public class LocationStream {
         (k, v) -> streamLog.debug("stringLocationAssignedKStream - k: {} v: {}", k, v));
 
     KTable<String, LocationAssigned> tableOfAssignedStructures = stringLocationAssignedKStream
-        .repartition(Repartitioned.with(Serdes.String(), new JsonSerde<>(LocationAssigned.class)))
+        .repartition()
         .toTable(Materialized.<String, LocationAssigned, KeyValueStore<Bytes, byte[]>>as(
                 kafkaProperties.getStoreMap()
                     .get(KafkaConstants.tableOfAssignedStructuresWithParentKeyed))
@@ -170,10 +163,8 @@ public class LocationStream {
                 locationAssigned.getPlanIdentifier() + "_" + locationAssigned.getAncestor(),
                 locationAssigned),
             Grouped.with(Serdes.String(), new JsonSerde<>(LocationAssigned.class)))
-        .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as(
-                kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent))
-            .withKeySerde(Serdes.String())
-            .withValueSerde(Serdes.Long()));
+        .count(Materialized.as(
+            kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent)));
 
     count.toStream().peek((k, v) -> streamLog.debug("count.toStream() - k: {} v: {}", k, v));
     return locationsAssignedStream;

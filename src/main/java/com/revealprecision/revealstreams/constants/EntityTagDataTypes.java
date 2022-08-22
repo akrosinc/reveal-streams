@@ -7,5 +7,6 @@ public interface EntityTagDataTypes {
   String STRING = "string";
   String BOOLEAN = "boolean";
   String DATE = "date";
+  String OBJECT = "object";
 
 }
