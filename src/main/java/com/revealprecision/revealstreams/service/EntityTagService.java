@@ -18,7 +18,7 @@ import com.revealprecision.revealstreams.messaging.message.EntityTagEvent;
 import com.revealprecision.revealstreams.persistence.domain.EntityTag;
 import com.revealprecision.revealstreams.persistence.domain.FormField;
 import com.revealprecision.revealstreams.persistence.domain.LookupEntityType;
-import com.revealprecision.revealstreams.persistence.projection.EntityTagRepository;
+import com.revealprecision.revealstreams.persistence.repository.EntityTagRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

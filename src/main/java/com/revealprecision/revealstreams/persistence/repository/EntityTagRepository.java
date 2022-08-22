@@ -1,4 +1,4 @@
-package com.revealprecision.revealstreams.persistence.projection;
+package com.revealprecision.revealstreams.persistence.repository;
 
 import com.revealprecision.revealstreams.persistence.domain.EntityTag;
 import java.util.Optional;
