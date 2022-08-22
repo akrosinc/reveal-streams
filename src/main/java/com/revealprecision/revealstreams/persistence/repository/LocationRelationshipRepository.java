@@ -36,7 +36,7 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
       @Param("locationIdentifier") UUID locationIdentifier);
 
   @Query(value = "select "
-      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "inner join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
       + "where lr.parentLocation.identifier = :parentLocationIdentifier group by lr.identifier")
@@ -51,7 +51,7 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
   List<LocationChildrenCountProjection> getLocationChildrenCount(UUID locationHierarchyIdentifier);
 
   @Query(value = "select "
-      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
       + "where lr.parentLocation.identifier is null group by lr.identifier")
@@ -66,7 +66,7 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
       @Param("hierarchyIdentifier") UUID hierarchyIdentifier);
 
   @Query(value = "select "
-      + "new com.revealprecision.revealstreams.persistence.projection.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
+      + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
       + "where lr.parentLocation.identifier = :parentLocationIdentifier group by lr.identifier")
