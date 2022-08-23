@@ -78,7 +78,7 @@ public class LocationBusinessStatusStream {
     KStream<UUID, LocationMetadataUnpackedEvent> uuidLocationMetadataUnpackedEventKStream = locationMetadataStream
         .flatMapValues(
             (k, locationMetadata) -> getLocationMetadataUnpackedByMetadataItems(locationMetadata));
-
+    //stream of location metadata updates multiplied by metadata items and ancestors
     KStream<String, LocationMetadataUnpackedEvent> unpackedLocationMetadataStream = uuidLocationMetadataUnpackedEventKStream
         .flatMapValues(
             (k, locationMetadata) -> getLocationMetadataUnpackedByAncestry(locationMetadata))
@@ -92,6 +92,7 @@ public class LocationBusinessStatusStream {
         .groupByKey(
             Grouped.with(Serdes.String(), new JsonSerde<>(LocationMetadataUnpackedEvent.class)));
 
+    //get a table of locations with their latest business state -> plan->hierarchy->ancestor->entity
     KTable<String, LocationBusinessStatusAggregate> individualLocationByBusinessStatusTable = stringLocationMetadataUnpackedEventKGroupedStream
         .aggregate(LocationBusinessStatusAggregate::new,
             (key, locationMetadataUnpackedEvent, aggregate) -> getLocationMetadataAggregate(
@@ -101,6 +102,7 @@ public class LocationBusinessStatusStream {
                 .withValueSerde(new JsonSerde<>(LocationBusinessStatusAggregate.class))
                 .withKeySerde(Serdes.String()));
 
+    //get a table of locations with their latest business state -> plan->hierarchy->ancestor->business_status -> counts of children by business_status
     individualLocationByBusinessStatusTable
         .groupBy((k, locationBusinessStatusAggregate) ->
                 KeyValue.pair(
@@ -110,6 +112,8 @@ public class LocationBusinessStatusStream {
         .count(Materialized.as(kafkaProperties.getStoreMap()
             .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy)));
 
+    //stream of location metadata updates multiplied by metadata items and ancestors
+    // (filtered by metadata updates from plans which are lite) keeping locations of that plan target type
     KStream<String, LocationMetadataUnpackedEvent> filter = uuidLocationMetadataUnpackedEventKStream
         .filter((k, locationMetadataUnpackedEvent) ->
             !locationMetadataUnpackedEvent.getPlanTargetType().equals(LocationConstants.STRUCTURE)
@@ -126,6 +130,7 @@ public class LocationBusinessStatusStream {
 
     filter.peek((k, v) -> streamLog.debug("filter k:{} v:{}", k, v));
 
+    //table of lite locations with their latest business states
     KTable<String, LocationStructureBusinessStatusAggregate> locationStructureBusinessStatusAggregateTable = filter.groupByKey(
             Grouped.with(Serdes.String(), new JsonSerde<>(LocationMetadataUnpackedEvent.class)))
         .aggregate(LocationStructureBusinessStatusAggregate::new,
@@ -140,6 +145,7 @@ public class LocationBusinessStatusStream {
         (k, v) -> streamLog.debug("locationStructureBusinessStatusAggregateTable k: {} v: {}", k,
             v));
 
+    //stream of lite locations with their latest business states muliplied by ancestry
     KStream<String, LocationStructureBusinessStatusAggregate> stringLocationStructureBusinessStatusAggregateKStream = locationStructureBusinessStatusAggregateTable.toStream()
         .flatMapValues((k, locationStructureBusinessStatusAggregate) ->
             locationRelationshipService.getLocationRelationshipsForLocation(
@@ -155,7 +161,7 @@ public class LocationBusinessStatusStream {
     stringLocationStructureBusinessStatusAggregateKStream.peek(
         (k, v) -> streamLog.debug("stringLocationStructureBusinessStatusAggregateKStream k:{} v:{}",
             k, v));
-
+    //table of lite locations with their latest business states and their previous business state
     KStream<String, LocationStructureBusinessStatusAggregate> stringLocationStructureBusinessStatusAggregateKStream1 = stringLocationStructureBusinessStatusAggregateKStream
         .flatMapValues((k, locationStructureBusinessStatusAggregate) -> {
               List<LocationStructureBusinessStatusAggregate> aggregateList = new ArrayList<>();
@@ -178,6 +184,7 @@ public class LocationBusinessStatusStream {
     stringLocationStructureBusinessStatusAggregateKStream1.peek((k, v) -> streamLog.debug(
         "stringLocationStructureBusinessStatusAggregateKStream1 k:{} v:{}", k, v));
 
+    //counts of lite locations by their childrens business state
     KTable<String, LocationStructureBusinessStatusAggregate> aggregate = stringLocationStructureBusinessStatusAggregateKStream1.selectKey(
             (k, v) -> v.getPlan() + "_" + v.getAncestorNode() + "_" + v.getBusinessStatusKey())
         .groupByKey(Grouped.with(Serdes.String(),
