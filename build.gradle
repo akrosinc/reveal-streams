@@ -73,6 +73,7 @@ dependencies {
     implementation 'org.keycloak.bom:keycloak-adapter-bom:15.0.2'
 
     implementation 'org.keycloak:keycloak-admin-client:16.0.0'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 dependencyManagement {
     imports {
