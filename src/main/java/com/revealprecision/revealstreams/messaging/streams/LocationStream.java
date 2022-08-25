@@ -51,47 +51,7 @@ public class LocationStream {
   private final RevealSerdes revealSerdes;
 
 
-  @Bean
-  KStream<String, LocationRelationshipMessage> getTotalStructures(
-      StreamsBuilder streamsBuilder) {
 
-    KStream<String, LocationRelationshipMessage> locationsImported = streamsBuilder.stream(
-        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATIONS_IMPORTED)
-        , Consumed.with(Serdes.String(), revealSerdes.get(LocationRelationshipMessage.class))
-    );
-
-    KStream<String, LocationRelationshipMessage> structures = locationsImported
-        .filter((k, locationRelationshipMessage) -> locationRelationshipMessage.getGeoName().equals(
-            LocationConstants.STRUCTURE))
-        .flatMapValues(
-            (k, locationRelationshipMessage) -> locationRelationshipMessage.getAncestry().stream()
-                .map(ancestor -> {
-                  LocationRelationshipMessage locationRelationshipMessageWithAncestor = new LocationRelationshipMessage();
-                  locationRelationshipMessageWithAncestor.setLocationName(
-                      locationRelationshipMessage.getLocationName());
-                  locationRelationshipMessageWithAncestor.setGeoName(
-                      locationRelationshipMessage.getGeoName());
-                  locationRelationshipMessageWithAncestor.setAncestor(ancestor);
-                  locationRelationshipMessageWithAncestor.setLocationIdentifier(
-                      locationRelationshipMessage.getLocationIdentifier());
-                  locationRelationshipMessageWithAncestor.setLocationHierarchyIdentifier(
-                      locationRelationshipMessage.getLocationHierarchyIdentifier());
-                  return locationRelationshipMessageWithAncestor;
-                }).collect(Collectors.toList()))
-        .selectKey((k, locationRelationshipMessage) ->
-            locationRelationshipMessage.getLocationHierarchyIdentifier() + "_"
-                + locationRelationshipMessage.getAncestor());
-
-    structures
-        .groupByKey(
-            Grouped.with(Serdes.String(), new JsonSerde<>(LocationRelationshipMessage.class)))
-        .count(Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as(
-                kafkaProperties.getStoreMap()
-                    .get(KafkaConstants.structureCountPerParent)).withKeySerde(Serdes.String())
-            .withValueSerde(Serdes.Long()));
-
-    return locationsImported;
-  }
 
   @Bean
   KStream<String, PlanLocationAssignMessage> propogateLocationAssignment(

@@ -1,12 +1,12 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
+import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
-import com.revealprecision.revealstreams.messaging.message.LocationBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
@@ -15,10 +15,14 @@ import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAre
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Person;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
+import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
+import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.PersonService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import java.io.Serializable;
@@ -54,6 +58,7 @@ public class MDADashboardService {
   private final PersonService personService;
   private final DashboardProperties dashboardProperties;
   private final PlanLocationsService planLocationsService;
+  private final LocationBusinessStatusService locationBusinessStatusService;
 
   //MDA
   private static final String TREATMENT_COVERAGE = "Treatment coverage";
@@ -79,11 +84,11 @@ public class MDADashboardService {
 
 
   ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
-  ReadOnlyKeyValueStore<String, Long> structureCounts;
-  ReadOnlyKeyValueStore<String, Long> countOfStructuresByBusinessStatus;
+//  ReadOnlyKeyValueStore<String, Long> structureCounts;
+//  ReadOnlyKeyValueStore<String, Long> countOfStructuresByBusinessStatus;
   ReadOnlyKeyValueStore<String, OperationalAreaVisitedCount> countOfOperationalArea;
   ReadOnlyKeyValueStore<String, PersonBusinessStatusAggregate> personBusinessStatus;
-  ReadOnlyKeyValueStore<String, LocationBusinessStatusAggregate> locationBusinessState;
+//  ReadOnlyKeyValueStore<String, LocationBusinessStatusAggregate> locationBusinessState;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> structurePeopleCounts;
   ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> treatedOperationalCounts;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateAggregate> structurePeople;
@@ -392,12 +397,15 @@ public class MDADashboardService {
       totalStructuresInPlanLocationCount = totalStructuresInPlanLocationCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -451,19 +459,16 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getLocationBusinessState(Plan plan,
       Location childLocation, String columnName, UUID parentLocationIdentifier) {
 
-    String businessStateDataStoreQueryKey =
-        plan.getIdentifier() + "_" +
-            parentLocationIdentifier + "_" +
-            plan.getLocationHierarchy().getIdentifier() + "_" +
-            childLocation.getIdentifier();
 
-    LocationBusinessStatusAggregate locationBusinessStatusAggregate = locationBusinessState.get(
-        businessStateDataStoreQueryKey);
+    TaskBusinessStateTracker locationBusinessState = locationBusinessStatusService.findLocationBusinessState(
+        plan.getLocationHierarchy().getIdentifier(), childLocation.getIdentifier(),
+        plan.getIdentifier());
+
 
     String businessStatus = "Not Applicable";
 
-    if (locationBusinessStatusAggregate != null) {
-      businessStatus = locationBusinessStatusAggregate.getBusinessStatus();
+    if (locationBusinessState != null) {
+      businessStatus = locationBusinessState.getTaskBusinessStatus();
     }
 
     ColumnData locationBusinessStateColumnData = new ColumnData();
@@ -554,23 +559,32 @@ public class MDADashboardService {
       totalStructuresInPlanLocationCount = totalStructuresInPlanLocationCountObj;
     }
 
-    String notVisitedStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Visited";
-    Long notVisitedStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notVisitedStructuresQueryKey);
+
+    Long notVisitedStructuresCountObj = null;
+    LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_VISITED, plan.getLocationHierarchy().getIdentifier());
+
+    if (notVisitedStructuresCountObjCount != null){
+      notVisitedStructuresCountObj = notVisitedStructuresCountObjCount.getLocationCount();
+    }
+
+
     double notVisitedStructuresCount = 0;
     if (notVisitedStructuresCountObj != null) {
       notVisitedStructuresCount = notVisitedStructuresCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -604,23 +618,41 @@ public class MDADashboardService {
       totalStructuresTargetedCount = totalStructuresTargetedCountObj;
     }
 
-    String notVisitedStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Visited";
-    Long notVisitedStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notVisitedStructuresQueryKey);
+
+
+
+//    String notVisitedStructuresQueryKey =
+//        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
+//            + plan.getLocationHierarchy()
+//            .getIdentifier() + "_" + "Not Visited";
+//    Long notVisitedStructuresCountObj = countOfStructuresByBusinessStatus.get(
+//        notVisitedStructuresQueryKey);
+
+    Long notVisitedStructuresCountObj = null;
+    LocationBusinessStateCount locationBusinessStateCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_VISITED, plan.getLocationHierarchy().getIdentifier());
+
+    if (locationBusinessStateCount != null){
+      notVisitedStructuresCountObj = locationBusinessStateCount.getLocationCount();
+    }
+
+
     double notVisitedStructuresCount = 0;
     if (notVisitedStructuresCountObj != null) {
       notVisitedStructuresCount = notVisitedStructuresCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -648,12 +680,15 @@ public class MDADashboardService {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -670,9 +705,17 @@ public class MDADashboardService {
 
   private Entry<String, ColumnData> getTotalStructuresCounts(Plan plan, Location childLocation,
       String columnName) {
-    String totalStructuresQueryKey =
-        plan.getLocationHierarchy().getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresCountObj = structureCounts.get(totalStructuresQueryKey);
+
+
+    Long totalStructuresCountObj = null;
+    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+        LocationConstants.STRUCTURE);
+
+    if (locationCounts !=null){
+      totalStructuresCountObj = locationCounts.getLocationCount();
+    }
+
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {
       totalStructuresCount = totalStructuresCountObj;
@@ -690,17 +733,7 @@ public class MDADashboardService {
               kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
               QueryableStoreTypes.keyValueStore()));
 
-      structureCounts = getKafkaStreams.getKafkaStreams()
-          .store(StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.structureCountPerParent),
-              QueryableStoreTypes.keyValueStore()));
-
-      countOfStructuresByBusinessStatus = getKafkaStreams.getKafkaStreams().store(
-          StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                  .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy),
-              QueryableStoreTypes.keyValueStore()));
-
-      countOfOperationalArea = getKafkaStreams.getKafkaStreams().store(
+    countOfOperationalArea = getKafkaStreams.getKafkaStreams().store(
           StoreQueryParameters.fromNameAndType(
               kafkaProperties.getStoreMap()
                   .get(KafkaConstants.operationalAreaByPlanParentHierarchy),
@@ -709,11 +742,6 @@ public class MDADashboardService {
       personBusinessStatus = getKafkaStreams.getKafkaStreams().store(
           StoreQueryParameters.fromNameAndType(
               kafkaProperties.getStoreMap().get(KafkaConstants.personBusinessStatus),
-              QueryableStoreTypes.keyValueStore()));
-
-      locationBusinessState = getKafkaStreams.getKafkaStreams().store(
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.locationBusinessStatus),
               QueryableStoreTypes.keyValueStore()));
 
       structurePeopleCounts = getKafkaStreams.getKafkaStreams().store(

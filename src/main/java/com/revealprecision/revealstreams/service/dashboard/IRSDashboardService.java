@@ -2,34 +2,35 @@ package com.revealprecision.revealstreams.service.dashboard;
 
 
 import static com.revealprecision.revealstreams.messaging.utils.DataStoreUtils.getQueryableStoreByWaiting;
+import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getGeoNameDirectlyAboveStructure;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getLocationBusinessState;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getStringValueColumnData;
 
+import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
-import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
 import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.Report;
 import com.revealprecision.revealstreams.persistence.domain.ReportIndicators;
+import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
+import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.LocationRelationshipService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,18 +49,18 @@ public class IRSDashboardService {
 
   public static final String NOT_SPRAYED_REASON = "Not Sprayed Reason";
   public static final String PHONE_NUMBER = "Phone Number";
-  public static final String NOT_VISITED = "Not Visited";
   public static final String N_A = "n/a";
+  public static final String HEAD_OF_HOUSEHOLD = "Head of Household";
   private final StreamsBuilderFactoryBean getKafkaStreams;
   private final KafkaProperties kafkaProperties;
   private final PlanLocationsService planLocationsService;
   private final LocationRelationshipService locationRelationshipService;
   private final DashboardProperties dashboardProperties;
+  private final LocationBusinessStatusService locationBusinessStatusService;
 
   private static final String TOTAL_SPRAY_AREAS = "Total spray areas";
   private static final String TARGET_SPRAY_AREAS = "Targeted spray areas";
   private static final String VISITED_AREAS = "Total  Spray Areas Visited";
-  public static final String SPRAY_COVERAGE_OF_TARGETED = "Spray Progress (Sprayed / Targeted)";
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
   private static final String TOTAL_STRUCTURES_FOUND = "Total Structures Found";
@@ -77,13 +78,13 @@ public class IRSDashboardService {
   private static final String MOBILIZED = "Mobilized";
 
   ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
-  ReadOnlyKeyValueStore<String, Long> structureCounts;
-  ReadOnlyKeyValueStore<String, Long> countOfStructuresByBusinessStatus;
+//  ReadOnlyKeyValueStore<String, Long> structureCounts;
+//  ReadOnlyKeyValueStore<String, Long> countOfStructuresByBusinessStatus;
   ReadOnlyKeyValueStore<String, OperationalAreaVisitedCount> countOfOperationalArea;
   ReadOnlyKeyValueStore<String, PersonBusinessStatusAggregate> personBusinessStatus;
-  ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> structurePeopleCounts;
-  ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> treatedOperationalCounts;
-  ReadOnlyKeyValueStore<String, LocationPersonBusinessStateAggregate> structurePeople;
+//  ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> structurePeopleCounts;
+//  ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> treatedOperationalCounts;
+//  ReadOnlyKeyValueStore<String, LocationPersonBusinessStateAggregate> structurePeople;
   boolean isDatastoresInitialized = false;
   private final ReportRepository planReportRepository;
 
@@ -135,21 +136,30 @@ public class IRSDashboardService {
   }
 
   public List<RowData> getIRSFullCoverageStructureLevelData(Plan plan, Location childLocation) {
-    Map<String, ColumnData> columns = new HashMap<>();
+    Map<String, ColumnData> columns = new LinkedHashMap<>();
     Report report = planReportRepository.findByPlanAndLocation(plan, childLocation).orElse(null);
+    columns.put(HEAD_OF_HOUSEHOLD, getHeadOfHousehold(report));
     columns.put(STRUCTURE_STATUS,
         getLocationBusinessState(report));
     columns.put(NO_OF_MALES, getMales(report));
     columns.put(NO_OF_FEMALES, getFemales(report));
-    columns.put(NO_OF_ROOMS, getRoomsSprayed(report));
     columns.put(NO_OF_PREGNANT_WOMEN, getPregnantWomen(report));
-    columns.put(NOT_SPRAYED_REASON, getNotSprayedReason(report));
+    columns.put(NO_OF_ROOMS, getRoomsSprayed(report));
     columns.put(PHONE_NUMBER, getHeadPhoneNumber(report));
+    columns.put(NOT_SPRAYED_REASON, getNotSprayedReason(report));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
     rowData.setLocationName(childLocation.getName());
     return List.of(rowData);
+  }
+
+  private ColumnData getHeadOfHousehold(Report report) {
+    ColumnData columnData = getStringValueColumnData();
+    if (report != null && report.getReportIndicators().getHouseholdHead() != null) {
+      columnData.setValue(report.getReportIndicators().getHouseholdHead());
+    }
+    return columnData;
   }
 
 
@@ -160,16 +170,16 @@ public class IRSDashboardService {
               kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
               QueryableStoreTypes.keyValueStore()));
 
-      structureCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.structureCountPerParent),
-              QueryableStoreTypes.keyValueStore()));
-
-      countOfStructuresByBusinessStatus = getQueryableStoreByWaiting(
-          getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                  .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy),
-              QueryableStoreTypes.keyValueStore()));
+//      structureCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
+//          StoreQueryParameters.fromNameAndType(
+//              kafkaProperties.getStoreMap().get(KafkaConstants.structureCountPerParent),
+//              QueryableStoreTypes.keyValueStore()));
+//
+//      countOfStructuresByBusinessStatus = getQueryableStoreByWaiting(
+//          getKafkaStreams.getKafkaStreams(),
+//          StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
+//                  .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy),
+//              QueryableStoreTypes.keyValueStore()));
 
       countOfOperationalArea = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
           StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
@@ -181,20 +191,20 @@ public class IRSDashboardService {
               kafkaProperties.getStoreMap().get(KafkaConstants.personBusinessStatus),
               QueryableStoreTypes.keyValueStore()));
 
-      structurePeopleCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.structurePeopleCounts),
-              QueryableStoreTypes.keyValueStore()));
+//      structurePeopleCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
+//          StoreQueryParameters.fromNameAndType(
+//              kafkaProperties.getStoreMap().get(KafkaConstants.structurePeopleCounts),
+//              QueryableStoreTypes.keyValueStore()));
 
-      treatedOperationalCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts),
-              QueryableStoreTypes.keyValueStore()));
+//      treatedOperationalCounts = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
+//          StoreQueryParameters.fromNameAndType(
+//              kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts),
+//              QueryableStoreTypes.keyValueStore()));
 
-      structurePeople = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.structurePeople),
-              QueryableStoreTypes.keyValueStore()));
+//      structurePeople = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
+//          StoreQueryParameters.fromNameAndType(
+//              kafkaProperties.getStoreMap().get(KafkaConstants.structurePeople),
+//              QueryableStoreTypes.keyValueStore()));
       isDatastoresInitialized = true;
     }
   }
@@ -377,6 +387,8 @@ public class IRSDashboardService {
         childLocation.getIdentifier() + "_" + plan.getIdentifier();
     OperationalAreaVisitedCount operationalAreaVisitedObj = countOfOperationalArea.get(
         operationalAreaVisitedQueryKey);
+
+
     double operationalAreaVisitedCount = 0;
     if (operationalAreaVisitedObj != null) {
       operationalAreaVisitedCount = operationalAreaVisitedObj.getOperationalAreaVisitedCountIRS();
@@ -408,9 +420,15 @@ public class IRSDashboardService {
   private ColumnData getTotalAreas(Plan plan, Location childLocation,
       String geoNameDirectlyAboveStructure) {
 
-    Long totalOperationAreaCounts = locationRelationshipService.getNumberOfChildrenByGeoLevelNameWithinLocationAndHierarchy(
-        geoNameDirectlyAboveStructure, childLocation.getIdentifier(),
-        plan.getLocationHierarchy().getIdentifier());
+    Long totalOperationAreaCounts = null;
+
+    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+        geoNameDirectlyAboveStructure);
+
+    if (locationCounts !=null){
+      totalOperationAreaCounts = locationCounts.getLocationCount();
+    }
 
     Long totalOperationAreaCountsValue = 0L;
 
@@ -425,19 +443,31 @@ public class IRSDashboardService {
   }
 
   private ColumnData getTotalStructuresCounts(Plan plan, Location childLocation, Report report) {
-    String totalStructuresQueryKey =
-        plan.getLocationHierarchy().getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresCountObj = structureCounts.get(totalStructuresQueryKey);
+
+
+    Long totalStructuresCountObj = null;
+    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+        LocationConstants.STRUCTURE);
+
+    if (locationCounts !=null){
+      totalStructuresCountObj = locationCounts.getLocationCount();
+    }
+
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {
       totalStructuresCount = totalStructuresCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy().getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -467,11 +497,15 @@ public class IRSDashboardService {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy().getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -507,11 +541,15 @@ public class IRSDashboardService {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
-    String notEligibleStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy().getIdentifier() + "_" + "Not Eligible";
-    Long notEligibleStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        notEligibleStructuresQueryKey);
+    Long notEligibleStructuresCountObj = null;
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    if (notEligibleStructuresCountObjCount != null){
+      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+    }
+
     double notEligibleStructuresCount = 0;
     if (notEligibleStructuresCountObj != null) {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
@@ -520,20 +558,27 @@ public class IRSDashboardService {
     double totalStructuresInTargetedCount =
         totalStructuresInPlanLocationCount - notEligibleStructuresCount;
 
-    String completedStructuresQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy().getIdentifier() + "_" + "Complete";
-    Long completedStructuresCountObj = countOfStructuresByBusinessStatus.get(
-        completedStructuresQueryKey);
+
+
+    Long completedStructuresCountObj = null;
+    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier());
+
+    if (completedStructuresCountObjCount != null){
+      completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
+    }
+
     double completedStructuresCount = 0;
     if (completedStructuresCountObj != null) {
-      completedStructuresCount = completedStructuresCountObj;
+      completedStructuresCount = notEligibleStructuresCountObj;
     }
+
 
     double percentageOfSprayedToTargeted = 0;
     if (totalStructuresInTargetedCount > 0) {
       percentageOfSprayedToTargeted =
-          completedStructuresCount / totalStructuresInTargetedCount * 100;
+          (completedStructuresCount / totalStructuresInTargetedCount) * 100;
     }
 
     ColumnData totalStructuresTargetedColumnData = new ColumnData();

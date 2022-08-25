@@ -32,4 +32,5 @@ public class ReportIndicators {
   private Integer foundStructures;
   private Integer sprayedStructures;
   private Integer insecticidesUsed;
+  private String householdHead;
 }

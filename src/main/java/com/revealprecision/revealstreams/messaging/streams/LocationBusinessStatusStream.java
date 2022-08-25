@@ -78,39 +78,6 @@ public class LocationBusinessStatusStream {
     KStream<UUID, LocationMetadataUnpackedEvent> uuidLocationMetadataUnpackedEventKStream = locationMetadataStream
         .flatMapValues(
             (k, locationMetadata) -> getLocationMetadataUnpackedByMetadataItems(locationMetadata));
-    //stream of location metadata updates multiplied by metadata items and ancestors
-    KStream<String, LocationMetadataUnpackedEvent> unpackedLocationMetadataStream = uuidLocationMetadataUnpackedEventKStream
-        .flatMapValues(
-            (k, locationMetadata) -> getLocationMetadataUnpackedByAncestry(locationMetadata))
-        .selectKey((k, locationMetadata) -> getPlanAncestorHierarchyEntityKey(locationMetadata));
-
-    unpackedLocationMetadataStream.peek(
-        (k, v) -> streamLog.debug("unpackedLocationMetadataStream - k: {} v: {}", k, v));
-
-    KGroupedStream<String, LocationMetadataUnpackedEvent> stringLocationMetadataUnpackedEventKGroupedStream = unpackedLocationMetadataStream
-        .selectKey((k, v) -> k)
-        .groupByKey(
-            Grouped.with(Serdes.String(), new JsonSerde<>(LocationMetadataUnpackedEvent.class)));
-
-    //get a table of locations with their latest business state -> plan->hierarchy->ancestor->entity
-    KTable<String, LocationBusinessStatusAggregate> individualLocationByBusinessStatusTable = stringLocationMetadataUnpackedEventKGroupedStream
-        .aggregate(LocationBusinessStatusAggregate::new,
-            (key, locationMetadataUnpackedEvent, aggregate) -> getLocationMetadataAggregate(
-                locationMetadataUnpackedEvent, aggregate),
-            Materialized.<String, LocationBusinessStatusAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap().get(KafkaConstants.locationBusinessStatus))
-                .withValueSerde(new JsonSerde<>(LocationBusinessStatusAggregate.class))
-                .withKeySerde(Serdes.String()));
-
-    //get a table of locations with their latest business state -> plan->hierarchy->ancestor->business_status -> counts of children by business_status
-    individualLocationByBusinessStatusTable
-        .groupBy((k, locationBusinessStatusAggregate) ->
-                KeyValue.pair(
-                    getPlanAncestorHierarchyBusinessStatusKey(k, locationBusinessStatusAggregate),
-                    locationBusinessStatusAggregate),
-            Grouped.with(Serdes.String(), new JsonSerde<>(LocationBusinessStatusAggregate.class)))
-        .count(Materialized.as(kafkaProperties.getStoreMap()
-            .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy)));
 
     //stream of location metadata updates multiplied by metadata items and ancestors
     // (filtered by metadata updates from plans which are lite) keeping locations of that plan target type

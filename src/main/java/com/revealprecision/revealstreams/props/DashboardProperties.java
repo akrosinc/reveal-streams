@@ -6,7 +6,6 @@ import static com.revealprecision.revealstreams.service.dashboard.DashboardServi
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.STRUCTURE_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
-import static com.revealprecision.revealstreams.service.dashboard.IRSDashboardService.SPRAY_COVERAGE_OF_TARGETED;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE_PERCENTAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE;
@@ -38,6 +37,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Getter
 public class DashboardProperties {
+  public static final String SPRAY_COVERAGE_OF_TARGETED = "Spray Progress (Sprayed/Targeted)";
 
   private List<String> dashboards = List.of("IRS_COVERAGE", "MDA_COVERAGE");
 

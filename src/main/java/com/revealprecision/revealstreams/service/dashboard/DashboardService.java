@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class DashboardService {
 
-
   private final LocationService locationService;
   private final PlanService planService;
   private final MDADashboardService mdaDashboardService;
@@ -188,7 +187,7 @@ public class DashboardService {
 
       case IRS_LITE_COVERAGE:
         return irsLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
-            rowDataMap);
+            rowDataMap,reportLevel);
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel, filters);
