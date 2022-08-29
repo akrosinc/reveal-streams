@@ -38,5 +38,20 @@ public interface TaskBusinessStateTrackerRepository extends
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(UUID planIdentifier,
       UUID parentLocationIdentifier, String taskLocationGeographicLevelName);
 
+  @Query(
+      "SELECT DISTINCT new TaskBusinessStateTracker (t.taskLocationIdentifier,t.parentGeographicLevelName,t.taskLocationName,t.taskBusinessStatus) from TaskBusinessStateTracker t WHERE t.planIdentifier = :planIdentifier "
+          + "and t.locationHierarchyIdentifier = :locationHierarchyIdentifier and t.taskLocationIdentifier = :taskLocationIdentifier")
+  TaskBusinessStateTracker findDistinctTaskBusinessStateTrackerByLocationHierarchyIdentifierAndTaskLocationIdentifierAndPlanIdentifier(
+      UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);
+
+  @Query(
+      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as taskBusinessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
+          + "where t.parentLocationIdentifier = :parentLocationIdentifier"
+          + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
+          + "t.planIdentifier = :planIdentifier and t.locationHierarchyIdentifier = :locationHierarchyIdentifier"
+          + " group by t.parentLocationIdentifier, t.planIdentifier,t.taskBusinessStatus ")
+  Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(UUID planIdentifier,
+      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,UUID locationHierarchyIdentifier);
+
 
 }

@@ -9,9 +9,7 @@ import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
-import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
@@ -84,13 +82,8 @@ public class MDADashboardService {
 
 
   ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
-//  ReadOnlyKeyValueStore<String, Long> structureCounts;
-//  ReadOnlyKeyValueStore<String, Long> countOfStructuresByBusinessStatus;
-  ReadOnlyKeyValueStore<String, OperationalAreaVisitedCount> countOfOperationalArea;
   ReadOnlyKeyValueStore<String, PersonBusinessStatusAggregate> personBusinessStatus;
-//  ReadOnlyKeyValueStore<String, LocationBusinessStatusAggregate> locationBusinessState;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> structurePeopleCounts;
-  ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> treatedOperationalCounts;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateAggregate> structurePeople;
   boolean datastoresInitialized = false;
 
@@ -301,14 +294,11 @@ public class MDADashboardService {
 
   private Entry<String, ColumnData> operationalAreaVisitedCounts(Plan plan,
       Location childLocation, String columnName) {
-    String operationalAreaVisitedQueryKey =
-        childLocation.getIdentifier() + "_" + plan.getIdentifier();
-    OperationalAreaVisitedCount operationalAreaVisitedObj = countOfOperationalArea.get(
-        operationalAreaVisitedQueryKey);
-    double operationalAreaVisitedCount = 0;
-    if (operationalAreaVisitedObj != null) {
-      operationalAreaVisitedCount = operationalAreaVisitedObj.getOperationalAreaVisitedCountMDA();
-    }
+
+    double operationalAreaVisitedCount = locationBusinessStatusService.getCountsOfVisitedLocationAboveStructure(
+        plan.getLocationHierarchy().getIdentifier(), childLocation.getIdentifier(),
+        plan.getIdentifier(), plan.getLocationHierarchy().getNodeOrder().get(
+            plan.getLocationHierarchy().getNodeOrder().indexOf(LocationConstants.STRUCTURE) - 1));
     ColumnData operationalAreaVisitedColumnData = new ColumnData();
     operationalAreaVisitedColumnData.setValue(operationalAreaVisitedCount);
     operationalAreaVisitedColumnData.setIsPercentage(false);
@@ -317,16 +307,11 @@ public class MDADashboardService {
 
   private Entry<String, ColumnData> operationalAreaTreatedPercentage(Plan plan,
       Location childLocation, String columnName) {
-    String operationalAreaVisitedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-            + plan.getLocationHierarchy()
-            .getIdentifier();
-    TreatedOperationalAreaAggregate treatedOperationalAreaAggregate = treatedOperationalCounts.get(
-        operationalAreaVisitedQueryKey);
-    double treatedOperationalAreaCount = 0;
-    if (treatedOperationalAreaAggregate != null) {
-      treatedOperationalAreaCount = (double) treatedOperationalAreaAggregate.getTreatLocationCount();
-    }
+
+    double treatedOperationalAreaCount = locationBusinessStatusService.getCountsOfTreatedLocationAboveStructure(
+        plan.getLocationHierarchy().getIdentifier(), childLocation.getIdentifier(),
+        plan.getIdentifier(), plan.getLocationHierarchy().getNodeOrder().get(
+            plan.getLocationHierarchy().getNodeOrder().indexOf(LocationConstants.STRUCTURE) - 1));
 
     Long totalOperationAreaCounts = planLocationsService
         .getNumberOfAssignedChildrenByGeoLevelNameWithinLocationAndHierarchyAndPlan(
@@ -733,12 +718,6 @@ public class MDADashboardService {
               kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
               QueryableStoreTypes.keyValueStore()));
 
-    countOfOperationalArea = getKafkaStreams.getKafkaStreams().store(
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap()
-                  .get(KafkaConstants.operationalAreaByPlanParentHierarchy),
-              QueryableStoreTypes.keyValueStore()));
-
       personBusinessStatus = getKafkaStreams.getKafkaStreams().store(
           StoreQueryParameters.fromNameAndType(
               kafkaProperties.getStoreMap().get(KafkaConstants.personBusinessStatus),
@@ -747,11 +726,6 @@ public class MDADashboardService {
       structurePeopleCounts = getKafkaStreams.getKafkaStreams().store(
           StoreQueryParameters.fromNameAndType(
               kafkaProperties.getStoreMap().get(KafkaConstants.structurePeopleCounts),
-              QueryableStoreTypes.keyValueStore()));
-
-      treatedOperationalCounts = getKafkaStreams.getKafkaStreams().store(
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts),
               QueryableStoreTypes.keyValueStore()));
 
       structurePeople = getKafkaStreams.getKafkaStreams().store(

@@ -109,6 +109,15 @@ public interface FormConstants {
         SPAQ_COMPLETE);
   }
 
+  interface AboveStructureStatus {
+
+    String VISITED = "Visited";
+    String VISITED_EFFECTIVELY = "Visited Effectively";
+    String NOT_VISITED = "Not Visited";
+    String TREATED = "Treated";
+    String NOT_TREATED = "Not Treated";
+  }
+
   interface Colors {
 
     String grey = "#8B8B8B";

@@ -7,30 +7,22 @@ import com.revealprecision.revealstreams.messaging.message.LocationPersonBusines
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateStreamTransportEvent;
 import com.revealprecision.revealstreams.messaging.message.MetaDataEvent;
-import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
-import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate.CurrentState;
 import com.revealprecision.revealstreams.messaging.message.PersonMetadataEvent;
 import com.revealprecision.revealstreams.messaging.message.PersonMetadataUnpackedEvent;
-import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
-import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.service.LocationHierarchyService;
 import com.revealprecision.revealstreams.service.LocationRelationshipService;
-import com.revealprecision.revealstreams.service.LocationService;
-import com.revealprecision.revealstreams.service.PlanService;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,22 +30,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
-import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
 @Configuration
@@ -65,9 +53,6 @@ public class PersonBusinessStatusStream {
   private final KafkaProperties kafkaProperties;
   private final LocationRelationshipService locationRelationshipService;
   private final LocationHierarchyService locationHierarchyService;
-  private final LocationService locationService;
-  private final PlanService planService;
-  private final StreamsBuilderFactoryBean getKafkaStreams;
   private final Logger streamLog = LoggerFactory.getLogger("stream-file");
   private final RevealSerdes revealSerdes;
 
@@ -272,258 +257,6 @@ public class PersonBusinessStatusStream {
 
     locationPersonAggregate.toStream()
         .peek((k, v) -> streamLog.debug("locationPersonAggregate.toStream() - k: {} v: {}", k, v));
-
-    KStream<String, LocationPersonBusinessStateCountAggregate> locationPersonAncestryHierarchyAggregate = locationPersonAggregate
-        .toStream()
-        .flatMapValues((k, locationPersonBusinessStateCountAggregate) ->
-
-            locationHierarchyService.getAll().stream()
-                .map(locationHierarchy -> {
-                  LocationPersonBusinessStateCountAggregate newlocationPersonBusinessStateCountAggregate = new LocationPersonBusinessStateCountAggregate();
-                  newlocationPersonBusinessStateCountAggregate.setLocationIdentifier(
-                      k.split("_")[1]);
-                  newlocationPersonBusinessStateCountAggregate.setStructureBusinessStatePersonMap(
-                      locationPersonBusinessStateCountAggregate.getStructureBusinessStatePersonMap());
-                  newlocationPersonBusinessStateCountAggregate.setPersonBusinessStatusMap(
-                      locationPersonBusinessStateCountAggregate.getPersonBusinessStatusMap());
-                  newlocationPersonBusinessStateCountAggregate.setStructureBusinessStateCountMap(
-                      locationPersonBusinessStateCountAggregate.getStructureBusinessStateCountMap());
-                  newlocationPersonBusinessStateCountAggregate.setLocationHierarchy(
-                      locationHierarchy.getIdentifier());
-                  newlocationPersonBusinessStateCountAggregate.setTreated(
-                      locationPersonBusinessStateCountAggregate.isTreated());
-                  return newlocationPersonBusinessStateCountAggregate;
-                }).collect(Collectors.toList()))
-        .flatMapValues((k, locationPersonBusinessStateCountAggregate) ->
-        {
-          List<UUID> ancestry = locationRelationshipService.getLocationRelationshipsForLocation(
-              locationPersonBusinessStateCountAggregate.getLocationHierarchy()
-              , UUID.fromString(k.split("_")[1])).getAncestry();
-          return ancestry.stream().map(ancestor -> {
-            LocationPersonBusinessStateCountAggregate newlocationPersonBusinessStateCountAggregate = new LocationPersonBusinessStateCountAggregate();
-            newlocationPersonBusinessStateCountAggregate.setLocationIdentifier(
-                locationPersonBusinessStateCountAggregate.getLocationIdentifier());
-            newlocationPersonBusinessStateCountAggregate.setStructureBusinessStatePersonMap(
-                locationPersonBusinessStateCountAggregate.getStructureBusinessStatePersonMap());
-            newlocationPersonBusinessStateCountAggregate.setPersonBusinessStatusMap(
-                locationPersonBusinessStateCountAggregate.getPersonBusinessStatusMap());
-            newlocationPersonBusinessStateCountAggregate.setStructureBusinessStateCountMap(
-                locationPersonBusinessStateCountAggregate.getStructureBusinessStateCountMap());
-            newlocationPersonBusinessStateCountAggregate.setLocationHierarchy(
-                locationPersonBusinessStateCountAggregate.getLocationHierarchy());
-            newlocationPersonBusinessStateCountAggregate.setAncestor(ancestor);
-            newlocationPersonBusinessStateCountAggregate.setAncestry(ancestry);
-            newlocationPersonBusinessStateCountAggregate.setTreated(
-                locationPersonBusinessStateCountAggregate.isTreated());
-            return newlocationPersonBusinessStateCountAggregate;
-          }).collect(Collectors.toList());
-        })
-        .selectKey((k, locationPersonBusinessStateCountAggregate) -> k.split("_")[0] + "_" //plan id
-            + locationPersonBusinessStateCountAggregate.getLocationHierarchy() + "_"
-            + locationPersonBusinessStateCountAggregate.getAncestor());
-
-    locationPersonAncestryHierarchyAggregate.peek(
-        (k, v) -> streamLog.debug("locationPersonAncestryHierarchyAggregate k:{} v:{}", k, v));
-
-    locationPersonAncestryHierarchyAggregate
-        .groupByKey(Grouped.with(Serdes.String(),
-            new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
-        .aggregate(LocationPersonBusinessStateCountAggregate::new,
-            (k, v, agg) -> {
-              agg.getPersonBusinessStatusMap().putAll(v.getPersonBusinessStatusMap());
-              return agg;
-            },
-            Materialized.<String, LocationPersonBusinessStateCountAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentData))
-                .withValueSerde(new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class))
-                .withKeySerde(Serdes.String())
-        )
-        .groupBy(KeyValue::pair, Grouped.with(Serdes.String(),
-            new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
-        .aggregate(LocationPersonBusinessStateCountAggregate::new,
-            (k, v, agg) -> {
-              agg.setStructureBusinessStateCountMap(
-                  v.getPersonBusinessStatusMap().entrySet().stream()
-                      .collect(Collectors.toMap(Entry::getValue, entry -> 1L, Long::sum)));
-              return agg;
-            },
-            (k, v, agg) -> {
-              agg.setStructureBusinessStateCountMap(new HashMap<>());
-              return agg;
-            },
-            Materialized.<String, LocationPersonBusinessStateCountAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentCounts))
-                .withValueSerde(new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class))
-                .withKeySerde(Serdes.String()));
-
-    KTable<String, LocationPersonBusinessStateCountAggregate> operationalAreaWithTreatedStructures = locationPersonAncestryHierarchyAggregate
-        .filter(
-            (k, v) -> locationService.findByIdentifier(UUID.fromString(k.split("_")[2]))
-                .getGeographicLevel().getName().equals("operational"))
-        .groupBy((k, v) -> k.split("_")[0] + "_" + k.split("_")[1] + "_" + v.getAncestor(),
-            Grouped.with(Serdes.String(),
-                new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
-        .aggregate(LocationPersonBusinessStateCountAggregate::new,
-            (k, v, agg) -> {
-
-              if (agg.getTreatedLocations().contains(v.getLocationIdentifier())) {
-                if (!v.isTreated()) {
-                  agg.getTreatedLocations().remove(v.getLocationIdentifier());
-                }
-              } else {
-                if (v.isTreated()) {
-                  agg.getTreatedLocations().add(v.getLocationIdentifier());
-                }
-              }
-              return agg;
-            },
-            Materialized.<String, LocationPersonBusinessStateCountAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap().get(KafkaConstants.operationalAreaTreatmentData))
-                .withValueSerde(new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class))
-                .withKeySerde(Serdes.String()));
-
-    KStream<String, LocationPersonBusinessStateCountAggregate> stringLocationPersonBusinessStateCountAggregateKStream = operationalAreaWithTreatedStructures.toStream()
-        .selectKey((k, v) -> {
-          Location location = new Location();
-          location.setIdentifier(UUID.fromString(k.split("_")[2]));
-          LocationHierarchy locationHierarchy = new LocationHierarchy();
-          locationHierarchy.setIdentifier(UUID.fromString(k.split("_")[1]));
-          Location locationParent = locationRelationshipService.getLocationParent(location,
-              locationHierarchy);
-          return locationParent.getIdentifier() + "_" + k.split("_")[2] + "_" + k.split("_")[0];
-        });
-
-    KTable<String, LocationPersonBusinessStateCountAggregate> test4 = stringLocationPersonBusinessStateCountAggregateKStream
-        .repartition(Repartitioned.with(Serdes.String(),
-            new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)))
-        .toTable(
-            Materialized.<String, LocationPersonBusinessStateCountAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap()
-                        .get(KafkaConstants.restructuredOperationalAreaTreatmentData))
-                .withKeySerde(Serdes.String())
-                .withValueSerde(new JsonSerde<>(LocationPersonBusinessStateCountAggregate.class)));
-
-    KTable<String, OperationalAreaAggregate> operationalAreaAggregateTable = streamsBuilder.table(
-        kafkaProperties.getTopicMap().get(KafkaConstants.tableOfOperationalAreaHierarchiesTOPIC)
-        , Consumed.with(Serdes.String(),revealSerdes.get(OperationalAreaAggregate.class)),
-        Materialized.<String, OperationalAreaAggregate, KeyValueStore<Bytes, byte[]>>as(
-                kafkaProperties.getStoreMap()
-                    .get(KafkaConstants.tableOfOperationalAreaHierarchiesForPersonStream))
-            .withKeySerde(Serdes.String())
-            .withValueSerde(new JsonSerde<>(OperationalAreaAggregate.class)));
-
-    KTable<String, TreatedOperationalAreaAggregate> stringTreatedOperationalAreaAggregateKTable = operationalAreaAggregateTable.join(
-        test4,
-        (v1, v2) -> {
-          TreatedOperationalAreaAggregate treatedOperationalAreaAggregate = new TreatedOperationalAreaAggregate();
-
-          treatedOperationalAreaAggregate.setAggregate(v1.getAggregate());
-          treatedOperationalAreaAggregate.setAggregatedLocationCount(
-              v1.getAggregatedLocationCount());
-          treatedOperationalAreaAggregate.setAncestorIdentifier(v1.getAncestorIdentifier());
-          treatedOperationalAreaAggregate.setIdentifier(v1.getIdentifier());
-          if (v2 != null) {
-            treatedOperationalAreaAggregate.setTreatedLocations(v2.getTreatedLocations());
-
-            Optional<Long> structureCount = v1.getAggregatedLocationCount().values().stream()
-                .reduce(Long::sum);
-            if (structureCount.isPresent()) {
-              int treatedStructures = v2.getTreatedLocations().size();
-
-              if (structureCount.get() > 0) {
-                double treatedPercentage =
-                    (double) treatedStructures / (double) structureCount.get() * 100;
-                if (treatedPercentage >= 95) {
-                  treatedOperationalAreaAggregate.setTreated(true);
-                }
-              }
-            }
-          }
-
-          return treatedOperationalAreaAggregate;
-        }
-        ,
-        Materialized.<String, TreatedOperationalAreaAggregate, KeyValueStore<Bytes, byte[]>>as(
-                kafkaProperties.getStoreMap().get(KafkaConstants.joinedOperationalAreaTreatmentData))
-            .withKeySerde(Serdes.String())
-            .withValueSerde(new JsonSerde<>(TreatedOperationalAreaAggregate.class))
-    );
-
-    stringTreatedOperationalAreaAggregateKTable
-        .toStream()
-        .peek((k, v) -> streamLog.debug(
-            "stringTreatedOperationalAreaAggregateKTable.toStream() k: {}, v: {}", k, v));
-
-    KStream<String, TreatedOperationalAreaAggregate> stringTreatedOperationalAreaAggregateKStream = stringTreatedOperationalAreaAggregateKTable
-        .toStream()
-        .flatMapValues((k, v) -> locationHierarchyService.getAll().stream().map(hierarchy -> {
-          TreatedOperationalAreaAggregate treatedOperationalAreaAggregate = new TreatedOperationalAreaAggregate();
-
-          treatedOperationalAreaAggregate.setAggregate(v.getAggregate());
-          treatedOperationalAreaAggregate.setAggregatedLocationCount(
-              v.getAggregatedLocationCount());
-          treatedOperationalAreaAggregate.setAncestorIdentifier(v.getAncestorIdentifier());
-          treatedOperationalAreaAggregate.setIdentifier(v.getIdentifier());
-          treatedOperationalAreaAggregate.setLocationHierarchy(hierarchy.getIdentifier());
-          treatedOperationalAreaAggregate.setTreated(v.isTreated());
-          return treatedOperationalAreaAggregate;
-
-        }).collect(Collectors.toList()))
-        .flatMapValues((k, v) -> {
-          LocationRelationship locationRelationshipsForLocation = locationRelationshipService.getLocationRelationshipsForLocation(
-              v.getLocationHierarchy(),
-              UUID.fromString(k.split("_")[1]));
-
-          if (locationRelationshipsForLocation != null) {
-
-            return locationRelationshipsForLocation
-                .getAncestry().stream()
-                .filter(Objects::nonNull)
-                .map((ancestor) -> {
-                  TreatedOperationalAreaAggregate treatedOperationalAreaAggregate = new TreatedOperationalAreaAggregate();
-
-                  treatedOperationalAreaAggregate.setAggregate(v.getAggregate());
-                  treatedOperationalAreaAggregate.setAggregatedLocationCount(
-                      v.getAggregatedLocationCount());
-                  treatedOperationalAreaAggregate.setLocationHierarchy(v.getLocationHierarchy());
-                  treatedOperationalAreaAggregate.setAncestorIdentifier(ancestor);
-                  treatedOperationalAreaAggregate.setIdentifier(v.getIdentifier());
-                  treatedOperationalAreaAggregate.setTreated(v.isTreated());
-                  return treatedOperationalAreaAggregate;
-                }).collect(Collectors.toList());
-          } else {
-            return new ArrayList<>();
-          }
-        })
-
-        .selectKey((k, v) -> k.split("_")[2] + "_" + v.getAncestorIdentifier() + "_"
-            + v.getLocationHierarchy());
-
-    stringTreatedOperationalAreaAggregateKStream.peek(
-        (k, v) -> streamLog.debug("stringTreatedOperationalAreaAggregateKStream k: {}, v: {}", k,
-            v));
-
-    stringTreatedOperationalAreaAggregateKStream
-        .groupByKey(
-            Grouped.with(Serdes.String(), new JsonSerde<>(TreatedOperationalAreaAggregate.class)))
-        .aggregate(TreatedOperationalAreaAggregate::new,
-            (k, v, agg) -> {
-              if (v.isTreated()) {
-                agg.getTreatedLocations().add(v.getIdentifier().toString());
-              } else {
-                if (!agg.getTreatedLocations().contains(v.getIdentifier().toString())) {
-                  agg.getTreatedLocations().remove(v.getIdentifier().toString());
-                }
-              }
-
-              agg.setTreatLocationCount((long) agg.getTreatedLocations().size());
-              return agg;
-            }
-            ,
-            Materialized.<String, TreatedOperationalAreaAggregate, KeyValueStore<Bytes, byte[]>>as(
-                    kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts))
-                .withKeySerde(Serdes.String())
-                .withValueSerde(new JsonSerde<>(TreatedOperationalAreaAggregate.class)));
 
     return personMetadataStream;
   }

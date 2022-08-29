@@ -4,7 +4,6 @@ package com.revealprecision.revealstreams.messaging.streams;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.messaging.message.LocationAssigned;
-import com.revealprecision.revealstreams.messaging.message.LocationRelationshipMessage;
 import com.revealprecision.revealstreams.messaging.message.PlanLocationAssignMessage;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.persistence.domain.Location;
@@ -29,7 +28,6 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
@@ -49,9 +47,6 @@ public class LocationStream {
   private final PlanService planService;
   private final Logger streamLog = LoggerFactory.getLogger("stream-file");
   private final RevealSerdes revealSerdes;
-
-
-
 
   @Bean
   KStream<String, PlanLocationAssignMessage> propogateLocationAssignment(
