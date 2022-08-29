@@ -1,22 +1,18 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
-import static com.revealprecision.revealstreams.messaging.utils.DataStoreUtils.getQueryableStoreByWaiting;
+import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getGeoNameDirectlyAboveStructure;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getLocationBusinessState;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getStringValueColumnData;
-import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
-
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
-import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
-import com.revealprecision.revealstreams.messaging.message.LocationStructureBusinessStatusAggregate;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
@@ -26,9 +22,7 @@ import com.revealprecision.revealstreams.persistence.domain.Report;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
-import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
-import com.revealprecision.revealstreams.service.LocationRelationshipService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,11 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StoreQueryParameters;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -56,10 +45,8 @@ public class IRSLiteDashboardService {
   public static final String MOBILIZED = "Mobilized";
   public static final String DATE_MOBILIZED = "Date Mobilized";
   public static final String NO = "No";
-  private final StreamsBuilderFactoryBean getKafkaStreams;
-  private final KafkaProperties kafkaProperties;
+
   private final PlanLocationsService planLocationsService;
-  private final LocationRelationshipService locationRelationshipService;
   private final LocationBusinessStatusService locationBusinessStatusService;
   private final DashboardProperties dashboardProperties;
 
@@ -74,10 +61,6 @@ public class IRSLiteDashboardService {
   private static final String STRUCTURES_SPRAYED = "Structures Sprayed";
   private static final String SPRAY_AREA_VISITED = "Spray Area Visited";
   private static final String LOCATION_STATUS = "Location Status";
-
-  ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
-  ReadOnlyKeyValueStore<String, LocationStructureBusinessStatusAggregate> countOfLocationStructuresByBusinessStatus;
-  ReadOnlyKeyValueStore<String, LocationStructureBusinessStatusAggregate> countOfLocationStructuresByBusinessStatusInSprayArea;
 
   private final ReportRepository planReportRepository;
 
@@ -213,23 +196,6 @@ public class IRSLiteDashboardService {
 
   public void initDataStoresIfNecessary() throws InterruptedException {
     if (!datastoresInitialized) {
-      KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-      countOfAssignedStructures = getQueryableStoreByWaiting(kafkaStreams,
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
-              QueryableStoreTypes.keyValueStore()));
-
-      countOfLocationStructuresByBusinessStatus = getQueryableStoreByWaiting(
-          kafkaStreams,
-          StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                  .get(KafkaConstants.locationStructureHierarchyBusinessStatus),
-              QueryableStoreTypes.keyValueStore()));
-
-      countOfLocationStructuresByBusinessStatusInSprayArea = getQueryableStoreByWaiting(
-          kafkaStreams,
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.locationStructureBusinessStatus),
-              QueryableStoreTypes.keyValueStore()));
       datastoresInitialized = true;
     }
   }
@@ -263,14 +229,9 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresSprayed(Plan plan, Location childLocation) {
 
-    String sprayedLocationsQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_" + "Sprayed";
-    LocationStructureBusinessStatusAggregate sprayedLocationsCountObj = countOfLocationStructuresByBusinessStatus.get(
-        sprayedLocationsQueryKey);
+
     double sprayedLocationsCount = 0;
-    if (sprayedLocationsCountObj != null) {
-      sprayedLocationsCount = sprayedLocationsCountObj.getStructureSum();
-    }
+
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(sprayedLocationsCount);
@@ -404,10 +365,10 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresTargetedCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
@@ -438,23 +399,10 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresFoundCount(Plan plan, Location childLocation) {
 
-    String sprayedLocationsQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_" + "Sprayed";
-    LocationStructureBusinessStatusAggregate sprayedLocationsCountObj = countOfLocationStructuresByBusinessStatus.get(
-        sprayedLocationsQueryKey);
-    double sprayedLocationsCount = 0;
-    if (sprayedLocationsCountObj != null) {
-      sprayedLocationsCount = sprayedLocationsCountObj.getStructureSum();
-    }
 
-    String notSprayedLocationsQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_" + "Not Sprayed";
-    LocationStructureBusinessStatusAggregate notSprayedLocationsCountObj = countOfLocationStructuresByBusinessStatus.get(
-        notSprayedLocationsQueryKey);
+    double sprayedLocationsCount = 0;
+
     double notSprayedLocationsCount = 0;
-    if (notSprayedLocationsCountObj != null) {
-      notSprayedLocationsCount = notSprayedLocationsCountObj.getStructureSum();
-    }
 
     double totalStructuresFound = sprayedLocationsCount + notSprayedLocationsCount;
 
@@ -466,20 +414,8 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresFoundCountInSprayArea(Plan plan, Location childLocation) {
 
-    String locationStructureBusinessStatusAggregateQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    LocationStructureBusinessStatusAggregate locationStructureBusinessStatusAggregate = countOfLocationStructuresByBusinessStatusInSprayArea.get(
-        locationStructureBusinessStatusAggregateQueryKey);
-    double totalStructuresFound = 0;
-    if (locationStructureBusinessStatusAggregate != null) {
-      if (locationStructureBusinessStatusAggregate.getBusinessStatus().equals("Sprayed")
-          || locationStructureBusinessStatusAggregate.getBusinessStatus().equals("Not Sprayed")) {
-        if (locationStructureBusinessStatusAggregate.getStructureCounts() != null) {
-          totalStructuresFound = locationStructureBusinessStatusAggregate.getStructureCounts();
-        }
 
-      }
-    }
+    double totalStructuresFound = 0;
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(totalStructuresFound);
@@ -489,19 +425,7 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresSprayedCountInSprayArea(Plan plan, Location childLocation) {
 
-    String locationStructureBusinessStatusAggregateQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    LocationStructureBusinessStatusAggregate locationStructureBusinessStatusAggregate = countOfLocationStructuresByBusinessStatusInSprayArea.get(
-        locationStructureBusinessStatusAggregateQueryKey);
     double totalStructuresSprayed = 0;
-    if (locationStructureBusinessStatusAggregate != null) {
-      if (locationStructureBusinessStatusAggregate.getBusinessStatus().equals("Sprayed")) {
-        if (locationStructureBusinessStatusAggregate.getStructureCounts() != null) {
-          totalStructuresSprayed = locationStructureBusinessStatusAggregate.getStructureCounts();
-        }
-
-      }
-    }
 
     ColumnData totalStructuresSprayedColumnData = new ColumnData();
     totalStructuresSprayedColumnData.setValue(totalStructuresSprayed);
@@ -511,16 +435,7 @@ public class IRSLiteDashboardService {
 
   private ColumnData getAreaVisitedInSprayArea(Plan plan, Location childLocation) {
 
-    String locationStructureBusinessStatusAggregateQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    LocationStructureBusinessStatusAggregate locationStructureBusinessStatusAggregate = countOfLocationStructuresByBusinessStatusInSprayArea.get(
-        locationStructureBusinessStatusAggregateQueryKey);
     String areaVisited = "no";
-    if (locationStructureBusinessStatusAggregate != null) {
-      if (!locationStructureBusinessStatusAggregate.getBusinessStatus().equals("Not Visited")) {
-        areaVisited = "yes";
-      }
-    }
 
     ColumnData areaVisitedColumnData = new ColumnData();
     areaVisitedColumnData.setValue(areaVisited);
@@ -532,23 +447,10 @@ public class IRSLiteDashboardService {
 
   private ColumnData getSprayCoverageOfFound(Plan plan, Location childLocation) {
 
-    String sprayedLocationsQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_" + "Sprayed";
-    LocationStructureBusinessStatusAggregate sprayedLocationsCountObj = countOfLocationStructuresByBusinessStatus.get(
-        sprayedLocationsQueryKey);
-    double sprayedLocationsCount = 0;
-    if (sprayedLocationsCountObj != null) {
-      sprayedLocationsCount = sprayedLocationsCountObj.getStructureSum();
-    }
 
-    String notSprayedLocationsQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_" + "Not Sprayed";
-    LocationStructureBusinessStatusAggregate notSprayedLocationsCountObj = countOfLocationStructuresByBusinessStatus.get(
-        notSprayedLocationsQueryKey);
+    double sprayedLocationsCount = 0;
+
     double notSprayedLocationsCount = 0;
-    if (notSprayedLocationsCountObj != null) {
-      notSprayedLocationsCount = notSprayedLocationsCountObj.getStructureSum();
-    }
 
     double totalStructuresFound = sprayedLocationsCount + notSprayedLocationsCount;
 

@@ -81,7 +81,6 @@ public class MDADashboardService {
   private static final String PERSON_STATE = "Person state";
 
 
-  ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
   ReadOnlyKeyValueStore<String, PersonBusinessStatusAggregate> personBusinessStatus;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> structurePeopleCounts;
   ReadOnlyKeyValueStore<String, LocationPersonBusinessStateAggregate> structurePeople;
@@ -373,13 +372,13 @@ public class MDADashboardService {
       noOfTreatedStructures = personLocationBusinessStatusObj.getLocationsTreated().size();
     }
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresInPlanLocationCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresInPlanLocationCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresInPlanLocationCountObj;
+    if (totalStructuresTargetedCountObj != null) {
+      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
     Long notEligibleStructuresCountObj = null;
@@ -535,13 +534,13 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalFoundCoverage(Plan plan,
       Location childLocation, String columnName) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresInPlanLocationCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresInPlanLocationCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresInPlanLocationCountObj;
+    if (totalStructuresTargetedCountObj != null) {
+      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
 
@@ -594,24 +593,15 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalStructuresFound(Plan plan,
       Location childLocation, String columnName) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresTargetedCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
-    double totalStructuresTargetedCount = 0;
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
+    double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
-      totalStructuresTargetedCount = totalStructuresTargetedCountObj;
+      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
     }
 
-
-
-
-//    String notVisitedStructuresQueryKey =
-//        plan.getIdentifier() + "_" + childLocation.getIdentifier() + "_"
-//            + plan.getLocationHierarchy()
-//            .getIdentifier() + "_" + "Not Visited";
-//    Long notVisitedStructuresCountObj = countOfStructuresByBusinessStatus.get(
-//        notVisitedStructuresQueryKey);
 
     Long notVisitedStructuresCountObj = null;
     LocationBusinessStateCount locationBusinessStateCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
@@ -644,7 +634,7 @@ public class MDADashboardService {
     }
 
     double totalStructuresFound =
-        ((totalStructuresTargetedCount - notEligibleStructuresCount) - notVisitedStructuresCount);
+        ((totalStructuresInPlanLocationCount - notEligibleStructuresCount) - notVisitedStructuresCount);
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(totalStructuresFound);
@@ -656,10 +646,10 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalStructuresTargetedCount(Plan plan,
       Location childLocation, String columnName) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresTargetedCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
@@ -713,10 +703,6 @@ public class MDADashboardService {
 
   public void initDataStoresIfNecessary() {
     if (!datastoresInitialized) {
-      countOfAssignedStructures = getKafkaStreams.getKafkaStreams().store(
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
-              QueryableStoreTypes.keyValueStore()));
 
       personBusinessStatus = getKafkaStreams.getKafkaStreams().store(
           StoreQueryParameters.fromNameAndType(

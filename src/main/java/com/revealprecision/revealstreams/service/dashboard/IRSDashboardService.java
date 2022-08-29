@@ -1,7 +1,6 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
-import static com.revealprecision.revealstreams.messaging.utils.DataStoreUtils.getQueryableStoreByWaiting;
 import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getGeoNameDirectlyAboveStructure;
@@ -9,7 +8,6 @@ import static com.revealprecision.revealstreams.util.DashboardUtils.getLocationB
 import static com.revealprecision.revealstreams.util.DashboardUtils.getStringValueColumnData;
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
-import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
@@ -25,7 +23,6 @@ import com.revealprecision.revealstreams.persistence.domain.ReportIndicators;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
-import com.revealprecision.revealstreams.props.KafkaProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import java.util.LinkedHashMap;
@@ -34,10 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.streams.StoreQueryParameters;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -48,8 +41,6 @@ public class IRSDashboardService {
   public static final String PHONE_NUMBER = "Phone Number";
   public static final String N_A = "n/a";
   public static final String HEAD_OF_HOUSEHOLD = "Head of Household";
-  private final StreamsBuilderFactoryBean getKafkaStreams;
-  private final KafkaProperties kafkaProperties;
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
@@ -73,7 +64,6 @@ public class IRSDashboardService {
   private static final String REVIEWED_WITH_DECISION = "Reviewed with decision";
   private static final String MOBILIZED = "Mobilized";
 
-  ReadOnlyKeyValueStore<String, Long> countOfAssignedStructures;
   boolean isDatastoresInitialized = false;
   private final ReportRepository planReportRepository;
 
@@ -154,11 +144,6 @@ public class IRSDashboardService {
 
   public void initDataStoresIfNecessary() throws InterruptedException {
     if (!isDatastoresInitialized) {
-      countOfAssignedStructures = getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(),
-          StoreQueryParameters.fromNameAndType(
-              kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
-              QueryableStoreTypes.keyValueStore()));
-
 
       isDatastoresInitialized = true;
     }
@@ -429,10 +414,11 @@ public class IRSDashboardService {
 
   private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresTargetedCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
@@ -473,10 +459,10 @@ public class IRSDashboardService {
 
   private ColumnData getSprayCoverageOfTargeted(Plan plan, Location childLocation) {
 
-    String totalStructuresTargetedQueryKey =
-        plan.getIdentifier() + "_" + childLocation.getIdentifier();
-    Long totalStructuresTargetedCountObj = countOfAssignedStructures.get(
-        totalStructuresTargetedQueryKey);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+
+
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
       totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;

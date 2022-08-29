@@ -2,7 +2,6 @@ package com.revealprecision.revealstreams.api.querying;
 
 
 import com.revealprecision.revealstreams.constants.KafkaConstants;
-import com.revealprecision.revealstreams.messaging.message.LocationBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataCountAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataMinMaxAggregateEvent;
@@ -10,13 +9,7 @@ import com.revealprecision.revealstreams.messaging.message.LocationFormDataSumAg
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationPersonBusinessStateCountAggregate;
 import com.revealprecision.revealstreams.messaging.message.LocationStructureBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.OperationalAreaAggregate;
-import com.revealprecision.revealstreams.messaging.message.OperationalAreaVisitedCount;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
-import com.revealprecision.revealstreams.messaging.message.PersonFormDataCountAggregateEvent;
-import com.revealprecision.revealstreams.messaging.message.TaskAggregate;
-import com.revealprecision.revealstreams.messaging.message.TaskEvent;
-import com.revealprecision.revealstreams.messaging.message.TreatedOperationalAreaAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserAggregate;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +23,6 @@ import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.StreamsBuilderFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,17 +37,17 @@ public class KafkaStateStoreQueryController<T> {
   private final KafkaProperties kafkaProperties;
 
 
-  @GetMapping("/userPerformance")
-  public void userPerformance() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, UserAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap()
-                .get(KafkaConstants.userPerformance),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/userPerformance")
+//  public void userPerformance() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, UserAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap()
+//                .get(KafkaConstants.userPerformance),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
 
   @GetMapping("/userPerformanceSums")
@@ -149,16 +141,16 @@ public class KafkaStateStoreQueryController<T> {
     iterateThroughStore(counts);
   }
 
-  @GetMapping("/personFormDataStringCount")
-  public void personFormDataStringCount() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, PersonFormDataCountAggregateEvent> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.personFormDataStringCount),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/personFormDataStringCount")
+//  public void personFormDataStringCount() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, PersonFormDataCountAggregateEvent> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.personFormDataStringCount),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
   @GetMapping("/locationFormDataInteger")
   public void locationFormDataInteger() {
@@ -218,16 +210,16 @@ public class KafkaStateStoreQueryController<T> {
   }
 
 
-  @GetMapping("/assignedOperationalCountPerParent")
-  public void assignedOperationalCountPerParent() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.assignedOperationalCountPerParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/assignedOperationalCountPerParent")
+//  public void assignedOperationalCountPerParent() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.assignedOperationalCountPerParent),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
   @GetMapping("/personBusinessStatus")
   public void personBusinessStatus() {
@@ -240,230 +232,170 @@ public class KafkaStateStoreQueryController<T> {
     iterateThroughStore(counts);
   }
 
-  @GetMapping("/tableOfOperationalAreas")
-  public void tableOfOperationalAreas() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.tableOfOperationalAreas),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/tableOfOperationalAreas")
+//  public void tableOfOperationalAreas() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.tableOfOperationalAreas),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
-  @GetMapping("/structureCountPerParent")
-  public void structureCountPerParent() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.structureCountPerParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/structureCountPerParent")
+//  public void structureCountPerParent() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.structureCountPerParent),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/hierarchicalPeopleTreatmentData")
+//  public void test() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentData),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/hierarchicalPeopleTreatmentCounts")
+//  public void hierarchicalPeopleTreatmentCounts() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentCounts),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/operationalAreaTreatmentData")
+//  public void operationalAreaTreatmentData() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.operationalAreaTreatmentData),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/restructuredOperationalAreaTreatmentData")
+//  public void restructuredOperationalAreaTreatmentData() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
+//                .get(KafkaConstants.restructuredOperationalAreaTreatmentData),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/tableOfOperationalAreaHierarchiesForPersonStream")
+//  public void tableOfOperationalAreaHierarchiesForPersonStream() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
+//                .get(KafkaConstants.tableOfOperationalAreaHierarchiesForPersonStream),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/joinedOperationalAreaTreatmentData")
+//  public void joinedOperationalAreaTreatmentData() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.joinedOperationalAreaTreatmentData),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/operationalTreatedCounts")
+//  public void operationalTreatedCounts() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
-  @GetMapping("/hierarchicalPeopleTreatmentData")
-  public void test() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentData),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/assignedStructureCountPerParent")
+//  public void countOfAssignedStructure() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
-  @GetMapping("/hierarchicalPeopleTreatmentCounts")
-  public void hierarchicalPeopleTreatmentCounts() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.hierarchicalPeopleTreatmentCounts),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/operationalAreaTreatmentData")
-  public void operationalAreaTreatmentData() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.operationalAreaTreatmentData),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/restructuredOperationalAreaTreatmentData")
-  public void restructuredOperationalAreaTreatmentData() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, LocationPersonBusinessStateCountAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                .get(KafkaConstants.restructuredOperationalAreaTreatmentData),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/tableOfOperationalAreaHierarchiesForPersonStream")
-  public void tableOfOperationalAreaHierarchiesForPersonStream() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                .get(KafkaConstants.tableOfOperationalAreaHierarchiesForPersonStream),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/joinedOperationalAreaTreatmentData")
-  public void joinedOperationalAreaTreatmentData() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.joinedOperationalAreaTreatmentData),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/operationalTreatedCounts")
-  public void operationalTreatedCounts() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TreatedOperationalAreaAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.operationalTreatedCounts),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/assignedStructureCountPerParent")
-  public void countOfAssignedStructure() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.assignedStructureCountPerParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/tableOfOperationalAreaHierarchies")
-  public void tableOfOperationalAreaHierarchies() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.tableOfOperationalAreaHierarchies),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/locationBusinessStatusByPlanParentHierarchy")
-  public void locationBusinessStatusByPlanParentHierarchy() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/operationalAreaByPlanParentHierarchy")
-  public void operationalAreaByPlanParentHierarchy() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, OperationalAreaVisitedCount> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
-                .get(KafkaConstants.operationalAreaByPlanParentHierarchy),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-
-  @GetMapping("/locationBusinessStatus")
-  public void locationBusinessStatus() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, LocationBusinessStatusAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.locationBusinessStatus),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/taskPlanParent")
-  public void taskPlanParent() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskEvent> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.taskPlanParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/task")
-  public void task() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskEvent> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.task),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/taskPlanParent/{task}/{plan}/{parent}")
-  public TaskEvent taskPlanParent(@PathVariable("task") String task,
-      @PathVariable("plan") String plan, @PathVariable("parent") String parent) {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskEvent> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.taskPlanParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    return counts.get(task.concat("_").concat(plan).concat("_").concat(parent));
-  }
-
-  @GetMapping("/taskParent")
-  public void taskParent() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.taskParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    KeyValueIterator<String, TaskAggregate> all = counts.all();
-    iterateThroughStore(counts);
-  }
-
-  @GetMapping("/taskParentCount")
-  public void taskParentCount() {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.taskParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    iterateThroughStore(counts);
-  }
+//  @GetMapping("/tableOfOperationalAreaHierarchies")
+//  public void tableOfOperationalAreaHierarchies() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, OperationalAreaAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.tableOfOperationalAreaHierarchies),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/locationBusinessStatusByPlanParentHierarchy")
+//  public void locationBusinessStatusByPlanParentHierarchy() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, Long> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
+//                .get(KafkaConstants.locationBusinessStatusByPlanParentHierarchy),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//  @GetMapping("/operationalAreaByPlanParentHierarchy")
+//  public void operationalAreaByPlanParentHierarchy() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, OperationalAreaVisitedCount> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(kafkaProperties.getStoreMap()
+//                .get(KafkaConstants.operationalAreaByPlanParentHierarchy),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
+//
+//
+//  @GetMapping("/locationBusinessStatus")
+//  public void locationBusinessStatus() {
+//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+//    ReadOnlyKeyValueStore<String, LocationBusinessStatusAggregate> counts = kafkaStreams.store(
+//        StoreQueryParameters.fromNameAndType(
+//            kafkaProperties.getStoreMap().get(KafkaConstants.locationBusinessStatus),
+//            QueryableStoreTypes.keyValueStore())
+//    );
+//    iterateThroughStore(counts);
+//  }
 
 
-  @GetMapping("/taskParent/{plan}/{parent}")
-  public TaskAggregate taskParent(@PathVariable("plan") String plan,
-      @PathVariable("parent") String parent) {
-    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-    ReadOnlyKeyValueStore<String, TaskAggregate> counts = kafkaStreams.store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.taskParent),
-            QueryableStoreTypes.keyValueStore())
-    );
-    return counts.get(plan.concat("_").concat(parent));
-  }
+
+
+
+
+
+
+
+
 
   private void iterateThroughStore(ReadOnlyKeyValueStore<String, ?> counts) {
     KeyValueIterator<String, ?> all = counts.all();

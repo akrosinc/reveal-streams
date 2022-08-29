@@ -31,5 +31,11 @@ public class PlanLocationsService {
         planIdentifier);
   }
 
+  public Long getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(UUID planIdentifier,
+      UUID locationIdentifier, String geographicLevelName) {
+    return planLocationsRepository.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
+        planIdentifier, locationIdentifier, geographicLevelName);
+  }
+
 
 }

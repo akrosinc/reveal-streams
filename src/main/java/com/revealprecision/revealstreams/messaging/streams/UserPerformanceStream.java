@@ -28,6 +28,7 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
@@ -64,7 +65,7 @@ public class UserPerformanceStream {
         ).collect(Collectors.toList()));
 
     KGroupedStream<String, UserPerOrgLevel> stringUserAggregateKGroupedStream = stringUserPerOrgLevelKStream.groupBy(
-        (k, v) -> v.getPlanIdentifier() + "_" + v.getUserLevel().getUserId());
+        (k, v) -> v.getPlanIdentifier() + "_" + v.getUserLevel().getUserId(), Grouped.with(Serdes.String(),new JsonSerde<>(UserPerOrgLevel.class)));
 
     KTable<String, UserPerformanceAggregate> userSumAggregateKTable = stringUserAggregateKGroupedStream.aggregate(
         () -> null,
@@ -273,7 +274,7 @@ public class UserPerformanceStream {
         Consumed.with(Serdes.String(), revealSerdes.get(UserDataParentChild.class)));
 
     KGroupedStream<String, UserDataParentChild> stringUserDataParentChildKGroupedStream = userParentChildStream.groupBy(
-        (k, v) -> v.getPlanIdentifier() + "_" + v.getParent().getUserId());
+        (k, v) -> v.getPlanIdentifier() + "_" + v.getParent().getUserId(), Grouped.with(Serdes.String(),new JsonSerde<>(UserDataParentChild.class)));
 
     stringUserDataParentChildKGroupedStream.aggregate(() -> null,
         (k, v, agg) -> {
