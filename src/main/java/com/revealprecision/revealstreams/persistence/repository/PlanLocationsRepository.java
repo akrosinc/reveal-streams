@@ -26,10 +26,10 @@ public interface PlanLocationsRepository extends EntityGraphJpaRepository<PlanLo
       @Param("locationHierarchyIdentifier") UUID locationHierarchyIdentifier,
       @Param("planIdentifier") UUID planIdentifier);
 
-  @Query(value = "SELECT ls.location_count from plan_locations pl "
-      + "left join location_counts ls on pl.location_identifier = ls.parent_location_identifier "
-      + "where pl.plan_identifier = :planIdentifier and pl.location_identifier = :locationIdentifier and "
-      + "ls.geographic_level_name = :geographicLevelName", nativeQuery = true)
-  Long getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(UUID planIdentifier, UUID locationIdentifier, String geographicLevelName);
+  @Query(value = "SELECT asc_.parent_location_identifier, asc_.parent_location_name, sum(asc_.structure_count) from assigned_structure_counts asc_ "
+      + "where asc_.plan_identifier = :planIdentifier and asc_.parent_location_identifier = :parentLocationIdentifier "
+      + "group by asc_.parent_location_identifier, asc_.parent_location_name", nativeQuery = true)
+  Long getAssignedStructureCountByLocationParentAndPlan(UUID planIdentifier, UUID parentLocationIdentifier);
+
 
 }

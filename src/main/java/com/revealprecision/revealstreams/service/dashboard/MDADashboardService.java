@@ -372,9 +372,8 @@ public class MDADashboardService {
       noOfTreatedStructures = personLocationBusinessStatusObj.getLocationsTreated().size();
     }
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
-
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
@@ -534,8 +533,8 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalFoundCoverage(Plan plan,
       Location childLocation, String columnName) {
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -593,8 +592,8 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalStructuresFound(Plan plan,
       Location childLocation, String columnName) {
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -646,8 +645,8 @@ public class MDADashboardService {
   private Entry<String, ColumnData> getTotalStructuresTargetedCount(Plan plan,
       Location childLocation, String columnName) {
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
 
     double totalStructuresInPlanLocationCount = 0;

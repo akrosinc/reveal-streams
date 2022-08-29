@@ -365,9 +365,8 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
-
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {

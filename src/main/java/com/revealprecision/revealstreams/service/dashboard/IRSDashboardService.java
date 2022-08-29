@@ -193,8 +193,10 @@ public class IRSDashboardService {
     if (foundStructures == 0) {
       columnData.setValue(0d);
     } else {
-      columnData.setValue((sprayedStructures / foundStructures) * 100);
+      columnData.setValue((sprayedStructures / sprayedStructures) * 100);
     }
+    columnData.setMeta(  "Targeted Structure: "+sprayedStructures + " / "+ "Found Structures: "+foundStructures);
+
     return columnData;
   }
 
@@ -209,6 +211,7 @@ public class IRSDashboardService {
     } else {
       columnData.setValue((foundStructures / targetedStructures) * 100);
     }
+    columnData.setMeta("Found Structures: "+foundStructures+ " / " + "Targeted Structure: "+targetedStructures);
     return columnData;
   }
 
@@ -415,8 +418,8 @@ public class IRSDashboardService {
   private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
 
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -459,8 +462,8 @@ public class IRSDashboardService {
 
   private ColumnData getSprayCoverageOfTargeted(Plan plan, Location childLocation) {
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedLocationCountOfGeoLevelByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE);
+    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
+        plan.getIdentifier(), childLocation.getIdentifier());
 
 
     double totalStructuresInPlanLocationCount = 0;
