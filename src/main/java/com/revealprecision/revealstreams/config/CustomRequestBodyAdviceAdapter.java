@@ -1,12 +1,15 @@
 package com.revealprecision.revealstreams.config;
 
 
+import com.revealprecision.revealstreams.props.HttpLoggingProperties;
 import com.revealprecision.revealstreams.service.HttpLoggingService;
 import com.revealprecision.revealstreams.util.HeaderUtil;
+import com.revealprecision.revealstreams.util.UserUtils;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ public class CustomRequestBodyAdviceAdapter extends RequestBodyAdviceAdapter {
 
   private final HttpLoggingService httpLoggingService;
 
+  private final HttpLoggingProperties httpLoggingProperties;
+
   private final Tracer tracer;
 
   public Object afterBodyRead(Object body, HttpInputMessage inputMessage,
@@ -40,25 +45,34 @@ public class CustomRequestBodyAdviceAdapter extends RequestBodyAdviceAdapter {
         TimeZone.getDefault().toZoneId());
 
     String jwtKid = null;
-//    try {
-//      jwtKid = UserUtils.getJwtKid();
-//    } catch (ClassCastException | NullPointerException e) {
-//      log.warn("No keycloak principal available");
-//      jwtKid = "not available";
-//    }
+    try {
+      jwtKid = UserUtils.getJwtKid();
+    } catch (ClassCastException | NullPointerException e) {
+      log.warn("No keycloak principal available");
+      jwtKid = "not available";
+    }
     String username = null;
-//    try {
-//      username = UserUtils.getCurrentPrincipleName();
-//    } catch (ClassCastException | NullPointerException e) {
-//      log.warn("No keycloak username available");
-//      username = "not available";
-//    }
+    try {
+      username = UserUtils.getCurrentPrincipleName();
+    } catch (ClassCastException | NullPointerException e) {
+      log.warn("No keycloak username available");
+      username = "not available";
+    }
 
-    httpLoggingService.log(
-        httpServletRequest.getRequestURL().toString() + (httpServletRequest.getQueryString() != null
-            ? "?" + httpServletRequest.getQueryString() : ""), body, null, tracer.currentSpan(),
-        httpServletRequest.getMethod(), null, requestHeaders, triggerTime, null,
-        username, jwtKid);
+    Optional<String> excludedPath = httpLoggingProperties.getExcludedPaths().stream()
+        .filter(excludedPathString ->
+            httpServletRequest.getRequestURL().toString().contains(excludedPathString)
+        ).findAny();
+
+    if (excludedPath.isEmpty()) {
+      httpLoggingService.log(
+          httpServletRequest.getRequestURL().toString() + (
+              httpServletRequest.getQueryString() != null
+                  ? "?" + httpServletRequest.getQueryString() : ""), body, null,
+          tracer.currentSpan(),
+          httpServletRequest.getMethod(), null, requestHeaders, triggerTime, null,
+          username, jwtKid);
+    }
 
     return super.afterBodyRead(body, inputMessage, parameter, targetType, converterType);
   }

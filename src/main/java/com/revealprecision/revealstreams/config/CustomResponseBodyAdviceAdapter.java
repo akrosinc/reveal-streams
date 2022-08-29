@@ -1,11 +1,14 @@
 package com.revealprecision.revealstreams.config;
 
 
+import com.revealprecision.revealstreams.props.HttpLoggingProperties;
 import com.revealprecision.revealstreams.service.HttpLoggingService;
 import com.revealprecision.revealstreams.util.HeaderUtil;
+import com.revealprecision.revealstreams.util.UserUtils;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,8 @@ public class CustomResponseBodyAdviceAdapter implements ResponseBodyAdvice<Objec
 
   private final Tracer tracer;
 
+  private final HttpLoggingProperties httpLoggingProperties;
+
   @Override
   public boolean supports(MethodParameter methodParameter,
       Class<? extends HttpMessageConverter<?>> aClass) {
@@ -57,29 +62,37 @@ public class CustomResponseBodyAdviceAdapter implements ResponseBodyAdvice<Objec
           TimeZone.getDefault().toZoneId());
       try {
         String jwtKid = null;
-//        try {
-//          jwtKid = UserUtils.getJwtKid();
-//        } catch (ClassCastException | NullPointerException e) {
-//          log.warn("No keycloak principal available");
-//          jwtKid = "not available";
-//        }
+        try {
+          jwtKid = UserUtils.getJwtKid();
+        } catch (ClassCastException | NullPointerException e) {
+          log.warn("No keycloak principal available");
+          jwtKid = "not available";
+        }
         String username = null;
-//        try {
-//          username = UserUtils.getCurrentPrincipleName();
-//        } catch (ClassCastException | NullPointerException e) {
-//          log.warn("No keycloak username available");
-//          username = "not available";
-//        }
+        try {
+          username = UserUtils.getCurrentPrincipleName();
+        } catch (ClassCastException | NullPointerException e) {
+          log.warn("No keycloak username available");
+          username = "not available";
+        }
 
-        httpLoggingService.log(
-            servletRequest.getRequestURL().toString() + (servletRequest.getQueryString() != null ?
-                "?"
-                    + servletRequest.getQueryString() : ""), null, o, tracer.currentSpan(),
-            servletRequest.getMethod(), String.valueOf(
-                ((ServletServerHttpResponse) serverHttpResponse).getServletResponse().getStatus()),
-            headers, triggerTime, LocalDateTime.now(), username,
-            jwtKid);
-      }catch (ClassCastException e){
+        Optional<String> excludedPath = httpLoggingProperties.getExcludedPaths().stream()
+            .filter(excludedPathString ->
+                servletRequest.getRequestURL().toString().contains(excludedPathString)
+            ).findAny();
+
+        if (excludedPath.isEmpty()) {
+          httpLoggingService.log(
+              servletRequest.getRequestURL().toString() + (servletRequest.getQueryString() != null ?
+                  "?"
+                      + servletRequest.getQueryString() : ""), null, o, tracer.currentSpan(),
+              servletRequest.getMethod(), String.valueOf(
+                  ((ServletServerHttpResponse) serverHttpResponse).getServletResponse()
+                      .getStatus()),
+              headers, triggerTime, LocalDateTime.now(), username,
+              jwtKid);
+        }
+      } catch (ClassCastException e) {
         e.printStackTrace();
       }
     }
