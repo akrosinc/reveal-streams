@@ -1,5 +1,7 @@
 package com.revealprecision.revealstreams.service;
 
+import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.repository.PlanLocationsRepository;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +33,16 @@ public class PlanLocationsService {
         planIdentifier);
   }
 
-  public Long getAssignedStructureCountByLocationParentAndPlan(UUID planIdentifier, UUID parentLocationIdentifier){
-    return planLocationsRepository.getAssignedStructureCountByLocationParentAndPlan(planIdentifier, parentLocationIdentifier);
+  public Long getAssignedStructureCountByLocationParentAndPlan(Plan plan, Location location) {
+    if (plan.getLocationHierarchy().getNodeOrder().get(plan.getLocationHierarchy().getNodeOrder()
+            .indexOf(plan.getPlanTargetType().getGeographicLevel().getName())-1)
+        .equals(location.getGeographicLevel().getName())) {
+      return planLocationsRepository.getAssignedStructureCountOnPlanTargetByLocationParentAndPlan(
+          plan.getIdentifier(), location.getIdentifier());
+    } else {
+      return planLocationsRepository.getAssignedStructureCountByLocationParentAndPlan(
+          plan.getIdentifier(), location.getIdentifier());
+    }
   }
 
 }

@@ -29,7 +29,13 @@ public interface PlanLocationsRepository extends EntityGraphJpaRepository<PlanLo
   @Query(value = "SELECT sum(asc_.structure_count) from assigned_structure_counts asc_ "
       + "where asc_.plan_identifier = :planIdentifier and asc_.parent_location_identifier = :parentLocationIdentifier "
       + "group by asc_.parent_location_identifier, asc_.parent_location_name", nativeQuery = true)
-  Long getAssignedStructureCountByLocationParentAndPlan(UUID planIdentifier, UUID parentLocationIdentifier);
+  Long getAssignedStructureCountByLocationParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier);
 
+
+  @Query(value = "SELECT DISTINCT structure_count from assigned_structure_counts asc_ "
+      + "WHERE asc_.plan_identifier = :planIdentifier and asc_.location_identifier = :parentLocationIdentifier", nativeQuery = true)
+  Long getAssignedStructureCountOnPlanTargetByLocationParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier);
 
 }
