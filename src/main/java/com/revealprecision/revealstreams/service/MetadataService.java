@@ -11,7 +11,6 @@ import static com.revealprecision.revealstreams.constants.EntityTagDataTypes.STR
 import com.revealprecision.revealstreams.constants.EntityTagScopes;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.enums.EntityStatus;
-import com.revealprecision.revealstreams.exceptions.FileFormatException;
 import com.revealprecision.revealstreams.factory.LocationMetadataEventFactory;
 import com.revealprecision.revealstreams.factory.PersonMetadataEventFactory;
 import com.revealprecision.revealstreams.messaging.message.EntityTagEvent;
@@ -30,16 +29,12 @@ import com.revealprecision.revealstreams.persistence.domain.metadata.infra.TagDa
 import com.revealprecision.revealstreams.persistence.domain.metadata.infra.TagValue;
 import com.revealprecision.revealstreams.persistence.repository.LocationMetadataRepository;
 import com.revealprecision.revealstreams.persistence.repository.PersonMetadataRepository;
-import com.revealprecision.revealstreams.persistence.repository.PersonRepository;
 import com.revealprecision.revealstreams.props.KafkaProperties;
-import java.io.IOException;
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
@@ -49,7 +44,6 @@ import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
-
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -64,8 +58,6 @@ public class MetadataService {
   private final KafkaTemplate<String, PersonMetadataEvent> personMetadataKafkaTemplate;
   private final KafkaProperties kafkaProperties;
   private final LocationService locationService;
-
-
 
   public Object updateMetaData(UUID identifier, Object tagValue,
       Plan plan, UUID taskIdentifier,

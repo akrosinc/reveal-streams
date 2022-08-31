@@ -203,13 +203,6 @@ public class UserPerformanceStream {
   }
 
 
-  public static void main(String[] args) {
-    Long mins = 1096L;
-
-    LocalTime localTime = LocalTime.MIDNIGHT.plusMinutes(mins);
-    System.out.println(localTime);
-  }
-
   private UserAggregate getUserAggregate(UserPerOrgLevel v, UserAggregate agg) {
     if (agg == null) {
       agg = new UserAggregate(

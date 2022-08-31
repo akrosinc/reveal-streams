@@ -14,14 +14,9 @@ public class PlanAssignmentService {
 
   private final PlanAssignmentRepository planAssignmentRepository;
 
-
-
   public List<PlanAssignment> getPlanAssignmentsByPlanIdentifier(UUID planIdentifier) {
     return planAssignmentRepository.findPlanAssignmentsByPlanLocations_Plan_Identifier(
         planIdentifier);
   }
-
-
-
 
 }
