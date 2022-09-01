@@ -25,19 +25,19 @@ public interface LocationAboveStructureCountsRepository extends JpaRepository<Lo
       , UUID planIdentifier);
 
   @Query("SELECT count(lasc) from LocationAboveStructure lasc WHERE "
-      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.locationAboveStructureIdentifier = :locationAboveStructureIdentifier "
+      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.parentLocationIdentifier = :locationAboveStructureIdentifier "
       + "      and lasc.planIdentifier = :planIdentifier and lasc.isVisited = true  and lasc.locationAboveStructureGeographicLevelName = :childGeographicLevelName ")
   Long getCountOfVisitedLocations(UUID locationHierarchyIdentifier, UUID locationAboveStructureIdentifier
       , UUID planIdentifier, String childGeographicLevelName);
 
   @Query("SELECT count(lasc) from LocationAboveStructure lasc WHERE "
-      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.locationAboveStructureIdentifier = :locationAboveStructureIdentifier "
+      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.parentLocationIdentifier = :locationAboveStructureIdentifier "
       + "      and lasc.planIdentifier = :planIdentifier and lasc.isVisitedEffectively = true  and lasc.locationAboveStructureGeographicLevelName = :childGeographicLevelName ")
   Long getCountOfVisitedEffectivelyLocations(UUID locationHierarchyIdentifier, UUID locationAboveStructureIdentifier
       , UUID planIdentifier, String childGeographicLevelName);
 
   @Query("SELECT count(lasc) from LocationAboveStructure lasc WHERE "
-      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.locationAboveStructureIdentifier = :locationAboveStructureIdentifier "
+      + "      lasc.locationHierarchyIdentifier = :locationHierarchyIdentifier and lasc.parentLocationIdentifier = :locationAboveStructureIdentifier "
       + "      and lasc.planIdentifier = :planIdentifier and lasc.isTreated = true  and lasc.locationAboveStructureGeographicLevelName = :childGeographicLevelName ")
   Long getCountOfTreatedLocations(UUID locationHierarchyIdentifier, UUID locationAboveStructureIdentifier
       , UUID planIdentifier, String childGeographicLevelName);

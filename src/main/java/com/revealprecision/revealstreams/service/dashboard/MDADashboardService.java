@@ -373,7 +373,7 @@ public class MDADashboardService {
     }
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
     double totalStructuresInPlanLocationCount = 0;
     if (totalStructuresTargetedCountObj != null) {
@@ -534,7 +534,7 @@ public class MDADashboardService {
       Location childLocation, String columnName) {
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -593,7 +593,7 @@ public class MDADashboardService {
       Location childLocation, String columnName) {
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -646,7 +646,7 @@ public class MDADashboardService {
       Location childLocation, String columnName) {
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
 
     double totalStructuresInPlanLocationCount = 0;

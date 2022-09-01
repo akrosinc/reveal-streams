@@ -193,9 +193,9 @@ public class IRSDashboardService {
     if (foundStructures == 0) {
       columnData.setValue(0d);
     } else {
-      columnData.setValue((sprayedStructures / sprayedStructures) * 100);
+      columnData.setValue((sprayedStructures / foundStructures) * 100);
     }
-    columnData.setMeta(  "Targeted Structure: "+sprayedStructures + " / "+ "Found Structures: "+foundStructures);
+    columnData.setMeta( "Sprayed Structures: "+sprayedStructures+ " / "+"Found Structures: "+foundStructures );
 
     return columnData;
   }
@@ -310,8 +310,8 @@ public class IRSDashboardService {
     percentageSprayedEffectivelyColumnData.setValue(percentageSprayedEffectively);
     percentageSprayedEffectivelyColumnData.setIsPercentage(true);
     percentageSprayedEffectivelyColumnData.setMeta(
-        "operationalAreaVisitedEffectivelyCount: " + operationalAreaVisitedEffectivelyCount + " / "
-            + "operationalAreaVisitedCount: " + operationalAreaVisitedCount);
+        "Total Effectively Sprayed Areas : " + operationalAreaVisitedEffectivelyCount + " / "
+            + "Total Spray Areas Visited: " + operationalAreaVisitedCount);
 
     return percentageSprayedEffectivelyColumnData;
 
@@ -419,7 +419,7 @@ public class IRSDashboardService {
 
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
 
     double totalStructuresInPlanLocationCount = 0;
@@ -463,7 +463,7 @@ public class IRSDashboardService {
   private ColumnData getSprayCoverageOfTargeted(Plan plan, Location childLocation) {
 
     Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan.getIdentifier(), childLocation.getIdentifier());
+        plan, childLocation);
 
 
     double totalStructuresInPlanLocationCount = 0;
