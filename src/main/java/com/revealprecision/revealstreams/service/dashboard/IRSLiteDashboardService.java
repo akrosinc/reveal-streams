@@ -24,6 +24,7 @@ import com.revealprecision.revealstreams.persistence.repository.ReportRepository
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
+import com.revealprecision.revealstreams.util.DashboardUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,8 +101,9 @@ public class IRSLiteDashboardService {
 
   private ColumnData getAverageInsecticideUsage(Plan plan, Location childLocation, Report report) {
     ColumnData columnData = new ColumnData();
-    Double sprayedStructures = (Double) getTotalStructuresSprayed(plan, childLocation).getValue();
-    Double insecticidesUsed = (Double) getInsecticidesUsed(report).getValue();
+    Double sprayedStructures = DashboardUtils.getDouble(
+        getTotalStructuresSprayed(plan, childLocation).getValue());
+    Double insecticidesUsed = DashboardUtils.getDouble(getInsecticidesUsed(report).getValue());
 
     if (insecticidesUsed == 0) {
       columnData.setValue(0d);
@@ -124,13 +126,14 @@ public class IRSLiteDashboardService {
   private ColumnData getAverageStructuresSprayedPerDay(Plan plan, Location childLocation,
       Report report) {
     ColumnData columnData = new ColumnData();
-    Double numberOfSprayDays = (Double) getNumberOfSprayDays(report).getValue();
-    Double sprayedStructures = (Double) getTotalStructuresSprayed(plan, childLocation).getValue();
+    Double numberOfSprayDays = DashboardUtils.getDouble(getNumberOfSprayDays(report).getValue());
+    Double sprayedStructures = DashboardUtils.getDouble(
+        getTotalStructuresSprayed(plan, childLocation).getValue());
 
-    if (numberOfSprayDays == 0) {
-      columnData.setValue(0);
-    } else {
+    if (numberOfSprayDays != null && numberOfSprayDays > 0) {
       columnData.setValue(Math.round(sprayedStructures / numberOfSprayDays));
+    } else {
+      columnData.setValue(0);
     }
 
     return columnData;
@@ -139,16 +142,17 @@ public class IRSLiteDashboardService {
   private ColumnData getSPrayedProgressTargeted(Plan plan, Location childLocation) {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
-    Double totalSprayedStructures = (Double) getTotalStructuresSprayed(plan,
-        childLocation).getValue();
-    Double totalTargetedStructures = (Double) getTotalStructuresTargetedCount(plan,
-        childLocation).getValue();
+    Double totalSprayedStructures = DashboardUtils.getDouble(getTotalStructuresSprayed(plan,
+        childLocation).getValue());
+    Double totalTargetedStructures = DashboardUtils.getDouble(getTotalStructuresTargetedCount(plan,
+        childLocation).getValue());
 
-    if (totalTargetedStructures != 0) {
-      columnData.setValue((totalSprayedStructures / totalTargetedStructures)*100);
+    if (totalTargetedStructures != null && totalTargetedStructures != 0) {
+      columnData.setValue((totalSprayedStructures / totalTargetedStructures) * 100);
     } else {
       columnData.setValue(0);
     }
+    columnData.setMeta("Total Structures Sprayed : "+totalSprayedStructures+" / "+ "Total Targeted Structures: "+totalSprayedStructures);
     return columnData;
   }
 
@@ -156,8 +160,8 @@ public class IRSLiteDashboardService {
     ColumnData columnData = new ColumnData();
 
     if (report != null && report.getReportIndicators().getUniqueSupervisionDates() != null) {
-      columnData.setValue(Double.valueOf(
-          report.getReportIndicators().getUniqueSupervisionDates().stream().count()));
+      columnData.setValue(
+          (double) report.getReportIndicators().getUniqueSupervisionDates().size());
     } else {
       columnData.setValue(0d);
     }
@@ -229,9 +233,7 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresSprayed(Plan plan, Location childLocation) {
 
-
     double sprayedLocationsCount = 0;
-
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(sprayedLocationsCount);
@@ -242,13 +244,13 @@ public class IRSLiteDashboardService {
 
   private ColumnData operationalAreaVisitedCounts(Plan plan, Location childLocation) {
 
-
     Long sprayedLocationsObj = null;
     LocationBusinessStateCount sprayedLocationsObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        plan.getIdentifier(), childLocation.getIdentifier(),
+        plan.getPlanTargetType().getGeographicLevel().getName(),
         BusinessStatus.SPRAYED, plan.getLocationHierarchy().getIdentifier());
 
-    if (sprayedLocationsObjCount != null){
+    if (sprayedLocationsObjCount != null) {
       sprayedLocationsObj = sprayedLocationsObjCount.getLocationCount();
     }
 
@@ -257,13 +259,13 @@ public class IRSLiteDashboardService {
       sprayedLocationsCount = sprayedLocationsObj;
     }
 
-
     Long notSprayedLocationsObj = null;
     LocationBusinessStateCount notSprayedLocationsObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.SPRAYED, plan.getLocationHierarchy().getIdentifier());
+        plan.getIdentifier(), childLocation.getIdentifier(),
+        plan.getPlanTargetType().getGeographicLevel().getName(),
+        BusinessStatus.NOT_SPRAYED, plan.getLocationHierarchy().getIdentifier());
 
-    if (notSprayedLocationsObjCount != null){
+    if (notSprayedLocationsObjCount != null) {
       notSprayedLocationsObj = notSprayedLocationsObjCount.getLocationCount();
     }
 
@@ -271,7 +273,6 @@ public class IRSLiteDashboardService {
     if (notSprayedLocationsObj != null) {
       notSprayedLocationsCount = notSprayedLocationsObj;
     }
-
 
     double visitedAreas = sprayedLocationsCount + notSprayedLocationsCount;
 
@@ -284,7 +285,8 @@ public class IRSLiteDashboardService {
   private ColumnData getTargetedAreas(Plan plan, Location childLocation) {
 
     Long countOfOperationalAreas = planLocationsService.getNumberOfAssignedChildrenByGeoLevelNameWithinLocationAndHierarchyAndPlan(
-        plan.getIdentifier(), LocationConstants.OPERATIONAL, childLocation.getIdentifier(),
+        plan.getIdentifier(), plan.getPlanTargetType().getGeographicLevel().getName(),
+        childLocation.getIdentifier(),
         plan.getLocationHierarchy().getIdentifier());
 
     Long countOfOperationalAreasValue = 0L;
@@ -302,16 +304,14 @@ public class IRSLiteDashboardService {
   private ColumnData getTotalAreas(Plan plan, Location childLocation,
       String geoNameDirectlyAboveStructure) {
 
-
     Long totalOperationAreaCounts = null;
     LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        geoNameDirectlyAboveStructure);
+        plan.getPlanTargetType().getGeographicLevel().getName());
 
-    if (locationCounts !=null){
+    if (locationCounts != null) {
       totalOperationAreaCounts = locationCounts.getLocationCount();
     }
-
 
     Long totalOperationAreaCountsValue = 0L;
 
@@ -332,7 +332,7 @@ public class IRSLiteDashboardService {
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
         LocationConstants.STRUCTURE);
 
-    if (locationCounts !=null){
+    if (locationCounts != null) {
       totalStructuresCountObj = locationCounts.getLocationCount();
     }
 
@@ -346,7 +346,7 @@ public class IRSLiteDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
         BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
 
-    if (notEligibleStructuresCountObjCount != null){
+    if (notEligibleStructuresCountObjCount != null) {
       notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
     }
 
@@ -378,7 +378,7 @@ public class IRSLiteDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
         BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
 
-    if (notEligibleStructuresCountObjCount != null){
+    if (notEligibleStructuresCountObjCount != null) {
       notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
     }
 
@@ -398,7 +398,6 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresFoundCount(Plan plan, Location childLocation) {
 
-
     double sprayedLocationsCount = 0;
 
     double notSprayedLocationsCount = 0;
@@ -412,7 +411,6 @@ public class IRSLiteDashboardService {
   }
 
   private ColumnData getTotalStructuresFoundCountInSprayArea(Plan plan, Location childLocation) {
-
 
     double totalStructuresFound = 0;
 
@@ -445,7 +443,6 @@ public class IRSLiteDashboardService {
 
 
   private ColumnData getSprayCoverageOfFound(Plan plan, Location childLocation) {
-
 
     double sprayedLocationsCount = 0;
 
@@ -492,7 +489,8 @@ public class IRSLiteDashboardService {
   }
 
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
-      List<PlanLocationDetails> locationDetails, Map<UUID, RowData> rowDataMap, String reportLevel) {
+      List<PlanLocationDetails> locationDetails, Map<UUID, RowData> rowDataMap,
+      String reportLevel) {
     FeatureSetResponse response = new FeatureSetResponse();
     response.setType("FeatureCollection");
     List<LocationResponse> locationResponses = locationDetails.stream()
@@ -501,7 +499,7 @@ public class IRSLiteDashboardService {
 
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses);
     response.setDefaultDisplayColumn(
-        dashboardProperties.getIrsDefaultDisplayColumns().getOrDefault(reportLevel, null));
+        dashboardProperties.getIrsLiteDefaultDisplayColumns().getOrDefault(reportLevel, null));
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
     return response;

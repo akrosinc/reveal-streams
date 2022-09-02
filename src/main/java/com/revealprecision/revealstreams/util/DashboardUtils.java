@@ -69,4 +69,16 @@ public class DashboardUtils {
         return null;
     }
   }
+  public static Double getDouble(Object object){
+
+    if (object instanceof Integer){
+      return ((Integer)object).doubleValue();
+    } else if (object instanceof String){
+      return Double.valueOf((String) object);
+    } else if (object instanceof Double){
+      return (double) object;
+    }
+
+    return null;
+  }
 }

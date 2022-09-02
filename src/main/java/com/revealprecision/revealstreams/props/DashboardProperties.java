@@ -6,6 +6,7 @@ import static com.revealprecision.revealstreams.service.dashboard.DashboardServi
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.STRUCTURE_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
+import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE_PERCENTAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE;
@@ -51,6 +52,10 @@ public class DashboardProperties {
       Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, DISTRIBUTION_COVERAGE_PERCENTAGE,
           ALL_OTHER_LEVELS, DISTRIBUTION_COVERAGE
       );
+
+  private final Map<String, String> irsLiteDefaultDisplayColumns =
+      Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_PROGRESS_SPRAYED_TARGETED,
+          ALL_OTHER_LEVELS, SPRAY_PROGRESS_SPRAYED_TARGETED);
 
   private final Map<String, String> irsDefaultDisplayColumns =
       Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_COVERAGE_OF_TARGETED,

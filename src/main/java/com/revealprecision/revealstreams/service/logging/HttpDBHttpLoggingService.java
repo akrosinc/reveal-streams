@@ -4,13 +4,15 @@ package com.revealprecision.revealstreams.service.logging;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.revealprecision.revealstreams.persistence.domain.logging.HttpLogging;
+import com.revealprecision.revealstreams.persistence.repository.logging.HttpLoggingRepository;
 import com.revealprecision.revealstreams.props.HttpLoggingProperties;
 import com.revealprecision.revealstreams.service.HttpLoggingService;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import javax.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.sleuth.Span;
@@ -18,12 +20,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-@Profile("!Http-DB-Logging")
+@Profile("Http-DB-Logging")
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultHttpLoggingService implements HttpLoggingService {
+public class HttpDBHttpLoggingService implements HttpLoggingService {
 
+  private final HttpLoggingRepository httpLoggingRepository;
   private final ObjectMapper objectMapper;
   private final HttpLoggingProperties httpLoggingProperties;
 
@@ -43,7 +46,6 @@ public class DefaultHttpLoggingService implements HttpLoggingService {
       } catch (JsonProcessingException e){
         log.warn("Response is not a JSON object {}",requestObject);
       }
-
       String traceId = span != null ? span.context().traceId() : null;
 
       String spanId = span != null ? span.context().spanId() : null;
@@ -65,7 +67,18 @@ public class DefaultHttpLoggingService implements HttpLoggingService {
     if (httpLoggingProperties.isShouldLogToConsole()) {
       log.debug("{}", pretty(httpLogging));
     }
+    if (httpLoggingProperties.isShouldLogToDatabase()) {
+      httpLoggingRepository.save(httpLogging);
+    }
   }
+
+  @Transactional
+  public void cleanUpLog() {
+    Duration duration = Duration.of(httpLoggingProperties.getChronoAmount(),
+        httpLoggingProperties.getChronoUnit());
+    httpLoggingRepository.deleteAllByRequestTimeBefore(LocalDateTime.now().minus(duration));
+  }
+
 
   private String pretty(HttpLogging httpLogging) {
     return "httpMethod='" + httpLogging.getHttpMethod() + '\'' + ", path='" + httpLogging.getPath()
