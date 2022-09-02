@@ -181,10 +181,6 @@ public class IRSLiteDashboardService {
   public List<RowData> getIRSFullDataOperational(Plan plan, Location childLocation) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     Report report = planReportRepository.findByPlanAndLocation(plan, childLocation).orElse(null);
-    columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
-    columns.put(STRUCTURES_FOUND,
-        getTotalStructuresFoundCountInSprayArea(plan, childLocation));
-    columns.put(STRUCTURES_SPRAYED, getTotalStructuresSprayedCountInSprayArea(plan, childLocation));
     columns.put(SPRAY_AREA_VISITED, getAreaVisitedInSprayArea(plan, childLocation));
     columns.put(DATE_VISITED_FOR_IRS, getSprayDate(report));
     columns.put(STRUCTURES_ON_THE_GROUND, getTotalStructuresCounts(plan, childLocation));
@@ -197,6 +193,8 @@ public class IRSLiteDashboardService {
     rowData.setLocationName(childLocation.getName());
     return List.of(rowData);
   }
+
+
 
   public void initDataStoresIfNecessary() throws InterruptedException {
     if (!datastoresInitialized) {
