@@ -59,6 +59,34 @@ public class MetadataService {
   private final KafkaProperties kafkaProperties;
   private final LocationService locationService;
 
+
+  public List<MetadataObj> getLocationMetadataByTagName(UUID locationIdentifier,UUID planIdentifier, String tagName, LocalDateTime localDateTime, String scope) {
+    Optional<LocationMetadata> locationMetadataOptional = locationMetadataRepository.findLocationMetadataByLocation_Identifier(
+        locationIdentifier);
+    if (locationMetadataOptional.isPresent()) {
+
+      LocationMetadata locationMetadata = locationMetadataOptional.get();
+
+      return locationMetadata.getEntityValue().getMetadataObjs().stream()
+          .filter(metadataObj -> metadataObj.getTag().equals(tagName))
+          .filter(metadataObj -> metadataObj.getCurrent().getMeta().getPlanId().equals(planIdentifier))
+          .filter(metadataObj -> {
+            if (EntityTagScopes.DATE.equals(scope)) {
+              return metadataObj.isDateScope() && metadataObj.getDateForDateScope()
+                  .equals(localDateTime.toString());
+            } else {
+              return true;
+            }
+          })
+          .collect(Collectors.toList());
+
+    } else {
+      return null;
+    }
+  }
+
+
+
   public Object updateMetaData(UUID identifier, Object tagValue,
       Plan plan, UUID taskIdentifier,
       String user, String dataType, EntityTagEvent tag, String type, Object entity, String taskType,
@@ -137,7 +165,12 @@ public class MetadataService {
       metadataList.setMetadataObjs(List.of(metadataObj));
       personMetadata.setEntityValue(metadataList);
       personMetadata.setEntityStatus(EntityStatus.ACTIVE);
+      personMetadata.setCreatedBy("reveal-streams");
+      personMetadata.setCreatedDatetime(LocalDateTime.now());
     }
+
+    personMetadata.setModifiedBy("reveal-streams");
+    personMetadata.setModifiedDatetime(LocalDateTime.now());
 
     PersonMetadata savedPersonMetadata = personMetadataRepository.save(personMetadata);
 
@@ -167,6 +200,7 @@ public class MetadataService {
     Optional<LocationMetadata> locationMetadataOptional = locationMetadataRepository.findLocationMetadataByLocation_Identifier(
         locationIdentifier);
     if (locationMetadataOptional.isPresent()) {
+      locationMetadata = locationMetadataOptional.get();
 
       OptionalInt optionalArrIndex = OptionalInt.empty();
       if (locationEntityTag.getScope() == null || (locationEntityTag.getScope() != null
@@ -193,7 +227,6 @@ public class MetadataService {
       }
       if (optionalArrIndex.isPresent()) {
         //tag exists
-        locationMetadata = locationMetadataOptional.get();
 
         int arrIndex = optionalArrIndex.getAsInt();
         //TODO: Add history
@@ -230,7 +263,7 @@ public class MetadataService {
             user,
             dataType, locationEntityTag, type, taskType, tagKey, dateForScopeDateFields);
 
-        locationMetadata = locationMetadataOptional.get();
+
         List<MetadataObj> temp = new ArrayList<>(
             locationMetadata.getEntityValue().getMetadataObjs());
         temp.add(metadataObj);
@@ -254,7 +287,12 @@ public class MetadataService {
       locationMetadata.setEntityValue(metadataList);
 
       locationMetadata.setEntityStatus(EntityStatus.ACTIVE);
+      locationMetadata.setCreatedBy("reveal-streams");
+      locationMetadata.setCreatedDatetime(LocalDateTime.now());
+
     }
+    locationMetadata.setModifiedBy("reveal-streams");
+    locationMetadata.setModifiedDatetime(LocalDateTime.now());
     LocationMetadata savedLocationMetadata = locationMetadataRepository.save(locationMetadata);
 
     LocationMetadataEvent locationMetadataEvent = LocationMetadataEventFactory.
@@ -262,7 +300,7 @@ public class MetadataService {
             plan, location, savedLocationMetadata);
 
     locationMetadataKafkaTemplate.send(
-        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_UPDATE),
+        kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_AGGREGATE_UPDATE),
         locationMetadataEvent);
     return savedLocationMetadata;
   }
@@ -276,6 +314,8 @@ public class MetadataService {
         locationIdentifier);
     if (locationMetadataOptional.isPresent()) {
 
+      locationMetadata = locationMetadataOptional.get();
+
       OptionalInt optionalArrIndex = IntStream.range(0,
               locationMetadataOptional.get().getEntityValue().getMetadataObjs().size())
           .filter(
@@ -285,7 +325,6 @@ public class MetadataService {
 
       if (optionalArrIndex.isPresent()) {
         //tag exists
-        locationMetadata = locationMetadataOptional.get();
 
         int arrIndex = optionalArrIndex.getAsInt();
         TagData oldObj = SerializationUtils.clone(
@@ -303,6 +342,9 @@ public class MetadataService {
               .setHistory(List.of(oldObj));
         }
 
+        locationMetadata.setModifiedBy("reveal-streams");
+        locationMetadata.setModifiedDatetime(LocalDateTime.now());
+
         LocationMetadata savedLocationMetadata = locationMetadataRepository.save(locationMetadata);
 
         LocationMetadataEvent locationMetadataEvent = LocationMetadataEventFactory.
@@ -310,7 +352,7 @@ public class MetadataService {
                 plan, null, savedLocationMetadata);
 
         locationMetadataKafkaTemplate.send(
-            kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_UPDATE),
+            kafkaProperties.getTopicMap().get(KafkaConstants.LOCATION_METADATA_AGGREGATE_UPDATE),
             locationMetadataEvent);
         return savedLocationMetadata;
       } else {
@@ -361,6 +403,9 @@ public class MetadataService {
           personMetadata.getEntityValue().getMetadataObjs().get(arrIndex)
               .setHistory(List.of(oldObj));
         }
+
+        personMetadata.setModifiedBy("reveal-streams");
+        personMetadata.setModifiedDatetime(LocalDateTime.now());
 
         PersonMetadata savedPersonMetadata = personMetadataRepository.save(personMetadata);
 

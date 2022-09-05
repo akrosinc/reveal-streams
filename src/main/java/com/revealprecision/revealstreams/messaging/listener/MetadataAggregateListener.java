@@ -14,6 +14,7 @@ import com.revealprecision.revealstreams.service.EntityTagService;
 import com.revealprecision.revealstreams.service.LocationService;
 import com.revealprecision.revealstreams.service.MetadataService;
 import com.revealprecision.revealstreams.service.PlanService;
+import com.revealprecision.revealstreams.util.DataStoreUtils;
 import com.revealprecision.revealstreams.util.UserUtils;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,12 +45,12 @@ public class MetadataAggregateListener extends Listener {
 
 
   @KafkaListener(topics = "#{kafkaConfigProperties.topicMap.get('METADATA_AGGREGATE')}", groupId = "reveal_server_group")
-  public void listenGroupFoo(ConsumerRecord<String, LocationFormDataSumAggregateEvent> message) {
+  public void listenGroupFoo(ConsumerRecord<String, LocationFormDataSumAggregateEvent> message)
+      throws InterruptedException {
     init();
-    locationFormDataIntegerSumOrAverage = getKafkaStreams.getKafkaStreams().store(
-        StoreQueryParameters.fromNameAndType(
-            kafkaProperties.getStoreMap().get(KafkaConstants.locationFormDataIntegerSumOrAverage),
-            QueryableStoreTypes.keyValueStore()));
+    locationFormDataIntegerSumOrAverage = DataStoreUtils.getQueryableStoreByWaiting(getKafkaStreams.getKafkaStreams(), StoreQueryParameters.fromNameAndType(
+        kafkaProperties.getStoreMap().get(KafkaConstants.locationFormDataIntegerSumOrAverage),
+        QueryableStoreTypes.keyValueStore()));
     log.info("Received Message k: {}  v: {}", message.key(), message.value());
     String k = message.key();
     LocationFormDataSumAggregateEvent aggMessage = message.value();
@@ -58,7 +59,7 @@ public class MetadataAggregateListener extends Listener {
 
     String planId = keySplit[0];
     Plan plan = null;
-    if (planId!=null && !planId.equals("plan") ){
+    if (planId != null && !planId.equals("plan")) {
       plan = planService.findNullablePlanByIdentifier(UUID.fromString(planId));
     }
 
@@ -70,6 +71,9 @@ public class MetadataAggregateListener extends Listener {
     UUID entityTagIdentifier = aggMessage.getEntityTagIdentifier();
     LocationFormDataSumAggregateEvent locationFormDataSumAggregateEvent = locationFormDataIntegerSumOrAverage.get(
         k);
+
+    String currentPrincipleName = UserUtils.getCurrentPrincipleName() == null ? "kafka-streams"
+        : UserUtils.getCurrentPrincipleName();
 
     if (locationFormDataSumAggregateEvent != null) {
 
@@ -84,12 +88,14 @@ public class MetadataAggregateListener extends Listener {
               entityTag.getTag() + "-sum");
 
           if (entityTagByTagName.isPresent()) {
-            EntityTagEvent entityTagEvent = EntityTagEventFactory.getEntityTagEvent(entityTagByTagName.get());
+            EntityTagEvent entityTagEvent = EntityTagEventFactory.getEntityTagEvent(
+                entityTagByTagName.get());
             entityTagEvent.setValueType(EntityTagDataTypes.DOUBLE);
             if (entityTagEvent.isAggregate()) {
-              metadataService.updateMetaData(UUID.fromString(entityParentIdentifier), locationFormDataSumAggregateEvent.getSum(),
-                  plan, null,
-                  UserUtils.getCurrentPrincipleName(), entityTagEvent.getValueType(), entityTagEvent,
+              metadataService.updateMetaData(UUID.fromString(entityParentIdentifier),
+                  locationFormDataSumAggregateEvent.getSum(),
+                  plan, null,currentPrincipleName
+                  , entityTagEvent.getValueType(), entityTagEvent,
                   "aggregate", location, "aggregate",
                   Location.class, k + "-sum", null);
             }

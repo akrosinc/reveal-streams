@@ -11,8 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface PlanLocationsRepository extends EntityGraphJpaRepository<PlanLocations, UUID> {
 
 
-  @Query(value = "SELECT count(*) "
-      + "FROM plan_locations pl "
+  @Query(value = "SELECT count(*) " + "FROM plan_locations pl "
       + "         INNER JOIN location_relationship lr on pl.location_identifier = lr.location_identifier "
       + "         INNER JOIN location l on l.identifier = lr.location_identifier "
       + "         LEFT JOIN geographic_level gl on l.geographic_level_identifier = gl.identifier "
@@ -34,8 +33,9 @@ public interface PlanLocationsRepository extends EntityGraphJpaRepository<PlanLo
 
 
   @Query(value = "SELECT DISTINCT structure_count from assigned_structure_counts asc_ "
-      + "WHERE asc_.plan_identifier = :planIdentifier and asc_.location_identifier = :parentLocationIdentifier", nativeQuery = true)
+      + "WHERE asc_.plan_identifier = :planIdentifier and asc_.parent_location_identifier = :parentLocationIdentifier and asc_.structure_count is not null", nativeQuery = true)
   Long getAssignedStructureCountOnPlanTargetByLocationParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier);
+
 
 }
