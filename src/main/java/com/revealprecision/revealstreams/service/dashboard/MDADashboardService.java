@@ -13,7 +13,6 @@ import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusA
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
-import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Person;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
@@ -681,14 +680,9 @@ public class MDADashboardService {
       String columnName) {
 
 
-    Long totalStructuresCountObj = null;
-    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        LocationConstants.STRUCTURE);
-
-    if (locationCounts !=null){
-      totalStructuresCountObj = locationCounts.getLocationCount();
-    }
+        LocationConstants.STRUCTURE, plan);
 
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {
