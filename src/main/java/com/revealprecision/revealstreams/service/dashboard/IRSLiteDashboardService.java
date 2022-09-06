@@ -17,7 +17,6 @@ import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
-import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.Report;
 import com.revealprecision.revealstreams.persistence.domain.metadata.infra.MetadataObj;
@@ -84,7 +83,6 @@ public class IRSLiteDashboardService {
     columns.put(TARGET_SPRAY_AREAS, getTargetedAreas(plan, childLocation));
     columns.put(VISITED_AREAS, operationalAreaVisitedCounts(plan, childLocation));
     columns.put(STRUCTURES_ON_THE_GROUND, getTotalStructuresCounts(plan, childLocation));
-    columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
     columns.put(STRUCTURES_SPRAYED, getTotalStructuresSprayed(plan,
         childLocation));
     columns.put(SPRAY_PROGRESS_SPRAYED_TARGETED,
@@ -158,10 +156,17 @@ public class IRSLiteDashboardService {
     columnData.setIsPercentage(true);
     Double totalSprayedStructures = DashboardUtils.getDouble(getTotalStructuresSprayed(plan,
         childLocation).getValue());
-    Double totalTargetedStructures = DashboardUtils.getDouble(getTotalStructuresTargetedCount(plan,
-        childLocation).getValue());
 
-    if (totalTargetedStructures != null && totalTargetedStructures != 0) {
+    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+        LocationConstants.STRUCTURE, plan);
+
+    double totalTargetedStructures = 0;
+    if (totalStructuresCountObj != null) {
+      totalTargetedStructures = totalStructuresCountObj;
+    }
+
+    if (totalTargetedStructures != 0 && totalSprayedStructures!=null) {
       columnData.setValue((totalSprayedStructures / totalTargetedStructures) * 100);
     } else {
       columnData.setValue(0);
@@ -340,14 +345,9 @@ public class IRSLiteDashboardService {
   private ColumnData getTotalAreas(Plan plan, Location childLocation,
       String geoNameDirectlyAboveStructure) {
 
-    Long totalOperationAreaCounts = null;
-    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+    Long totalOperationAreaCounts =  locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        plan.getPlanTargetType().getGeographicLevel().getName());
-
-    if (locationCounts != null) {
-      totalOperationAreaCounts = locationCounts.getLocationCount();
-    }
+        plan.getPlanTargetType().getGeographicLevel().getName(), plan);
 
     Long totalOperationAreaCountsValue = 0L;
 
@@ -363,14 +363,9 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresCounts(Plan plan, Location childLocation) {
 
-    Long totalStructuresCountObj = null;
-    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        LocationConstants.STRUCTURE);
-
-    if (locationCounts != null) {
-      totalStructuresCountObj = locationCounts.getLocationCount();
-    }
+        LocationConstants.STRUCTURE, plan);
 
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {

@@ -16,7 +16,6 @@ import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
-import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.Report;
 import com.revealprecision.revealstreams.persistence.domain.ReportIndicators;
@@ -350,15 +349,9 @@ public class IRSDashboardService {
   private ColumnData getTotalAreas(Plan plan, Location childLocation,
       String geoNameDirectlyAboveStructure) {
 
-    Long totalOperationAreaCounts = null;
-
-    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+    Long totalOperationAreaCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        geoNameDirectlyAboveStructure);
-
-    if (locationCounts != null) {
-      totalOperationAreaCounts = locationCounts.getLocationCount();
-    }
+        geoNameDirectlyAboveStructure, plan);
 
     Long totalOperationAreaCountsValue = 0L;
 
@@ -374,14 +367,9 @@ public class IRSDashboardService {
 
   private ColumnData getTotalStructuresCounts(Plan plan, Location childLocation, Report report) {
 
-    Long totalStructuresCountObj = null;
-    LocationCounts locationCounts = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        LocationConstants.STRUCTURE);
-
-    if (locationCounts != null) {
-      totalStructuresCountObj = locationCounts.getLocationCount();
-    }
+        LocationConstants.STRUCTURE, plan);
 
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {
