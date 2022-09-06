@@ -30,4 +30,6 @@ public class FormDataEntityTagValueEvent extends Message {
 
   private UUID eventId;
 
+  private String additionalKeyString;
+
 }

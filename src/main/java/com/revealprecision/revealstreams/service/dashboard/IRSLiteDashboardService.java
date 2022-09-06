@@ -7,6 +7,7 @@ import static com.revealprecision.revealstreams.util.DashboardUtils.getGeoNameDi
 import static com.revealprecision.revealstreams.util.DashboardUtils.getLocationBusinessState;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getStringValueColumnData;
 
+import com.revealprecision.revealstreams.constants.EntityTagScopes;
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
@@ -19,22 +20,28 @@ import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.LocationCounts;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.Report;
+import com.revealprecision.revealstreams.persistence.domain.metadata.infra.MetadataObj;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
+import com.revealprecision.revealstreams.service.MetadataService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import com.revealprecision.revealstreams.util.DashboardUtils;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class IRSLiteDashboardService {
 
   public static final String SPRAY_PROGRESS_SPRAYED_TARGETED = "Spray Progress(Sprayed/Targeted)";
@@ -50,6 +57,7 @@ public class IRSLiteDashboardService {
   private final PlanLocationsService planLocationsService;
   private final LocationBusinessStatusService locationBusinessStatusService;
   private final DashboardProperties dashboardProperties;
+  private final MetadataService metadataService;
 
 
   private static final String TOTAL_SPRAY_AREAS = "Total spray areas";
@@ -110,6 +118,12 @@ public class IRSLiteDashboardService {
     } else {
       columnData.setValue(sprayedStructures / insecticidesUsed);
     }
+
+    columnData.setMeta("Sprayed structures: " + sprayedStructures + " / " + "Insecticides Used: "
+        + insecticidesUsed);
+
+    columnData.setIsPercentage(true);
+
     return columnData;
   }
 
@@ -152,7 +166,8 @@ public class IRSLiteDashboardService {
     } else {
       columnData.setValue(0);
     }
-    columnData.setMeta("Total Structures Sprayed : "+totalSprayedStructures+" / "+ "Total Targeted Structures: "+totalSprayedStructures);
+    columnData.setMeta("Total Structures Sprayed : " + totalSprayedStructures + " / "
+        + "Total Targeted Structures: " + totalTargetedStructures);
     return columnData;
   }
 
@@ -181,11 +196,7 @@ public class IRSLiteDashboardService {
   public List<RowData> getIRSFullDataOperational(Plan plan, Location childLocation) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     Report report = planReportRepository.findByPlanAndLocation(plan, childLocation).orElse(null);
-    columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
-    columns.put(STRUCTURES_FOUND,
-        getTotalStructuresFoundCountInSprayArea(plan, childLocation));
-    columns.put(STRUCTURES_SPRAYED, getTotalStructuresSprayedCountInSprayArea(plan, childLocation));
-    columns.put(SPRAY_AREA_VISITED, getAreaVisitedInSprayArea(plan, childLocation));
+    columns.put(SPRAY_AREA_VISITED, getAreaVisitedInSprayArea(report));
     columns.put(DATE_VISITED_FOR_IRS, getSprayDate(report));
     columns.put(STRUCTURES_ON_THE_GROUND, getTotalStructuresCounts(plan, childLocation));
     columns.put(MOBILIZED, getMobilized(report));
@@ -198,15 +209,23 @@ public class IRSLiteDashboardService {
     return List.of(rowData);
   }
 
+
   public void initDataStoresIfNecessary() throws InterruptedException {
     if (!datastoresInitialized) {
       datastoresInitialized = true;
     }
   }
 
+  public static void main(String[] args) {
+    String date = "02-09-2022";
+    LocalDate localDateTime = LocalDate.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+    System.out.println(localDateTime);
+  }
+
   private ColumnData getSprayDate(Report report) {
     ColumnData columnData = getStringValueColumnData();
     if (report != null && report.getReportIndicators().getDateSprayed() != null) {
+
       columnData.setValue(report.getReportIndicators().getDateSprayed());
     }
     return columnData;
@@ -215,7 +234,14 @@ public class IRSLiteDashboardService {
   private ColumnData getMobilizedDate(Report report) {
     ColumnData columnData = getStringValueColumnData();
     if (report != null && report.getReportIndicators().getMobilizationDate() != null) {
-      columnData.setValue(report.getReportIndicators().getMobilizationDate());
+      String mobilizationDate = report.getReportIndicators().getMobilizationDate();
+      try {
+        columnData.setValue(
+            LocalDate.parse(mobilizationDate, DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+      } catch (RuntimeException e) {
+        log.warn("Mobilized Date not in the correct format - {}", mobilizationDate);
+        columnData.setValue(mobilizationDate);
+      }
     }
     return columnData;
   }
@@ -233,7 +259,17 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresSprayed(Plan plan, Location childLocation) {
 
+    List<MetadataObj> locationMetadataByTagName = metadataService.getLocationMetadataByTagName(
+        childLocation.getIdentifier(), plan.getIdentifier(), "irs-lite-sprayed-sum", null,
+        EntityTagScopes.PLAN);
+
     double sprayedLocationsCount = 0;
+    if (locationMetadataByTagName != null) {
+      if (locationMetadataByTagName.get(0) != null) {
+        sprayedLocationsCount = locationMetadataByTagName.get(0).getCurrent().getValue()
+            .getValueDouble();
+      }
+    }
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(sprayedLocationsCount);
@@ -398,43 +434,45 @@ public class IRSLiteDashboardService {
 
   private ColumnData getTotalStructuresFoundCount(Plan plan, Location childLocation) {
 
+    List<MetadataObj> locationMetadataByTagName = metadataService.getLocationMetadataByTagName(
+        childLocation.getIdentifier(), plan.getIdentifier(), "irs-lite-found-sum", null,
+        EntityTagScopes.PLAN);
+
     double sprayedLocationsCount = 0;
 
     double notSprayedLocationsCount = 0;
 
-    double totalStructuresFound = sprayedLocationsCount + notSprayedLocationsCount;
-
-    ColumnData totalStructuresFoundColumnData = new ColumnData();
-    totalStructuresFoundColumnData.setValue(totalStructuresFound);
-    totalStructuresFoundColumnData.setIsPercentage(false);
-    return totalStructuresFoundColumnData;
-  }
-
-  private ColumnData getTotalStructuresFoundCountInSprayArea(Plan plan, Location childLocation) {
-
     double totalStructuresFound = 0;
 
+    if (locationMetadataByTagName != null) {
+      Double totalStructuresFoundValue = locationMetadataByTagName.get(0).getCurrent().getValue()
+          .getValueDouble();
+      if (totalStructuresFoundValue != null) {
+        totalStructuresFound = totalStructuresFoundValue;
+      }
+    }
+
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(totalStructuresFound);
     totalStructuresFoundColumnData.setIsPercentage(false);
     return totalStructuresFoundColumnData;
   }
 
-  private ColumnData getTotalStructuresSprayedCountInSprayArea(Plan plan, Location childLocation) {
 
-    double totalStructuresSprayed = 0;
-
-    ColumnData totalStructuresSprayedColumnData = new ColumnData();
-    totalStructuresSprayedColumnData.setValue(totalStructuresSprayed);
-    totalStructuresSprayedColumnData.setIsPercentage(false);
-    return totalStructuresSprayedColumnData;
-  }
-
-  private ColumnData getAreaVisitedInSprayArea(Plan plan, Location childLocation) {
-
-    String areaVisited = "no";
+  private ColumnData getAreaVisitedInSprayArea(Report report) {
 
     ColumnData areaVisitedColumnData = new ColumnData();
+    String areaVisited = "no";
+
+    if (report != null && report.getReportIndicators().getBusinessStatus() != null) {
+      if (report.getReportIndicators().getBusinessStatus()
+          .equals(BusinessStatus.SPRAYED)) {
+        areaVisited = "yes";
+      }
+    }
+
+    areaVisitedColumnData.setValue(areaVisited);
+
     areaVisitedColumnData.setValue(areaVisited);
     areaVisitedColumnData.setIsPercentage(false);
     areaVisitedColumnData.setDataType("string");
@@ -444,11 +482,32 @@ public class IRSLiteDashboardService {
 
   private ColumnData getSprayCoverageOfFound(Plan plan, Location childLocation) {
 
+    List<MetadataObj> locationMetadataByTagNameFound = metadataService.getLocationMetadataByTagName(
+        childLocation.getIdentifier(), plan.getIdentifier(), "irs-lite-found-sum", null,
+        EntityTagScopes.PLAN);
+
+    double totalStructuresFound = 0;
+
+    if (locationMetadataByTagNameFound != null) {
+      Double totalStructuresFoundValue = locationMetadataByTagNameFound.get(0).getCurrent()
+          .getValue()
+          .getValueDouble();
+      if (totalStructuresFoundValue != null) {
+        totalStructuresFound = totalStructuresFoundValue;
+      }
+    }
+
+    List<MetadataObj> locationMetadataByTagNameSprayed = metadataService.getLocationMetadataByTagName(
+        childLocation.getIdentifier(), plan.getIdentifier(), "irs-lite-sprayed-sum", null,
+        EntityTagScopes.PLAN);
+
     double sprayedLocationsCount = 0;
-
-    double notSprayedLocationsCount = 0;
-
-    double totalStructuresFound = sprayedLocationsCount + notSprayedLocationsCount;
+    if (locationMetadataByTagNameSprayed != null) {
+      if (locationMetadataByTagNameSprayed.get(0) != null) {
+        sprayedLocationsCount = locationMetadataByTagNameSprayed.get(0).getCurrent().getValue()
+            .getValueDouble();
+      }
+    }
 
     double sprayCoverageOfFound = 0;
 
