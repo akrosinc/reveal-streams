@@ -394,48 +394,12 @@ public class IRSLiteDashboardService {
     return totalStructuresColumnData;
   }
 
-  private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
-
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan, childLocation);
-
-    double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresTargetedCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
-    }
-
-    Long notEligibleStructuresCountObj = null;
-    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
-
-    if (notEligibleStructuresCountObjCount != null) {
-      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
-    }
-
-    double notEligibleStructuresCount = 0;
-    if (notEligibleStructuresCountObj != null) {
-      notEligibleStructuresCount = notEligibleStructuresCountObj;
-    }
-
-    double totalStructuresInTargetedCount =
-        totalStructuresInPlanLocationCount - notEligibleStructuresCount;
-
-    ColumnData totalStructuresTargetedColumnData = new ColumnData();
-    totalStructuresTargetedColumnData.setValue(totalStructuresInTargetedCount);
-    totalStructuresTargetedColumnData.setIsPercentage(false);
-    return totalStructuresTargetedColumnData;
-  }
 
   private ColumnData getTotalStructuresFoundCount(Plan plan, Location childLocation) {
 
     List<MetadataObj> locationMetadataByTagName = metadataService.getLocationMetadataByTagName(
         childLocation.getIdentifier(), plan.getIdentifier(), "irs-lite-found-sum", null,
         EntityTagScopes.PLAN);
-
-    double sprayedLocationsCount = 0;
-
-    double notSprayedLocationsCount = 0;
 
     double totalStructuresFound = 0;
 
