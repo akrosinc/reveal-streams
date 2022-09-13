@@ -390,12 +390,8 @@ public class IRSDashboardService {
       notEligibleStructuresCount = notEligibleStructuresCountObj;
     }
 
-    double discoveredStructuresCount =
-        (report != null && report.getReportIndicators().getRegisteredStructures() != null)
-            ? Double.valueOf(report.getReportIndicators().getRegisteredStructures()) : 0d;
-
     double totalStructuresExcludingNotEligible =
-        totalStructuresCount + discoveredStructuresCount - notEligibleStructuresCount;
+        totalStructuresCount - notEligibleStructuresCount;
 
     ColumnData totalStructuresColumnData = new ColumnData();
     totalStructuresColumnData.setValue(totalStructuresExcludingNotEligible);
