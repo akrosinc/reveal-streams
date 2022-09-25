@@ -1,16 +1,18 @@
 package com.revealprecision.revealstreams.messaging.streams;
 
 
+import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.messaging.message.FieldAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserDataParentChild;
+import com.revealprecision.revealstreams.messaging.message.UserLevel;
+import com.revealprecision.revealstreams.messaging.message.UserParentChildren;
 import com.revealprecision.revealstreams.messaging.message.UserPerOrgLevel;
 import com.revealprecision.revealstreams.messaging.message.UserPerformanceAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserPerformanceData;
 import com.revealprecision.revealstreams.messaging.message.UserPerformancePerDate;
 import com.revealprecision.revealstreams.messaging.serdes.RevealSerdes;
 import com.revealprecision.revealstreams.props.KafkaProperties;
-import com.revealprecision.revealstreams.constants.KafkaConstants;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -22,8 +24,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.revealprecision.revealstreams.messaging.message.UserLevel;
-import com.revealprecision.revealstreams.messaging.message.UserParentChildren;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -60,8 +60,10 @@ public class UserPerformanceStream {
         (k, v) -> userPerformanceFile.debug("performanceDataKStream k: {},v: {}", k, v));
 
     KStream<String, UserPerOrgLevel> stringUserPerOrgLevelKStream = performanceDataKStream.flatMapValues(
-        (k, v) -> v.getOrgHierarchy().stream().map(org ->
-            new UserPerOrgLevel(v.getPlanIdentifier(), v.getCaptureTime(), org, v.getFields())
+        (k, v) -> v.getOrgHierarchy().stream()
+            .map(org ->
+            new UserPerOrgLevel(v.getPlanIdentifier(), v.getCaptureTime(), org, v.getFields(),
+                v.isUndo())
         ).collect(Collectors.toList()));
 
     KGroupedStream<String, UserPerOrgLevel> stringUserAggregateKGroupedStream = stringUserPerOrgLevelKStream.groupBy(
@@ -119,18 +121,28 @@ public class UserPerformanceStream {
                         FieldAggregate fieldAggregate1 = existingAggregationMapForThisKey.get(
                             valueKey);
 
-                        fieldAggregate1 = new FieldAggregate(fieldAggregate1.getCount() + 1,
-                            fieldAggregate1.getSum() + sum);
+                        Long count = null;
+                        Long sum1 = null;
+                        if (v.isUndo()){
+                          count = fieldAggregate1.getCount() - 1;
+                          sum1 = fieldAggregate1.getSum() - sum;
+                        }else{
+                          count = fieldAggregate1.getCount() + 1;
+                          sum1 = fieldAggregate1.getSum() + sum;
+                        }
+
+                        fieldAggregate1 = new FieldAggregate(count,
+                            sum1, sum);
 
                         existingAggregationMapForThisKey.put(valueKey, fieldAggregate1);
                       } else {
                         existingAggregationMapForThisKey.put(valueKey, new FieldAggregate(1L,
-                            sum));
+                            sum,sum));
                       }
                       fieldAggregate = existingAggregationMapForThisKey;
                     } else {
                       fieldAggregate = Map.of(valueKey, new FieldAggregate(1L,
-                          sum));
+                          sum,sum));
                     }
                     return new SimpleEntry<>(incomingFormValueEntry.getKey(), fieldAggregate);
                   }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
@@ -176,7 +188,7 @@ public class UserPerformanceStream {
             sum = ((Integer) entry.getValue()).longValue();
             key = "integer";
           }
-          return new SimpleEntry<>(entry.getKey(), Map.of(key, new FieldAggregate(1L, sum)));
+          return new SimpleEntry<>(entry.getKey(), Map.of(key, new FieldAggregate(1L, sum, sum)));
         }).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
     return new UserPerformancePerDate(0L,
@@ -284,6 +296,7 @@ public class UserPerformanceStream {
                 kafkaProperties.getStoreMap().get(KafkaConstants.userParentChildren))
             .withValueSerde(new JsonSerde<>(UserParentChildren.class))
             .withKeySerde(Serdes.String()));
+
 
     return userParentChildStream;
 
