@@ -352,7 +352,7 @@ public class MDALiteDashboardService {
       columns.putAll(getDashboardData(plan, childLocation, MEB, new ArrayList<>(), type));
     }
 
-    if (filters == null || filters.contains(PZQ)) {
+    if ((filters == null || filters.contains(PZQ)) && type == MdaLiteReportType.TREATMENT_COVERAGE) {
       Entry<String, ColumnData> schCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
           childLocation,
           schTargetPop, SCH_CENSUS_POP_TARGET);
@@ -365,7 +365,7 @@ public class MDALiteDashboardService {
 
     }
 
-    if (filters == null || filters.contains(MEB) || filters.contains(ALB)) {
+    if ((filters == null || filters.contains(MEB) || filters.contains(ALB)) && type == MdaLiteReportType.TREATMENT_COVERAGE) {
       Entry<String, ColumnData> sthCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
           childLocation,
           sthTargetPop, STH_CENSUS_POP_TARGET);
@@ -700,7 +700,7 @@ public class MDALiteDashboardService {
 
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails,
-      Map<UUID, RowData> rowDataMap, String reportLevel, List<String> filters) {
+      Map<UUID, RowData> rowDataMap, String reportLevel, List<String> filters, MdaLiteReportType type) {
     FeatureSetResponse response = new FeatureSetResponse();
     response.setType("FeatureCollection");
     List<LocationResponse> locationResponses;
@@ -722,7 +722,7 @@ public class MDALiteDashboardService {
     }
     locationResponses = setGeojsonResponseProperties(rowDataMap, reportLevel, locationResponses);
     response.setDefaultDisplayColumn(
-        getDefaultColumn(filters, reportLevel)
+        getDefaultColumn(filters, reportLevel, type)
     );
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
@@ -757,12 +757,11 @@ public class MDALiteDashboardService {
     return locationResponses;
   }
 
-  private String getDefaultColumn(List<String> filters, String reportLevel) {
+  private String getDefaultColumn(List<String> filters, String reportLevel, MdaLiteReportType type) {
     String defaultFilter = (filters == null ? ALB
         : (filters.contains(ALB) ? ALB : filters.contains(MEB) ? MEB : PZQ));
-    String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumns().getOrDefault(
-        defaultFilter +
-            reportLevel, null);
+    String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumnsWithType().getOrDefault(type +
+        defaultFilter, null);
     String name = defaultColumn;
     if (!defaultColumn.equals(STH_TREATMENT_COVERAGE) && !defaultColumn.equals(
         SCH_TREATMENT_COVERAGE)) {

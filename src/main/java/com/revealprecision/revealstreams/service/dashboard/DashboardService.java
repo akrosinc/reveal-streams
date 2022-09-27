@@ -83,7 +83,7 @@ public class DashboardService {
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
-        reportTypeEnum, filters);
+        reportTypeEnum, filters, type);
   }
 
   private void checkSupportedReports(String reportType, UUID planIdentifier,
@@ -175,7 +175,7 @@ public class DashboardService {
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails,
       Map<UUID, RowData> rowDataMap, String reportLevel, ReportTypeEnum reportTypeEnum,
-      List<String> filters) {
+      List<String> filters, MdaLiteReportType type) {
     switch (reportTypeEnum) {
 
       case MDA_FULL_COVERAGE:
@@ -191,7 +191,7 @@ public class DashboardService {
             rowDataMap,reportLevel);
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
-            rowDataMap, reportLevel, filters);
+            rowDataMap, reportLevel, filters, type);
 
 
     }
