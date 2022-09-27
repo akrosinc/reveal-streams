@@ -13,6 +13,7 @@ import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationPropertyResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
+import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataSumAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.mdalite.MDALiteLocationSupervisorListAggregation;
@@ -27,7 +28,9 @@ import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -116,6 +119,36 @@ public class MDALiteDashboardService {
       entry(REMAINING_WITH_CDD, cddRemaining)
   );
 
+  private final Map<String, String> treatmentCoverage = Map.ofEntries(
+      entry(TOTAL_TREATED, totalPeople)
+  );
+
+  static final Map<String, String> AGE_COVERAGE;
+  static {
+    Map<String, String> ageCoverage = new LinkedHashMap<>();
+    ageCoverage.put(MALES_1_4, treatedMale1_4);
+    ageCoverage.put(MALES_5_14, treatedMale5_14);
+    ageCoverage.put(MALES_15, treatedMale15);
+    ageCoverage.put(MALES_TOTAL, totalMales);
+    ageCoverage.put(FEMALES_1_4, treatedFemale1_4);
+    ageCoverage.put(FEMALES_5_14, treatedFemale5_14);
+    ageCoverage.put(FEMALES_15, treatedFemale15);
+    ageCoverage.put(FEMALES_TOTAL, totalFemale);
+    AGE_COVERAGE = Collections.unmodifiableMap(ageCoverage);
+  }
+
+  static final Map<String, String> DRUG_DISTRIBUTION;
+  static {
+    Map<String, String> drugDistribution = new LinkedHashMap<>();
+    drugDistribution.put(SUPERVISOR_DISTRIBUTED, SUPERVISOR_DISTRIBUTED);
+    drugDistribution.put(RECEIVED_BY_CDD, cddReceived);
+    drugDistribution.put(ADMINISTERED, administered);
+    drugDistribution.put(REMAINING_WITH_CDD, cddRemaining);
+    drugDistribution.put(RETURNED_TO_SUPERVISOR, supervisorReturned);
+    drugDistribution.put(ADVERSE, mdaLiteAdverse);
+    DRUG_DISTRIBUTION = Collections.unmodifiableMap(drugDistribution);
+  }
+
   private final Map<String, String> supervisorColumnMap = Map.ofEntries(
       entry(ADMINISTERED, administered),
       entry(ADVERSE, mdaLiteAdverse),
@@ -158,6 +191,7 @@ public class MDALiteDashboardService {
 
     return constant.concat(" (").concat(drug).concat(")");
   }
+
 
   public List<RowData> getMDALiteSupervisorCoverageData(Plan plan, Location childLocation,
       List<String> filters) {
@@ -303,32 +337,21 @@ public class MDALiteDashboardService {
   }
 
   public List<RowData> getMDALiteCoverageData(Plan plan, Location childLocation,
-      List<String> filters) {
-    Map<String, ColumnData> columns = new HashMap<>();
+      List<String> filters, MdaLiteReportType type) {
+    Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     if (filters == null || (filters.contains(ALB) || filters.isEmpty())) {
-      columns.putAll(getDashboardData(plan, childLocation, ALB, new ArrayList<>()));
+      columns.putAll(getDashboardData(plan, childLocation, ALB, new ArrayList<>(), type));
     }
 
     if (filters == null || (filters.contains(PZQ) || filters.isEmpty())) {
-      columns.putAll(getDashboardData(plan, childLocation, PZQ, List.of(MALES_1_4, FEMALES_1_4)));
+      columns.putAll(getDashboardData(plan, childLocation, PZQ, List.of(MALES_1_4, FEMALES_1_4), type));
     }
 
     if (filters == null || (filters.contains(MEB) || filters.isEmpty())) {
-      columns.putAll(getDashboardData(plan, childLocation, MEB, new ArrayList<>()));
+      columns.putAll(getDashboardData(plan, childLocation, MEB, new ArrayList<>(), type));
     }
 
-    if (filters == null || filters.contains(MEB) || filters.contains(ALB)) {
-      Entry<String, ColumnData> sthCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
-          childLocation,
-          sthTargetPop, STH_CENSUS_POP_TARGET);
-      columns.put(sthCensusPopulationTarget.getKey(), sthCensusPopulationTarget.getValue());
-
-      Entry<String, ColumnData> treatmentCoverage = getTreatmentCoverageTarget(plan,
-          childLocation,
-          STH, STH_TREATMENT_COVERAGE);
-      columns.put(treatmentCoverage.getKey(), treatmentCoverage.getValue());
-    }
     if (filters == null || filters.contains(PZQ)) {
       Entry<String, ColumnData> schCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
           childLocation,
@@ -342,6 +365,18 @@ public class MDALiteDashboardService {
 
     }
 
+    if (filters == null || filters.contains(MEB) || filters.contains(ALB)) {
+      Entry<String, ColumnData> sthCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
+          childLocation,
+          sthTargetPop, STH_CENSUS_POP_TARGET);
+      columns.put(sthCensusPopulationTarget.getKey(), sthCensusPopulationTarget.getValue());
+
+      Entry<String, ColumnData> treatmentCoverage = getTreatmentCoverageTarget(plan,
+          childLocation,
+          STH, STH_TREATMENT_COVERAGE);
+      columns.put(treatmentCoverage.getKey(), treatmentCoverage.getValue());
+    }
+
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -351,15 +386,27 @@ public class MDALiteDashboardService {
   }
 
   private Map<String, ColumnData> getDashboardData(Plan plan, Location childLocation, String drug,
-      List<String> exclusions) {
-    return columnMap.keySet().stream()
+      List<String> exclusions, MdaLiteReportType type) {
+    Map<String, String> mapToIterate;
+    if(type == MdaLiteReportType.DRUG_DISTRIBUTION) {
+      mapToIterate = DRUG_DISTRIBUTION;
+    }else if(type == MdaLiteReportType.TREATMENT_COVERAGE) {
+      mapToIterate = treatmentCoverage;
+    } else if(type == MdaLiteReportType.AGE_COVERAGE) {
+      mapToIterate = AGE_COVERAGE;
+    }else {
+      mapToIterate = columnMap;
+    }
+    Map<String, ColumnData>  response = new LinkedHashMap<>();
+    mapToIterate.keySet().stream()
         .filter(s -> !exclusions.contains(s))
-        .map(
-            s -> getFormData(plan, childLocation,
-                drug, columnMap.get(s), name(s, drug))
+        .forEach(s -> {
+          Entry<String, ColumnData> entry = getFormData(plan, childLocation,
+              drug, columnMap.get(s), name(s, drug));
+          response.put(entry.getKey(), entry.getValue());
+        });
 
-        ).collect(Collectors.toList()).stream()
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+    return response;
   }
 
   private Entry<String, ColumnData> getSupervisorFormData(Plan plan, Location childLocation,
