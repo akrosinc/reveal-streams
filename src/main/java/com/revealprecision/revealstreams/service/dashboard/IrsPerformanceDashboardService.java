@@ -224,12 +224,13 @@ public class IrsPerformanceDashboardService {
               int sachetCount = userPerformancePerDate.getSachetCount();
               int spray = userPerformancePerDate.getSprayed();
               double usage = 0;
-              if (spray > 0) {
-                usage = (double) sachetCount / (double) spray;
+              if (sachetCount > 0) {
+                usage =  (double) spray / (double) sachetCount ;
+                bottlesUsageRateColumnData.setMeta(
+                     "Sprayed Structures:" + spray + " / "  + "Insecticide: " + sachetCount );
               }
               bottlesUsageRateColumnData.setIsPercentage(true);
-              bottlesUsageRateColumnData.setMeta(
-                  "Insecticide: " + sachetCount + " / " + "Sprayed Structures:" + spray);
+
               bottlesUsageRateColumnData.setValue(
                   usage);
 
@@ -449,13 +450,15 @@ public class IrsPerformanceDashboardService {
       }
 
       Map<String, ColumnData> columnData = new LinkedHashMap<>();
+      ColumnData averageStructuresColumnData = new ColumnData();
       Double averageStructures = null;
       if (finalDistrictDaysWorkedMap.get(name) > 0) {
         averageStructures = (double) sprayed / (double) finalDistrictDaysWorkedMap.get(name);
+        averageStructuresColumnData.setMeta("Sprayed: "+sprayed+" / "+"Days: "+finalDistrictDaysWorkedMap.get(name));
       } else {
         averageStructures = 0D;
       }
-      ColumnData averageStructuresColumnData = new ColumnData();
+
       averageStructuresColumnData.setValue(averageStructures);
       averageStructuresColumnData.setIsPercentage(true);
       columnData.put(AVERAGE_STRUCTURES, averageStructuresColumnData);
@@ -513,14 +516,15 @@ public class IrsPerformanceDashboardService {
       if (!finalTypeString.equals("deviceUser")) {
         ColumnData bottlesUsageRate = new ColumnData();
         Double sachetUsageRate = null;
-        if (sprayed > 0) {
-          sachetUsageRate = (double) sachets / (double) sprayed;
+        if (sachets > 0) {
+          sachetUsageRate =  (double) sprayed / (double) sachets;
+          bottlesUsageRate.setMeta("Sprayed: " + sprayed + " / Sachets: " + sachets);
         } else {
           sachetUsageRate = 0D;
         }
         bottlesUsageRate.setValue(sachetUsageRate);
         bottlesUsageRate.setIsPercentage(true);
-        bottlesUsageRate.setMeta("sachets: " + sachets + " / sprayed: " + sprayed);
+
         columnData.put(BOTTLES_USAGE_RATE, bottlesUsageRate);
       }
 
