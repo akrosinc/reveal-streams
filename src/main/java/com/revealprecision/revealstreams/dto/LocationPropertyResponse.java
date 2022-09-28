@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.revealprecision.revealstreams.enums.LocationStatus;
 import com.revealprecision.revealstreams.models.ColumnData;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,7 +35,7 @@ public class LocationPropertyResponse {
   private Object numberOfChildrenEligible;
   private Object sprayCoverage;
   private String id;
-  private Map<String, ColumnData> columnDataMap;
+  private Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
   private List<PersonMainData> persons;
   private List<EntityMetadataResponse> metadata;
   private String businessStatus;

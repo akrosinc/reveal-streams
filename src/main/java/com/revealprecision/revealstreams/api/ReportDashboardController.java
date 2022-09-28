@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.api;
 
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.enums.ApplicableReportsEnum;
+import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.models.AdditionalReportInfo;
 import com.revealprecision.revealstreams.models.RowData;
@@ -50,10 +51,11 @@ public class ReportDashboardController {
       @RequestParam(name = "reportType") String reportType,
       @RequestParam(name = "planIdentifier") UUID planIdentifier,
       @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
-      @RequestParam(name = "filters", required = false) List<String> filters) {
+      @RequestParam(name = "filters", required = false) List<String> filters,
+      @RequestParam(name = "type", required = false, defaultValue = "AGE_COVERAGE") MdaLiteReportType type) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(dashboardService.getDataForReport(reportType, planIdentifier, parentIdentifier,
-            filters));
+            filters, type));
   }
 
   @GetMapping("/reportAdditionalInfo")
