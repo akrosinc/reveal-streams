@@ -21,5 +21,6 @@ public class UserPerformanceData extends Message {
   private List<UserLevel> orgHierarchy;
   private LocalDateTime captureTime;
   private Map<String, Object> fields;
+  private boolean isUndo;
 
 }

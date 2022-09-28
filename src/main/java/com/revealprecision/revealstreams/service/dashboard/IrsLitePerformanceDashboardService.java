@@ -224,6 +224,10 @@ public class IrsLitePerformanceDashboardService {
 
     UserPerformanceAggregate userSumAggregate = userPerformanceSums.get(key);
 
+    if (userSumAggregate == null){
+      return null;
+    }
+
     ColumnData averageHoursWorkedColumnData = getAverageHoursWorkedColumnData(
         userSumAggregate);
     columnData.put(AVERAGE_HOURS_WORKED, averageHoursWorkedColumnData);

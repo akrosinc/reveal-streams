@@ -47,41 +47,51 @@ public class PerformanceDashboardService {
   private final KafkaProperties kafkaProperties;
   boolean datastoresInitialized = false;
 
-  public static final String DAYS_WORKED = "Days Worked";
+  public static final String DAYS_WORKED = "Number of Days Worked";
   public static final String AVERAGE_DAYS_WORKED = "Average Days Worked";
-  public static final String START_TIME = "Start Time";
-  public static final String END_TIME = "End Time";
+  public static final String START_TIME = "Data Collection Start Time";
+  public static final String END_TIME = "Data Collection End Time";
   public static final String AVERAGE_START_TIME = "Average Start Time";
   public static final String AVERAGE_END_TIME = "Average End Time";
-  public static final String HOURS_WORKED = "Hours Worked";
-  public static final String AVERAGE_HOURS_WORKED = "Average Hours Worked";
-
+  public static final String HOURS_WORKED = "Duration in Field";
+  public static final String AVERAGE_HOURS_WORKED = "Average Duration in Field Per Day";
 
   public List<RowData> getDataForReport(UUID planIdentifier, String id) {
 
     Plan plan = planService.findPlanByIdentifier(planIdentifier);
-
-    List<PlanAssignment> planAssignmentsByPlanIdentifier = planAssignmentService.getPlanAssignmentsByPlanIdentifier(
-        planIdentifier);
-    Map<String, UserLevel> userLevels = null;
-    if (id == null || id.equals("null") || id.equals("")) {
-      userLevels = planAssignmentsByPlanIdentifier.stream()
-          .map(this::getOrganization)
-          .filter(Objects::nonNull)
-          .map(highestLevelOrg -> new UserLevel(highestLevelOrg.getIdentifier().toString(),
-              highestLevelOrg.getName(), 0, "organization", highestLevelOrg.getType().name()))
-          .collect(Collectors.toMap(UserLevel::getUserId, userLevel -> userLevel, (a, b) -> b));
-    } else {
-      UserParentChildren userParentChildren = this.userParentChildren.get(
-          planIdentifier + "_" + id);
-      if (userParentChildren != null) {
-        userLevels = userParentChildren.getChildren().stream()
+    if (plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.IRS_LITE.name())) {
+      Map<String, UserLevel> userLevels = null;
+      if (id == null || id.equals("null") || id.equals("")) {
+        List<PlanAssignment> planAssignmentsByPlanIdentifier = planAssignmentService.getPlanAssignmentsByPlanIdentifier(
+            planIdentifier);
+        userLevels = planAssignmentsByPlanIdentifier.stream()
+            .map(this::getOrganization)
+            .filter(Objects::nonNull)
+            .map(highestLevelOrg -> new UserLevel(highestLevelOrg.getIdentifier().toString(),
+                highestLevelOrg.getName(), 0, "organization", highestLevelOrg.getType().name()))
             .collect(Collectors.toMap(UserLevel::getUserId, userLevel -> userLevel, (a, b) -> b));
+      } else {
+        UserParentChildren userParentChildren = this.userParentChildren.get(
+            planIdentifier + "_" + id);
+        if (userParentChildren != null) {
+          userLevels = userParentChildren.getChildren().stream()
+              .collect(Collectors.toMap(UserLevel::getUserId, userLevel -> userLevel, (a, b) -> b));
+        }
       }
+      initialDataStores(plan);
+      return getRowDatasIRSLite(plan,
+          userLevels == null ? null : new HashSet<>(userLevels.values()), id);
+
+    } else {
+      boolean startAtTop = false;
+      if (id == null || id.equals("null") || id.equals("")) {
+        startAtTop = true;
+      }
+      return getRowDatasIRS(plan, id, startAtTop);
     }
-    initialDataStores(plan);
-    return getRowDatas(plan, userLevels == null ? null : new HashSet<>(userLevels.values()), id);
+
   }
+
 
   private Organization getOrganization(PlanAssignment planAssignment) {
     Organization loopOrg = organizationService.findByIdWithChildren(
@@ -116,38 +126,44 @@ public class PerformanceDashboardService {
     }
   }
 
-  private RowData getPerformanceColumnData(
-      Plan plan, PlanInterventionTypeEnum planInterventionTypeEnum, UserLevel userLevel,
-      String parentUserLevelId) {
 
-    switch (planInterventionTypeEnum) {
-      case IRS:
-        return irsPerformanceDashboardService.getRowData(
-            plan, userLevel, parentUserLevelId);
-      case IRS_LITE:
-        return irsLitePerformanceDashboardService.getRowData(
-            plan, userLevel, parentUserLevelId);
-      case MDA:
-      case MDA_LITE:
-      default:
-        return null;
-    }
+  private List<RowData> getPerformanceColumnDataIRS(
+      Plan plan,
+      String parentUserLevelId, boolean startAtTop) {
+
+    return irsPerformanceDashboardService.getRowData(
+        plan, parentUserLevelId, startAtTop);
+
+
   }
 
-
-  private List<RowData> getRowDatas(Plan plan, Set<UserLevel> userLevels,
+  private RowData getPerformanceColumnDataIRSLite(
+      Plan plan, UserLevel userLevel,
       String parentUserLevelId) {
 
-    PlanInterventionTypeEnum planInterventionTypeEnum = PlanInterventionTypeEnum.valueOf(
-        plan.getInterventionType().getCode());
+    return irsLitePerformanceDashboardService.getRowData(
+        plan, userLevel, parentUserLevelId);
+
+  }
+
+  private List<RowData> getRowDatasIRSLite(Plan plan, Set<UserLevel> userLevels,
+      String parentUserLevelId) {
+
+
     if (userLevels == null) {
       return null;
     }
     return userLevels.stream()
-        .map(userLevel -> getPerformanceColumnData(
-            plan, planInterventionTypeEnum, userLevel, parentUserLevelId)).collect(
+        .map(userLevel -> getPerformanceColumnDataIRSLite(
+            plan, userLevel, parentUserLevelId)).collect(
             Collectors.toList());
   }
+
+  private List<RowData> getRowDatasIRS(Plan plan,
+      String parentUserLevelId, boolean startAtTop) {
+    return getPerformanceColumnDataIRS(plan,  parentUserLevelId, startAtTop);
+  }
+
 
 
   private void initialDataStores(Plan plan) {
@@ -160,7 +176,6 @@ public class PerformanceDashboardService {
     }
     switch (PlanInterventionTypeEnum.valueOf(plan.getInterventionType().getCode())) {
       case IRS:
-        irsPerformanceDashboardService.initialDataStores();
         break;
       case IRS_LITE:
         irsLitePerformanceDashboardService.initialDataStores();
