@@ -19,6 +19,7 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static java.util.Map.entry;
 
+import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.PlanInterventionTypeEnum;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.service.dashboard.IrsLitePerformanceDashboardService;
@@ -81,6 +82,18 @@ public class DashboardProperties {
           entry(ALB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
           entry(MEB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
           entry(PZQ + ALL_OTHER_LEVELS, SCH_TREATMENT_COVERAGE));
+
+  private final Map<String, String> mdaLiteDefaultDisplayColumnsWithType =
+      Map.ofEntries(
+          entry(MdaLiteReportType.AGE_COVERAGE + ALB, MALES_1_4),
+          entry(MdaLiteReportType.AGE_COVERAGE + MEB, MALES_1_4),
+          entry(MdaLiteReportType.AGE_COVERAGE + PZQ, MALES_1_4),
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION + ALB, ADVERSE),
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION + MEB, ADVERSE),
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION + PZQ, ADVERSE),
+          entry(MdaLiteReportType.TREATMENT_COVERAGE + ALB, STH_TREATMENT_COVERAGE),
+          entry(MdaLiteReportType.TREATMENT_COVERAGE + MEB, STH_TREATMENT_COVERAGE),
+          entry(MdaLiteReportType.TREATMENT_COVERAGE + PZQ, SCH_TREATMENT_COVERAGE));
 
 
   private Long operationalAreaVisitedThreshold = 20L;

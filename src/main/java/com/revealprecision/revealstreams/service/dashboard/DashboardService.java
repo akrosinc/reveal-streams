@@ -6,6 +6,7 @@ import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LookupUtil;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.enums.ApplicableReportsEnum;
+import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.exceptions.WrongEnumException;
 import com.revealprecision.revealstreams.models.RowData;
@@ -43,7 +44,7 @@ public class DashboardService {
   public static final String CDD_LEVEL = "CDD Level";
 
   public FeatureSetResponse getDataForReport(String reportType, UUID planIdentifier,
-      String parentIdentifierString, List<String> filters) {
+      String parentIdentifierString, List<String> filters, MdaLiteReportType type) {
 
     ReportTypeEnum reportTypeEnum = LookupUtil.lookup(ReportTypeEnum.class, reportType);
     Plan plan = planService.findPlanByIdentifier(planIdentifier);
@@ -76,13 +77,13 @@ public class DashboardService {
 
     Map<UUID, RowData> rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
                 getRowData(loc.getParentLocation(), reportTypeEnum, plan, loc, reportLevel, filters,
-                    parentIdentifierString))
+                    parentIdentifierString, type))
             .stream()).filter(Objects::nonNull)
         .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row));
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
-        reportTypeEnum, filters);
+        reportTypeEnum, filters, type);
   }
 
   private void checkSupportedReports(String reportType, UUID planIdentifier,
@@ -100,7 +101,7 @@ public class DashboardService {
   private List<RowData> getRowData(Location parentLocation, ReportTypeEnum reportTypeEnum,
       Plan plan,
       PlanLocationDetails loc, String reportLevel, List<String> filters,
-      String parentIdentifierString) {
+      String parentIdentifierString, MdaLiteReportType type) {
 
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
@@ -163,7 +164,7 @@ public class DashboardService {
           case ALL_OTHER_LEVELS:
             return mdaLiteDashboardService.getMDALiteCoverageData(
                 plan,
-                loc.getLocation(), filters);
+                loc.getLocation(), filters, type);
 
         }
 
@@ -174,7 +175,7 @@ public class DashboardService {
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails,
       Map<UUID, RowData> rowDataMap, String reportLevel, ReportTypeEnum reportTypeEnum,
-      List<String> filters) {
+      List<String> filters, MdaLiteReportType type) {
     switch (reportTypeEnum) {
 
       case MDA_FULL_COVERAGE:
@@ -190,7 +191,7 @@ public class DashboardService {
             rowDataMap,reportLevel);
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
-            rowDataMap, reportLevel, filters);
+            rowDataMap, reportLevel, filters, type);
 
 
     }
