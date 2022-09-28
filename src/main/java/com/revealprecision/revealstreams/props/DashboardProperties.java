@@ -38,68 +38,68 @@ import org.springframework.stereotype.Component;
 @Setter
 @Getter
 public class DashboardProperties {
+
   public static final String SPRAY_COVERAGE_OF_TARGETED = "Spray Progress (Sprayed/Targeted)";
 
   private List<String> dashboards = List.of("IRS_COVERAGE", "MDA_COVERAGE");
 
   private Map<String, Map<String, ColumnMeta>> dashboardColumns = Map.of("MDA_COVERAGE",
-      Map.of("TOTAL_STRUCTURES", new ColumnMeta("Total Structures", false)
-          , "TOTAL_STRUCTURES_FOUND", new ColumnMeta("Total Structures Found", false)
-          , "FOUND_COVERAGE", new ColumnMeta("Found Coverage", true)
-          , "OPERATIONAL_AREA_VISITED", new ColumnMeta("Operational Area Visited", false)));
+      Map.of("TOTAL_STRUCTURES", new ColumnMeta("Total Structures", false),
+          "TOTAL_STRUCTURES_FOUND", new ColumnMeta("Total Structures Found", false),
+          "FOUND_COVERAGE", new ColumnMeta("Found Coverage", true), "OPERATIONAL_AREA_VISITED",
+          new ColumnMeta("Operational Area Visited", false)));
 
-  private final Map<String, String> mdaDefaultDisplayColumns =
-      Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, DISTRIBUTION_COVERAGE_PERCENTAGE,
-          ALL_OTHER_LEVELS, DISTRIBUTION_COVERAGE
-      );
+  private final Map<String, String> mdaDefaultDisplayColumns = Map.of(
+      DIRECTLY_ABOVE_STRUCTURE_LEVEL, DISTRIBUTION_COVERAGE_PERCENTAGE, ALL_OTHER_LEVELS,
+      DISTRIBUTION_COVERAGE);
 
-  private final Map<String, String> irsLiteDefaultDisplayColumns =
-      Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_PROGRESS_SPRAYED_TARGETED,
-          ALL_OTHER_LEVELS, SPRAY_PROGRESS_SPRAYED_TARGETED);
+  private final Map<String, String> irsLiteDefaultDisplayColumns = Map.of(
+      DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_PROGRESS_SPRAYED_TARGETED, ALL_OTHER_LEVELS,
+      SPRAY_PROGRESS_SPRAYED_TARGETED);
 
-  private final Map<String, String> irsDefaultDisplayColumns =
-      Map.of(DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_COVERAGE_OF_TARGETED,
-          ALL_OTHER_LEVELS, SPRAY_COVERAGE_OF_TARGETED);
+  private final Map<String, String> irsDefaultDisplayColumns = Map.of(
+      DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_COVERAGE_OF_TARGETED, ALL_OTHER_LEVELS,
+      SPRAY_COVERAGE_OF_TARGETED);
 
-  private final Map<String, String> mdaLiteDefaultDisplayColumns =
-      Map.ofEntries(
-          entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-          entry(MEB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-          entry(PZQ + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-          entry(ALB + CDD_LEVEL, MALES_1_4),
-          entry(MEB + CDD_LEVEL, MALES_1_4),
-          entry(PZQ + CDD_LEVEL, MALES_1_4),
-          entry(ALB + SUPERVISOR_LEVEL, ADVERSE),
-          entry(MEB + SUPERVISOR_LEVEL, ADVERSE),
-          entry(PZQ + SUPERVISOR_LEVEL, ADVERSE),
-          entry(ALB + IS_ON_PLAN_TARGET, MALES_1_4),
-          entry(MEB + IS_ON_PLAN_TARGET, MALES_1_4),
-          entry(PZQ + IS_ON_PLAN_TARGET, MALES_1_4),
-          entry(ALB + STRUCTURE_LEVEL, MALES_1_4),
-          entry(MEB + STRUCTURE_LEVEL, MALES_1_4),
-          entry(PZQ + STRUCTURE_LEVEL, MALES_1_4),
-          entry(ALB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-          entry(MEB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-          entry(PZQ + ALL_OTHER_LEVELS, SCH_TREATMENT_COVERAGE));
+  private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.ofEntries(
+      entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
+      entry(MEB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
+      entry(PZQ + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4), entry(ALB + CDD_LEVEL, MALES_1_4),
+      entry(MEB + CDD_LEVEL, MALES_1_4), entry(PZQ + CDD_LEVEL, MALES_1_4),
+      entry(ALB + SUPERVISOR_LEVEL, ADVERSE), entry(MEB + SUPERVISOR_LEVEL, ADVERSE),
+      entry(PZQ + SUPERVISOR_LEVEL, ADVERSE), entry(ALB + IS_ON_PLAN_TARGET, MALES_1_4),
+      entry(MEB + IS_ON_PLAN_TARGET, MALES_1_4), entry(PZQ + IS_ON_PLAN_TARGET, MALES_1_4),
+      entry(ALB + STRUCTURE_LEVEL, MALES_1_4), entry(MEB + STRUCTURE_LEVEL, MALES_1_4),
+      entry(PZQ + STRUCTURE_LEVEL, MALES_1_4),
+      entry(ALB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
+      entry(MEB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
+      entry(PZQ + ALL_OTHER_LEVELS, SCH_TREATMENT_COVERAGE));
 
 
   private Long operationalAreaVisitedThreshold = 20L;
   private Long operationalAreaVisitedEffectivelyThreshold = 85L;
 
-  private final Map<String, List<String>> mdaLiteFilters = Map.of(
-      DRUG, List.of(ALB, MEB, PZQ)
-  );
+  private final Map<String, List<String>> mdaLiteFilters = Map.of(DRUG, List.of(ALB, MEB, PZQ));
 
   private final Map<ReportTypeEnum, Map<String, List<String>>> dashboardFilterAssociations = Map.of(
-      ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters
-  );
+      ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters);
 
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(
       PlanInterventionTypeEnum.IRS,
-      List.of(IrsPerformanceDashboardService.FOUND, IrsPerformanceDashboardService.SPRAYED,
-          IrsPerformanceDashboardService.NOT_SPRAYED, IrsPerformanceDashboardService.BOTTLES_USED,
+      List.of(IrsPerformanceDashboardService.DAY,
+          IrsPerformanceDashboardService.FOUND,
+          IrsPerformanceDashboardService.SPRAYED,
+          IrsPerformanceDashboardService.NOT_SPRAYED_REFUSED,
+          IrsPerformanceDashboardService.NOT_SPRAYED_REFUSED_OTHER,
+          IrsPerformanceDashboardService.NOT_SPRAYED,
+          IrsPerformanceDashboardService.BOTTLES_USAGE_RATE,
+          IrsPerformanceDashboardService.BOTTLES_USED,
           PerformanceDashboardService.START_TIME,
-          PerformanceDashboardService.END_TIME, PerformanceDashboardService.HOURS_WORKED),
+          PerformanceDashboardService.END_TIME,
+          PerformanceDashboardService.HOURS_WORKED,
+          IrsPerformanceDashboardService.CHECKED,
+          IrsPerformanceDashboardService.SPRAYED_DIFF,
+          IrsPerformanceDashboardService.FOUND_DIFF),
       PlanInterventionTypeEnum.IRS_LITE,
       List.of(IrsLitePerformanceDashboardService.FOUND, IrsLitePerformanceDashboardService.SPRAYED,
           IrsLitePerformanceDashboardService.NOT_SPRAYED, PerformanceDashboardService.START_TIME,

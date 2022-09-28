@@ -18,4 +18,5 @@ public class UserPerOrgLevel extends Message {
   private LocalDateTime captureDateTime;
   private UserLevel userLevel;
   private Map<String, Object> fields;
+  private boolean isUndo;
 }

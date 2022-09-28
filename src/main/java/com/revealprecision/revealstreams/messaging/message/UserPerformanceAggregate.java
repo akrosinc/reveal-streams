@@ -10,12 +10,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 
 @AllArgsConstructor
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class UserPerformanceAggregate extends Message {
 
   UUID planIdentifier;
@@ -32,7 +34,8 @@ public class UserPerformanceAggregate extends Message {
 
   public String getAverageEndTime() {
     return LocalTime.MIN.plus(Duration.ofMinutes(Double.valueOf(
-            ((double) (this.datedUserRecords.values().stream().map(UserPerformancePerDate::getEndTimeLong)
+            ((double) (this.datedUserRecords.values().stream()
+                .map(UserPerformancePerDate::getEndTimeLong)
                 .reduce(0L, Long::sum))) / ((double) this.datedUserRecords.size())).longValue()))
         .toString();
   }

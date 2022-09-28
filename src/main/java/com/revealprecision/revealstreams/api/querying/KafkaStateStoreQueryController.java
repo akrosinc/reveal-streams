@@ -1,6 +1,7 @@
 package com.revealprecision.revealstreams.api.querying;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revealprecision.revealstreams.constants.KafkaConstants;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataAggregateEvent;
 import com.revealprecision.revealstreams.messaging.message.LocationFormDataCountAggregateEvent;
@@ -11,6 +12,7 @@ import com.revealprecision.revealstreams.messaging.message.LocationPersonBusines
 import com.revealprecision.revealstreams.messaging.message.LocationStructureBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.PersonBusinessStatusAggregate;
 import com.revealprecision.revealstreams.messaging.message.UserAggregate;
+import com.revealprecision.revealstreams.messaging.message.UserParentChildren;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,23 +33,25 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RequiredArgsConstructor
 @Profile("Reveal-Streams")
+
 public class KafkaStateStoreQueryController<T> {
 
   private final StreamsBuilderFactoryBean getKafkaStreams;
   private final KafkaProperties kafkaProperties;
+  private final ObjectMapper objectMapper;
 
 
-//  @GetMapping("/userPerformance")
-//  public void userPerformance() {
-//    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
-//    ReadOnlyKeyValueStore<String, UserAggregate> counts = kafkaStreams.store(
-//        StoreQueryParameters.fromNameAndType(
-//            kafkaProperties.getStoreMap()
-//                .get(KafkaConstants.userPerformance),
-//            QueryableStoreTypes.keyValueStore())
-//    );
-//    iterateThroughStore(counts);
-//  }
+  @GetMapping("/userParentChildren")
+  public void userPerformance() {
+    KafkaStreams kafkaStreams = getKafkaStreams.getKafkaStreams();
+    ReadOnlyKeyValueStore<String, UserParentChildren> counts = kafkaStreams.store(
+        StoreQueryParameters.fromNameAndType(
+            kafkaProperties.getStoreMap()
+                .get(KafkaConstants.userParentChildren),
+            QueryableStoreTypes.keyValueStore())
+    );
+    iterateThroughStore(counts);
+  }
 
 
   @GetMapping("/userPerformanceSums")
@@ -404,7 +408,7 @@ public class KafkaStateStoreQueryController<T> {
       KeyValue<String, ?> keyValue = all.next();
       String key = keyValue.key;
       Object value = keyValue.value;
-      log.info("key: {} - value: {}", key, value);
+      log.info("key: {} - value: {}", key, objectMapper.valueToTree(value));
     }
     log.info("Ended");
   }
