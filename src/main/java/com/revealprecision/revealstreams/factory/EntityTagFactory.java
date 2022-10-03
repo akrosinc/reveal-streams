@@ -41,6 +41,7 @@ public class EntityTagFactory {
 
     entityTag.setEntityStatus(EntityStatus.ACTIVE);
     entityTag.setCreatedBy("reveal-streams");
+    entityTag.setModifiedBy("reveal-streams");
     return entityTag;
   }
 }
