@@ -5,7 +5,7 @@ import static com.revealprecision.revealstreams.constants.EntityTagDataTypes.DAT
 import static com.revealprecision.revealstreams.constants.EntityTagDataTypes.DOUBLE;
 import static com.revealprecision.revealstreams.constants.EntityTagDataTypes.INTEGER;
 import static com.revealprecision.revealstreams.constants.EntityTagDataTypes.STRING;
-import static com.revealprecision.revealstreams.enums.SummaryEnum.COUNT;
+import static com.revealprecision.revealstreams.constants.EntityTagDataAggregationMethods.COUNT;
 
 import com.revealprecision.revealstreams.constants.EntityTagDataAggregationMethods;
 import com.revealprecision.revealstreams.constants.EntityTagScopes;
