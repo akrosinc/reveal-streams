@@ -40,6 +40,7 @@ public class EntityTagFactory {
     }
 
     entityTag.setEntityStatus(EntityStatus.ACTIVE);
+    entityTag.setCreatedBy("reveal-streams");
     return entityTag;
   }
 }
