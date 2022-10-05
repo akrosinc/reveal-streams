@@ -5,6 +5,8 @@ package com.revealprecision.revealstreams.service.dashboard;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.CDD_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
+import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
+import static com.revealprecision.revealstreams.util.DashboardUtils.getLocationBusinessState;
 import static java.util.Map.entry;
 
 
@@ -24,6 +26,8 @@ import com.revealprecision.revealstreams.models.RowDataForSupervisor;
 import com.revealprecision.revealstreams.models.RowDataWithSupervisorOrCdd;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.persistence.domain.Report;
+import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.KafkaProperties;
 import java.util.AbstractMap.SimpleEntry;
@@ -51,6 +55,8 @@ public class MDALiteDashboardService {
   private final StreamsBuilderFactoryBean getKafkaStreams;
   private final KafkaProperties kafkaProperties;
   private final DashboardProperties dashboardProperties;
+
+  private final ReportRepository reportRepository;
 
   public static final String MALES_1_4 = "Male 1-4 years";
   private static final String MALES_5_14 = "Male 5-14 years";
@@ -100,6 +106,9 @@ public class MDALiteDashboardService {
   public static final String SCH = "STH";
 
   public static final String DRUG = "drug";
+
+  private static final String LOCATION_STATUS = "Location Status";
+
 
   private final Map<String, String> columnMap = Map.ofEntries(
       entry(MALES_1_4, treatedMale1_4),
@@ -339,6 +348,7 @@ public class MDALiteDashboardService {
   public List<RowData> getMDALiteCoverageData(Plan plan, Location childLocation,
       List<String> filters, MdaLiteReportType type) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
+    Report report = reportRepository.findByPlanAndLocation(plan, childLocation).orElse(null);
 
     if (filters == null || (filters.contains(ALB) || filters.isEmpty())) {
       columns.putAll(getDashboardData(plan, childLocation, ALB, new ArrayList<>(), type));
@@ -377,11 +387,11 @@ public class MDALiteDashboardService {
       columns.put(treatmentCoverage.getKey(), treatmentCoverage.getValue());
     }
 
+    columns.put(LOCATION_STATUS, getLocationBusinessState(report));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
     rowData.setLocationName(childLocation.getName());
-
     return List.of(rowData);
   }
 
@@ -522,7 +532,7 @@ public class MDALiteDashboardService {
       Double totalSTHPeople = totalPeopleALB + totalPeopleMEB;
 
       if (sthCensusTargetPopulation > 0) {
-        treatmentCoverage = (double) totalSTHPeople / (double) sthCensusTargetPopulation * 100;
+        treatmentCoverage = totalSTHPeople / sthCensusTargetPopulation * 100;
       }
       meta =
           "Total People Treated for STH: " + totalSTHPeople +
@@ -535,7 +545,7 @@ public class MDALiteDashboardService {
       Double totalPeoplePZQ = getTotalPeople(plan, childLocation, PZQ);
 
       if (schCensusTargetPopulation > 0) {
-        treatmentCoverage = (double) totalPeoplePZQ / (double) schCensusTargetPopulation * 100;
+        treatmentCoverage = totalPeoplePZQ / schCensusTargetPopulation * 100;
       }
       meta =
           "Total People Treated for SCH: " + schCensusTargetPopulation
@@ -694,6 +704,14 @@ public class MDALiteDashboardService {
     return locationResponses.stream().peek(loc -> {
       loc.getProperties().setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
       loc.getProperties().setId("SUPERVISOR_" + "placeholder_" + loc.getIdentifier().toString());
+      ColumnData locationStatusColumnData = rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+          .get(LOCATION_STATUS);
+      if (locationStatusColumnData != null) {
+        String businessStatus = (String) locationStatusColumnData.getValue();
+        loc.getProperties().setBusinessStatus(
+            businessStatus);
+        loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
+      }
     }).collect(Collectors.toList());
   }
 
@@ -743,7 +761,7 @@ public class MDALiteDashboardService {
 
   private List<LocationResponse> setGeojsonResponseProperties(Map<UUID, RowData> rowDataMap,
       String reportLevel, List<LocationResponse> locationResponses) {
-    switch (reportLevel) {
+      switch (reportLevel) {
       case IS_ON_PLAN_TARGET:
         locationResponses = setGeoJsonPropertiesOnPlanTarget(rowDataMap, locationResponses);
         break;
