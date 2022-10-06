@@ -188,7 +188,7 @@ public class DashboardService {
 
       case IRS_LITE_COVERAGE:
         return irsLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
-            rowDataMap,reportLevel);
+            rowDataMap, reportLevel);
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel, filters, type);
@@ -229,7 +229,10 @@ public class DashboardService {
             .indexOf(LocationConstants.STRUCTURE);
         int locationNodeIndex = plan.getLocationHierarchy().getNodeOrder()
             .indexOf(parentLocation.getGeographicLevel().getName());
-        if (locationNodeIndex + 1 < structureNodeIndex) {
+        if (structureNodeIndex < 0) {
+          locationDetails = locationService.getAssignedLocationsByParentIdentifierAndPlanIdentifier(
+              parentIdentifier, planIdentifier, false);
+        } else if (locationNodeIndex + 1 < structureNodeIndex) {
           locationDetails = locationService.getAssignedLocationsByParentIdentifierAndPlanIdentifier(
               parentIdentifier, planIdentifier, (locationNodeIndex + 2) == structureNodeIndex);
         } else {
