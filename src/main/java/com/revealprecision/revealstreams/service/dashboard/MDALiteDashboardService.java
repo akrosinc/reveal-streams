@@ -1,7 +1,6 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
-
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.CDD_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
@@ -133,6 +132,7 @@ public class MDALiteDashboardService {
   );
 
   static final Map<String, String> AGE_COVERAGE;
+
   static {
     Map<String, String> ageCoverage = new LinkedHashMap<>();
     ageCoverage.put(MALES_1_4, treatedMale1_4);
@@ -147,6 +147,7 @@ public class MDALiteDashboardService {
   }
 
   static final Map<String, String> DRUG_DISTRIBUTION;
+
   static {
     Map<String, String> drugDistribution = new LinkedHashMap<>();
     drugDistribution.put(SUPERVISOR_DISTRIBUTED, SUPERVISOR_DISTRIBUTED);
@@ -214,7 +215,7 @@ public class MDALiteDashboardService {
     MDALiteLocationSupervisorListAggregation locationFormDataSumAggregateEvent = supervisors.get(
         supervisorKey);
 
-    if (locationFormDataSumAggregateEvent!=null) {
+    if (locationFormDataSumAggregateEvent != null) {
       Map<String, String> supervisorNames = locationFormDataSumAggregateEvent.getSupervisorNames();
       for (Entry<String, String> supervisor : supervisorNames.entrySet()) {
         Map<String, ColumnData> columns = new HashMap<>();
@@ -355,14 +356,16 @@ public class MDALiteDashboardService {
     }
 
     if (filters == null || (filters.contains(PZQ) || filters.isEmpty())) {
-      columns.putAll(getDashboardData(plan, childLocation, PZQ, List.of(MALES_1_4, FEMALES_1_4), type));
+      columns.putAll(
+          getDashboardData(plan, childLocation, PZQ, List.of(MALES_1_4, FEMALES_1_4), type));
     }
 
     if (filters == null || (filters.contains(MEB) || filters.isEmpty())) {
       columns.putAll(getDashboardData(plan, childLocation, MEB, new ArrayList<>(), type));
     }
 
-    if ((filters == null || filters.contains(PZQ)) && type == MdaLiteReportType.TREATMENT_COVERAGE) {
+    if ((filters == null || filters.contains(PZQ))
+        && type == MdaLiteReportType.TREATMENT_COVERAGE) {
       Entry<String, ColumnData> schCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
           childLocation,
           schTargetPop, SCH_CENSUS_POP_TARGET);
@@ -375,7 +378,8 @@ public class MDALiteDashboardService {
 
     }
 
-    if ((filters == null || filters.contains(MEB) || filters.contains(ALB)) && type == MdaLiteReportType.TREATMENT_COVERAGE) {
+    if ((filters == null || filters.contains(MEB) || filters.contains(ALB))
+        && type == MdaLiteReportType.TREATMENT_COVERAGE) {
       Entry<String, ColumnData> sthCensusPopulationTarget = getCensusPopulationTargetColumnMap(plan,
           childLocation,
           sthTargetPop, STH_CENSUS_POP_TARGET);
@@ -398,16 +402,16 @@ public class MDALiteDashboardService {
   private Map<String, ColumnData> getDashboardData(Plan plan, Location childLocation, String drug,
       List<String> exclusions, MdaLiteReportType type) {
     Map<String, String> mapToIterate;
-    if(type == MdaLiteReportType.DRUG_DISTRIBUTION) {
+    if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       mapToIterate = DRUG_DISTRIBUTION;
-    }else if(type == MdaLiteReportType.TREATMENT_COVERAGE) {
+    } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       mapToIterate = treatmentCoverage;
-    } else if(type == MdaLiteReportType.AGE_COVERAGE) {
+    } else if (type == MdaLiteReportType.AGE_COVERAGE) {
       mapToIterate = AGE_COVERAGE;
-    }else {
+    } else {
       mapToIterate = columnMap;
     }
-    Map<String, ColumnData>  response = new LinkedHashMap<>();
+    Map<String, ColumnData> response = new LinkedHashMap<>();
     mapToIterate.keySet().stream()
         .filter(s -> !exclusions.contains(s))
         .forEach(s -> {
@@ -523,7 +527,8 @@ public class MDALiteDashboardService {
     String meta = "";
     if (infection.equals(STH)) {
 
-      Double sthCensusTargetPopulation = getCensusTargetPopulation(plan, childLocation, sthTargetPop);
+      Double sthCensusTargetPopulation = getCensusTargetPopulation(plan, childLocation,
+          sthTargetPop);
 
       Double totalPeopleALB = getTotalPeople(plan, childLocation, ALB);
 
@@ -540,7 +545,8 @@ public class MDALiteDashboardService {
     }
     if (infection.equals(SCH)) {
 
-      Double schCensusTargetPopulation = getCensusTargetPopulation(plan, childLocation, schTargetPop);
+      Double schCensusTargetPopulation = getCensusTargetPopulation(plan, childLocation,
+          schTargetPop);
 
       Double totalPeoplePZQ = getTotalPeople(plan, childLocation, PZQ);
 
@@ -669,6 +675,14 @@ public class MDALiteDashboardService {
 
       loc.getProperties().setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
       loc.getProperties().setId(loc.getIdentifier().toString());
+      ColumnData locationStatusColumnData = rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+          .get(LOCATION_STATUS);
+      if (locationStatusColumnData != null) {
+        String businessStatus = (String) locationStatusColumnData.getValue();
+        loc.getProperties().setBusinessStatus(
+            businessStatus);
+        loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
+      }
     }).collect(Collectors.toList());
   }
 
@@ -718,7 +732,8 @@ public class MDALiteDashboardService {
 
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails,
-      Map<UUID, RowData> rowDataMap, String reportLevel, List<String> filters, MdaLiteReportType type) {
+      Map<UUID, RowData> rowDataMap, String reportLevel, List<String> filters,
+      MdaLiteReportType type) {
     FeatureSetResponse response = new FeatureSetResponse();
     response.setType("FeatureCollection");
     List<LocationResponse> locationResponses;
@@ -761,7 +776,7 @@ public class MDALiteDashboardService {
 
   private List<LocationResponse> setGeojsonResponseProperties(Map<UUID, RowData> rowDataMap,
       String reportLevel, List<LocationResponse> locationResponses) {
-      switch (reportLevel) {
+    switch (reportLevel) {
       case IS_ON_PLAN_TARGET:
         locationResponses = setGeoJsonPropertiesOnPlanTarget(rowDataMap, locationResponses);
         break;
@@ -775,11 +790,13 @@ public class MDALiteDashboardService {
     return locationResponses;
   }
 
-  private String getDefaultColumn(List<String> filters, String reportLevel, MdaLiteReportType type) {
+  private String getDefaultColumn(List<String> filters, String reportLevel,
+      MdaLiteReportType type) {
     String defaultFilter = (filters == null ? ALB
         : (filters.contains(ALB) ? ALB : filters.contains(MEB) ? MEB : PZQ));
-    String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumnsWithType().getOrDefault(type +
-        defaultFilter, null);
+    String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumnsWithType()
+        .getOrDefault(type +
+            defaultFilter, null);
     String name = defaultColumn;
     if (!defaultColumn.equals(STH_TREATMENT_COVERAGE) && !defaultColumn.equals(
         SCH_TREATMENT_COVERAGE)) {
