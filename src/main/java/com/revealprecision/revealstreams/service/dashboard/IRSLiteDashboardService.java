@@ -269,12 +269,10 @@ public class IRSLiteDashboardService {
         EntityTagScopes.PLAN);
 
     double sprayedLocationsCount = 0;
-    if (locationMetadataByTagName != null) {
-      if (locationMetadataByTagName.get(0) != null) {
+      if (locationMetadataByTagName != null && !locationMetadataByTagName.isEmpty()) {
         sprayedLocationsCount = locationMetadataByTagName.get(0).getCurrent().getValue()
             .getValueDouble();
       }
-    }
 
     ColumnData totalStructuresFoundColumnData = new ColumnData();
     totalStructuresFoundColumnData.setValue(sprayedLocationsCount);
@@ -403,7 +401,7 @@ public class IRSLiteDashboardService {
 
     double totalStructuresFound = 0;
 
-    if (locationMetadataByTagName != null) {
+    if (locationMetadataByTagName != null && !locationMetadataByTagName.isEmpty()) {
       Double totalStructuresFoundValue = locationMetadataByTagName.get(0).getCurrent().getValue()
           .getValueDouble();
       if (totalStructuresFoundValue != null) {
@@ -447,7 +445,7 @@ public class IRSLiteDashboardService {
 
     double totalStructuresFound = 0;
 
-    if (locationMetadataByTagNameFound != null) {
+    if (locationMetadataByTagNameFound != null && !locationMetadataByTagNameFound.isEmpty()) {
       Double totalStructuresFoundValue = locationMetadataByTagNameFound.get(0).getCurrent()
           .getValue()
           .getValueDouble();
@@ -461,7 +459,7 @@ public class IRSLiteDashboardService {
         EntityTagScopes.PLAN);
 
     double sprayedLocationsCount = 0;
-    if (locationMetadataByTagNameSprayed != null) {
+    if (locationMetadataByTagNameSprayed != null && !locationMetadataByTagNameSprayed.isEmpty()) {
       if (locationMetadataByTagNameSprayed.get(0) != null) {
         sprayedLocationsCount = locationMetadataByTagNameSprayed.get(0).getCurrent().getValue()
             .getValueDouble();
