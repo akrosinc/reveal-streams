@@ -32,6 +32,10 @@
     source="reveal.logging.user-performance-data-file-name"/>
   <springProperty scope="context" name="loggingUserPerformanceRollingFileName"
     source="reveal.logging.user-performance-rolling-file-name"/>
+  <springProperty scope="context" name="loggingHttpDataFileName"
+    source="reveal.logging.http-data-file-name"/>
+  <springProperty scope="context" name="loggingHttpDataRollingFileName"
+    source="reveal.logging.http-data-rolling-file-name"/>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
@@ -122,6 +126,17 @@
     </encoder>
   </appender>
 
+  <appender name="HTTP-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${loggingPath}${loggingHttpDataFileName}</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${loggingPath}${loggingHttpDataRollingFileName}</fileNamePattern>
+      <maxFileSize>${maxFileSize}</maxFileSize>
+    </rollingPolicy>
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <pattern>${loggingPatternAlternate}</pattern>
+    </encoder>
+  </appender>
+
   <logger name="stream-file" level="DEBUG" additivity="false">
     <appender-ref ref="STREAM-FILE"/>
   </logger>
@@ -144,6 +159,10 @@
 
   <logger name="form-data-file" level="DEBUG" additivity="false">
     <appender-ref ref="FORM-DATA-FILE"/>
+  </logger>
+
+  <logger name="http-file" level="DEBUG" additivity="false">
+    <appender-ref ref="HTTP-FILE"/>
   </logger>
 
   <root level="INFO">
