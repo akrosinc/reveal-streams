@@ -30,10 +30,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class IRSDashboardService {
 
   public static final String NOT_SPRAYED_REASON = "Not Sprayed Reason";
@@ -284,7 +286,17 @@ public class IRSDashboardService {
     LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
         plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
         BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier());
+
+
     if (completedStructuresCountObjCount != null) {
+
+      log.trace("getTotalStructuresSprayed parms - plan: {} location: {} type: {} businessStatus: {} hierarchy{} - output {} {}",
+          plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+          BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier(),
+          completedStructuresCountObjCount.getLocationCount(),
+          completedStructuresCountObjCount.getBusinessStatus()
+      );
+
       completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
     }
 
@@ -455,6 +467,12 @@ public class IRSDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
         BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier());
     if (completedStructuresCountObjCount != null) {
+      log.trace("getTotalStructuresSprayed parms - plan: {} location: {} type: {} businessStatus: {} hierarchy{} - output {} {}",
+          plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+          BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier(),
+          completedStructuresCountObjCount.getLocationCount(),
+          completedStructuresCountObjCount.getBusinessStatus()
+      );
       completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
     }
 
@@ -517,6 +535,12 @@ public class IRSDashboardService {
         BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier());
 
     if (completedStructuresCountObjCount != null) {
+      log.trace("getTotalStructuresSprayed parms - plan: {} location: {} type: {} businessStatus: {} hierarchy{} - output {} {}",
+          plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+          BusinessStatus.COMPLETE, plan.getLocationHierarchy().getIdentifier(),
+          completedStructuresCountObjCount.getLocationCount(),
+          completedStructuresCountObjCount.getBusinessStatus()
+      );
       completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
     }
 
