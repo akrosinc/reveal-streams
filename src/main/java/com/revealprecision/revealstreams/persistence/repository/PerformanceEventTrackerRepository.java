@@ -199,15 +199,15 @@ List<UserPerformanceDistrictAggregateProjection> getDeviceUserStats(UUID planIde
         + "\tCASE WHEN pet.user_data->'fields'->>'NOT SPRAYED' = 'true' THEN 1 ELSE 0 END as not_sprayed,\n"
         + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_OTHER' = 'true' THEN 1 ELSE 0 END as not_sprayed_other,\n"
         + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_REFUSED' = 'true' THEN 1 ELSE 0 END as not_sprayed_refused,\n"
-        + "    CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int) as sachet_count,\n"
+        + "    COALESCE(CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int),0) as sachet_count,\n"
         + "\tCOALESCE(CAST(pet.user_data->'fields'->>'IRS_FOUND_FROM_SUMMARY'as int),0) as found_summary,\n"
         + "\tCOALESCE(CAST(pet.user_data->'fields'->>'IRS_SPRAYED_FROM_SUMMARY'as int),0) as spray_summary,\n"
         + "\tCOALESCE(CAST(pet.user_data->'fields'->>'IRS_FOUND_FROM_SUMMARY'as varchar),'')as found_checked,\n"
         + "\tCOALESCE(CAST(pet.user_data->'fields'->>'IRS_SPRAYED_FROM_SUMMARY'as varchar),'')as spray_checked\n"
         + "From performance_event_tracker pet\n"
-        + "WHERE pet.plan_identifier = :planIdentifier"
+        + "WHERE pet.plan_identifier = :planIdentifier "
         + ") as t\n"
-        + "WHERE t.district = :district \n"
+        + "WHERE t.district = :district and t.time is not null\n"
         + "group by t.date, t.district", nativeQuery = true)
 
     List<UserPerformanceDistrictAggregateProjection> getDistrictStats(UUID planIdentifier,String district);
@@ -239,11 +239,11 @@ List<UserPerformanceDistrictAggregateProjection> getDeviceUserStats(UUID planIde
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT SPRAYED' = 'true' THEN 1 ELSE 0 END as not_sprayed,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_OTHER' = 'true' THEN 1 ELSE 0 END as not_sprayed_other,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_REFUSED' = 'true' THEN 1 ELSE 0 END as not_sprayed_refused,\n"
-      + "    CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int) as sachet_count\n"
+      + "    COALESCE(CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int),0) as sachet_count\n"
       + "From performance_event_tracker pet\n"
       + "WHERE pet.plan_identifier = :planIdentifier\n"
       + ") as t\n"
-      + "WHERE t.deviceUser = :deviceUser\n"
+      + "WHERE t.deviceUser = :deviceUser and t.time is not null\n"
       + "group by t.district, t.deviceUser, t.fieldWorker", nativeQuery = true)
 
   List<UserPerformanceDistrictAggregateProjection> getIndividualDeviceUserAggregatedStats(UUID planIdentifier, String deviceUser);
@@ -322,11 +322,11 @@ List<UserPerformanceDistrictAggregateProjection> getDeviceUserStats(UUID planIde
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT SPRAYED' = 'true' THEN 1 ELSE 0 END as not_sprayed,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_OTHER' = 'true' THEN 1 ELSE 0 END as not_sprayed_other,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_REFUSED' = 'true' THEN 1 ELSE 0 END as not_sprayed_refused,\n"
-      + "    CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int) as sachet_count\n"
+      + "     COALESCE(CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int),0) as sachet_count\n"
       + "From performance_event_tracker pet\n"
       + "WHERE pet.plan_identifier = :planIdentifier\n"
       + ") as t\n"
-      + "WHERE t.district = :district\n"
+      + "WHERE t.district = :district and t.time is not null\n"
       + "group by t.district, t.deviceUserName", nativeQuery = true)
 
   List<UserPerformanceDistrictAggregateProjection> getIndividualDistrictAggregatedStats(UUID planIdentifier, String district);
@@ -401,7 +401,7 @@ List<UserPerformanceDistrictAggregateProjection> getDeviceUserStats(UUID planIde
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT SPRAYED' = 'true' THEN 1 ELSE 0 END as not_sprayed,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_OTHER' = 'true' THEN 1 ELSE 0 END as not_sprayed_other,\n"
       + "\tCASE WHEN pet.user_data->'fields'->>'NOT_SPRAYED_REFUSED' = 'true' THEN 1 ELSE 0 END as not_sprayed_refused,\n"
-      + "    CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int) as sachet_count\n"
+      + "    COALESCE(CAST(pet.user_data->'fields'->>'SACHET_COUNT'as int),0) as sachet_count\n"
       + "From performance_event_tracker pet\n"
       + "WHERE pet.plan_identifier = :planIdentifier\n"
       + ") as t\n"
