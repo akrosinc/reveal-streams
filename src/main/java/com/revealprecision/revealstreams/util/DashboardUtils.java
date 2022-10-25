@@ -48,6 +48,7 @@ public class DashboardUtils {
       case BusinessStatus.NOT_DISPENSED:
       case BusinessStatus.IN_PROGRESS:
       case BusinessStatus.NONE_RECEIVED:
+      case BusinessStatus.MDA_REFUSED_OR_ABSENT:
         return Colors.red;
       case BusinessStatus.SPRAYED:
       case BusinessStatus.SMC_COMPLETE:
@@ -55,6 +56,7 @@ public class DashboardUtils {
       case BusinessStatus.ALL_TASKS_COMPLETE:
       case BusinessStatus.COMPLETE:
       case BusinessStatus.FULLY_RECEIVED:
+      case BusinessStatus.MDA_COMPLETE:
       case PARTIALLY_SPRAYED:
         return Colors.green;
       case BusinessStatus.NOT_SPRAYABLE:
@@ -62,6 +64,7 @@ public class DashboardUtils {
         return Colors.black;
       case BusinessStatus.INCOMPLETE:
       case TASKS_INCOMPLETE:
+      case BusinessStatus.MDA_PARTIALLY_COMPLETE:
       case BusinessStatus.PARTIALLY_RECEIVED:
         return Colors.orange;
       default:
