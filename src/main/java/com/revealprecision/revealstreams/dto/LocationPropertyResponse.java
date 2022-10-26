@@ -34,6 +34,7 @@ public class LocationPropertyResponse {
   private Object numberOfChildrenTreated;
   private Object numberOfChildrenEligible;
   private Object sprayCoverage;
+  private Object foundCoverage;
   private String id;
   private Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
   private List<PersonMainData> persons;

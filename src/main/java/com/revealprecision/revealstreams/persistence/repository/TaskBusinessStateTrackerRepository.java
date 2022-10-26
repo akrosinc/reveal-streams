@@ -39,7 +39,7 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID parentLocationIdentifier, String taskLocationGeographicLevelName);
 
   @Query(
-      "SELECT DISTINCT new TaskBusinessStateTracker (t.taskLocationIdentifier,t.parentGeographicLevelName,t.taskLocationName,t.taskBusinessStatus) from TaskBusinessStateTracker t WHERE t.planIdentifier = :planIdentifier "
+      "SELECT DISTINCT new TaskBusinessStateTracker (t.taskLocationIdentifier,t.taskLocationGeographicLevelName,t.taskLocationName,t.taskBusinessStatus) from TaskBusinessStateTracker t WHERE t.planIdentifier = :planIdentifier "
           + "and t.locationHierarchyIdentifier = :locationHierarchyIdentifier and t.taskLocationIdentifier = :taskLocationIdentifier")
   TaskBusinessStateTracker findDistinctTaskBusinessStateTrackerByLocationHierarchyIdentifierAndTaskLocationIdentifierAndPlanIdentifier(
       UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);

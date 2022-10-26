@@ -33,6 +33,7 @@ public class DashboardService {
   private final IRSDashboardService irsDashboardService;
   private final IRSLiteDashboardService irsLiteDashboardService;
   private final MDALiteDashboardService mdaLiteDashboardService;
+  private final SurveyDashboardService surveyDashboardService;
 
   public static final String WITHIN_STRUCTURE_LEVEL = "Within Structure";
   public static final String STRUCTURE_LEVEL = "Structure";
@@ -138,6 +139,16 @@ public class DashboardService {
           case ALL_OTHER_LEVELS:
             return irsDashboardService.getIRSFullData(plan, loc.getLocation());
         }
+      case SURVEY:
+
+        switch (reportLevel) {
+          case WITHIN_STRUCTURE_LEVEL:
+          case STRUCTURE_LEVEL:
+            return surveyDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+          case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
+          case ALL_OTHER_LEVELS:
+            return surveyDashboardService.getIRSFullData(plan, loc.getLocation());
+        }
       case IRS_LITE_COVERAGE:
         switch (reportLevel) {
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
@@ -192,6 +203,9 @@ public class DashboardService {
       case MDA_LITE_COVERAGE:
         return mdaLiteDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel, filters, type);
+      case SURVEY:
+        return surveyDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
+            rowDataMap, reportLevel);
 
 
     }
