@@ -40,9 +40,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE = "Total Structures MDA Complete";
   private static final String STRUCTURE_STATUS = "Structure Status";
-  public static final String VISITATION_COVERAGE = "Visitation Coverage (Found/Target)";
-
-  boolean isDatastoresInitialized = false;
+  public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
