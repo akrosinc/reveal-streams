@@ -17,7 +17,7 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.PZQ;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.SCH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
-import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.FOUND_COVERAGE;
+import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
 
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
@@ -65,7 +65,7 @@ public class DashboardProperties {
 
   private final Map<String, String> surveyDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,
-      FOUND_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL,FOUND_COVERAGE);
+      VISITATION_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, VISITATION_COVERAGE);
 
   private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.ofEntries(
       entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
