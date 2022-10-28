@@ -40,9 +40,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE = "Total Structures MDA Complete";
   private static final String STRUCTURE_STATUS = "Structure Status";
-  public static final String FOUND_COVERAGE = "Found Coverage (Found/Target)";
-
-  boolean isDatastoresInitialized = false;
+  public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
@@ -52,7 +50,7 @@ public class SurveyDashboardService {
     columns.put(TOTAL_STRUCTURES_MDA_COMPLETE, getTotalStructuresMdaComplete(plan, childLocation));
     columns.put(
         TOTAL_STRUCTURES_VISITED, getTotalStructuresFoundCount(plan, childLocation));
-    columns.put(FOUND_COVERAGE, getFoundCoverage(plan, childLocation));
+    columns.put(VISITATION_COVERAGE, getFoundCoverage(plan, childLocation));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -99,7 +97,7 @@ public class SurveyDashboardService {
     } else {
       columnData.setValue((foundStructures / targetedStructures) * 100);
     }
-    columnData.setMeta("Found Structures: "+foundStructures+ " / " + "Targeted Structure: "+targetedStructures);
+    columnData.setMeta("Visited Structures: "+foundStructures+ " / " + "Targeted Structure: "+targetedStructures);
     return columnData;
   }
 
@@ -273,10 +271,10 @@ public class SurveyDashboardService {
     return locationResponses.stream().peek(loc -> {
       loc.getProperties().setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
       loc.getProperties().setId(loc.getIdentifier().toString());
-      if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(FOUND_COVERAGE)
+      if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
           != null) {
         loc.getProperties().setFoundCoverage(
-            rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(FOUND_COVERAGE)
+            rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
                 .getValue());
       }
       if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
