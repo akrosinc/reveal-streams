@@ -41,6 +41,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE = "Total Structures MDA Complete";
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
+  public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
@@ -51,6 +52,7 @@ public class SurveyDashboardService {
     columns.put(
         TOTAL_STRUCTURES_VISITED, getTotalStructuresFoundCount(plan, childLocation));
     columns.put(VISITATION_COVERAGE, getFoundCoverage(plan, childLocation));
+    columns.put(DISTRIBUTION_COVERAGE,getDistributionCoverage(plan, childLocation));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -98,6 +100,20 @@ public class SurveyDashboardService {
       columnData.setValue((foundStructures / targetedStructures) * 100);
     }
     columnData.setMeta("Visited Structures: "+foundStructures+ " / " + "Targeted Structure: "+targetedStructures);
+    return columnData;
+  }
+
+  private ColumnData getDistributionCoverage(Plan plan, Location childLocation) {
+    ColumnData columnData = new ColumnData();
+    columnData.setIsPercentage(true);
+    double foundStructures = (double) getTotalStructuresFoundCount(plan, childLocation).getValue();
+    double mdaComplete = (double) getTotalStructuresMdaComplete(plan, childLocation).getValue();
+    if (foundStructures == 0) {
+      columnData.setValue(0d);
+    } else {
+      columnData.setValue((mdaComplete / foundStructures) * 100);
+    }
+    columnData.setMeta("MDA Complete: "+mdaComplete+ " / " + "Visited: "+foundStructures);
     return columnData;
   }
 
