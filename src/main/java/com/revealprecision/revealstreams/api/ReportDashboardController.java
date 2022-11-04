@@ -52,7 +52,7 @@ public class ReportDashboardController {
       @RequestParam(name = "planIdentifier") UUID planIdentifier,
       @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
       @RequestParam(name = "filters", required = false) List<String> filters,
-      @RequestParam(name = "type", required = false, defaultValue = "AGE_COVERAGE") MdaLiteReportType type) {
+      @RequestParam(name = "type", required = false, defaultValue = "TREATMENT_COVERAGE") MdaLiteReportType type) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(dashboardService.getDataForReport(reportType, planIdentifier, parentIdentifier,
             filters, type));
