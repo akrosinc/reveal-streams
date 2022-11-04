@@ -55,11 +55,62 @@ public class LocationBusinessStatusService {
     return null;
   }
 
+  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForWaterBodies(UUID parentLocationIdentifier,
+      UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
+
+      log.trace("parms passed: {} {} {}", parentLocationIdentifier, locationHierarchyIdentifier,
+          geographicLevelName);
+      LocationCounts locationCounts = locationCountsRepository.findLocationCountsByParentLocationIdentifierAndLocationHierarchyIdentifierAndGeographicLevelName(
+          parentLocationIdentifier, locationHierarchyIdentifier, geographicLevelName);
+      if (locationCounts != null) {
+        log.trace("result: {} {} {} {} {} {} {} ", parentLocationIdentifier,
+            locationHierarchyIdentifier, geographicLevelName,
+            locationCounts.getParentLocationIdentifier(), locationCounts.getLocationCount(),
+            locationCounts.getParentLocationName(), locationCounts.getParentGeographicLevelName());
+        return locationCounts.getWaterBodyCount();
+      }
+
+    return null;
+  }
+
+  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForNonWaterBodies(UUID parentLocationIdentifier,
+      UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
+
+    log.trace("parms passed: {} {} {}", parentLocationIdentifier, locationHierarchyIdentifier,
+        geographicLevelName);
+    LocationCounts locationCounts = locationCountsRepository.findLocationCountsByParentLocationIdentifierAndLocationHierarchyIdentifierAndGeographicLevelName(
+        parentLocationIdentifier, locationHierarchyIdentifier, geographicLevelName);
+    if (locationCounts != null) {
+      log.trace("result: {} {} {} {} {} {} {} ", parentLocationIdentifier,
+          locationHierarchyIdentifier, geographicLevelName,
+          locationCounts.getParentLocationIdentifier(), locationCounts.getLocationCount(),
+          locationCounts.getParentLocationName(), locationCounts.getParentGeographicLevelName());
+      return locationCounts.getLocationWithoutSurveyLocationType();
+    }
+
+    return null;
+  }
 
   public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier) {
     return taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        planIdentifier, parentLocationIdentifier, taskLocationGeographicLevelName,
+        taskBusinessStatus, locationHierarchyIdentifier);
+  }
+
+  public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      String taskBusinessStatus, UUID locationHierarchyIdentifier) {
+    return taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
+        planIdentifier, parentLocationIdentifier, taskLocationGeographicLevelName,
+        taskBusinessStatus, locationHierarchyIdentifier);
+  }
+
+  public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForWaterBodies(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      String taskBusinessStatus, UUID locationHierarchyIdentifier) {
+    return taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForWaterBodies(
         planIdentifier, parentLocationIdentifier, taskLocationGeographicLevelName,
         taskBusinessStatus, locationHierarchyIdentifier);
   }

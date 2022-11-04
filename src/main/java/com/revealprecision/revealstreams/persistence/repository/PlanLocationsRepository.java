@@ -31,11 +31,32 @@ public interface PlanLocationsRepository extends EntityGraphJpaRepository<PlanLo
   Long getAssignedStructureCountByLocationParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier);
 
+  @Query(value = "SELECT sum(asc_.water_body_count) from assigned_structure_counts asc_ "
+      + "where asc_.plan_identifier = :planIdentifier and asc_.parent_location_identifier = :parentLocationIdentifier "
+      + "group by asc_.parent_location_identifier, asc_.parent_location_name", nativeQuery = true)
+  Long getAssignedStructureCountByLocationParentAndPlanForWaterBodies(UUID planIdentifier,
+      UUID parentLocationIdentifier);
+
+  @Query(value = "SELECT sum(asc_.location_without_survey_location_type) from assigned_structure_counts asc_ "
+      + "where asc_.plan_identifier = :planIdentifier and asc_.parent_location_identifier = :parentLocationIdentifier "
+      + "group by asc_.parent_location_identifier, asc_.parent_location_name", nativeQuery = true)
+  Long getAssignedStructureCountByLocationParentAndPlanForNonWaterBodies(UUID planIdentifier,
+      UUID parentLocationIdentifier);
+
 
   @Query(value = "SELECT DISTINCT structure_count from assigned_structure_counts asc_ "
       + "WHERE asc_.plan_identifier = :planIdentifier and asc_.location_identifier = :parentLocationIdentifier and asc_.structure_count is not null", nativeQuery = true)
   Long getAssignedStructureCountOnPlanTargetByLocationParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier);
 
+  @Query(value = "SELECT DISTINCT water_body_count from assigned_structure_counts asc_ "
+      + "WHERE asc_.plan_identifier = :planIdentifier and asc_.location_identifier = :parentLocationIdentifier and asc_.structure_count is not null", nativeQuery = true)
+  Long getAssignedStructureCountOnPlanTargetByLocationParentAndPlanForWaterBodies(UUID planIdentifier,
+      UUID parentLocationIdentifier);
+
+  @Query(value = "SELECT DISTINCT location_without_survey_location_type from assigned_structure_counts asc_ "
+      + "WHERE asc_.plan_identifier = :planIdentifier and asc_.location_identifier = :parentLocationIdentifier and asc_.structure_count is not null", nativeQuery = true)
+  Long getAssignedStructureCountOnPlanTargetByLocationParentAndPlanForNonWaterBodies(UUID planIdentifier,
+      UUID parentLocationIdentifier);
 
 }

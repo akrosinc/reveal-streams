@@ -45,4 +45,29 @@ public class PlanLocationsService {
     }
   }
 
+  public Long getAssignedStructureCountByLocationParentAndPlanForWaterBodies(Plan plan, Location location) {
+
+    if (plan.getLocationHierarchy().getNodeOrder().get(plan.getLocationHierarchy().getNodeOrder()
+            .indexOf(plan.getPlanTargetType().getGeographicLevel().getName())-1)
+        .equals(location.getGeographicLevel().getName())) {
+      return planLocationsRepository.getAssignedStructureCountOnPlanTargetByLocationParentAndPlanForWaterBodies(
+          plan.getIdentifier(), location.getIdentifier());
+    } else {
+      return planLocationsRepository.getAssignedStructureCountByLocationParentAndPlanForWaterBodies(
+          plan.getIdentifier(), location.getIdentifier());
+    }
+
+  }
+  public Long getAssignedStructureCountByLocationParentAndPlanForNonWaterBodies(Plan plan, Location location) {
+
+    if (plan.getLocationHierarchy().getNodeOrder().get(plan.getLocationHierarchy().getNodeOrder()
+            .indexOf(plan.getPlanTargetType().getGeographicLevel().getName())-1)
+        .equals(location.getGeographicLevel().getName())) {
+      return planLocationsRepository.getAssignedStructureCountOnPlanTargetByLocationParentAndPlanForNonWaterBodies(
+          plan.getIdentifier(), location.getIdentifier());
+    } else {
+      return planLocationsRepository.getAssignedStructureCountByLocationParentAndPlanForNonWaterBodies(
+          plan.getIdentifier(), location.getIdentifier());
+    }
+  }
 }

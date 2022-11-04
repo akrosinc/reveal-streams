@@ -17,7 +17,6 @@ import lombok.Setter;
 @Builder
 public class LocationProperty {
 
-
   @NotBlank
   private String name;
 
@@ -27,4 +26,10 @@ public class LocationProperty {
   private UUID externalId;
   @NotNull
   private String geographicLevel;
+
+  private Long structures;
+
+  private Boolean isOtherArea;
+
+  private String surveyLocationType;
 }

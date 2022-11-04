@@ -30,6 +30,35 @@ public interface TaskBusinessStateTrackerRepository extends
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
 
   @Query(
+      value = "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier, CAST(t.plan_identifier as varchar) as planIdentifier, count(t) as locationCount "
+          + "from task_business_state_tracker t "
+          + "left join location l on l.identifier = t.task_location_identifier "
+          + "where t.parent_location_identifier = :parentLocationIdentifier "
+          + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
+          + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
+          + "and l.location_property ->>'surveyLocationType'='waterbody' "
+          + "and t.task_business_status = :taskBusinessStatus "
+          + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
+  LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForWaterBodies(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      String taskBusinessStatus, UUID locationHierarchyIdentifier);
+
+  @Query(
+      value = "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier"
+          + ", CAST(t.plan_identifier  as varchar) as planIdentifier, count(t) as locationCount "
+            + "from task_business_state_tracker t "
+            + "left join location l on l.identifier = t.task_location_identifier "
+            + "where t.parent_location_identifier = :parentLocationIdentifier "
+            + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
+            + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
+            + "and jsonb_exists_any(l.location_property,ARRAY['surveyLocationType'])=false "
+            + "and t.task_business_status = :taskBusinessStatus "
+            + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
+  LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      String taskBusinessStatus, UUID locationHierarchyIdentifier);
+
+  @Query(
       "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as taskBusinessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
           + "where t.parentLocationIdentifier = :parentLocationIdentifier"
           + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
