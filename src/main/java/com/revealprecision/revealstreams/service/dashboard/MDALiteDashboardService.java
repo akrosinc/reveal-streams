@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -391,6 +392,15 @@ public class MDALiteDashboardService {
       columns.put(treatmentCoverage.getKey(), treatmentCoverage.getValue());
     }
 
+    if (type == MdaLiteReportType.AGE_COVERAGE) {
+      columns.put(MALES_1_4, getTotals(MALES_1_4, columns, filters));
+      columns.put(MALES_5_14, getTotals(MALES_5_14, columns, filters));
+      columns.put(MALES_15, getTotals(MALES_15, columns, filters));
+      columns.put(FEMALES_1_4, getTotals(FEMALES_1_4, columns, filters));
+      columns.put(FEMALES_5_14, getTotals(FEMALES_5_14, columns, filters));
+      columns.put(FEMALES_15, getTotals(FEMALES_5_14, columns, filters));
+    }
+
     columns.put(LOCATION_STATUS, getLocationBusinessState(report));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
@@ -419,8 +429,17 @@ public class MDALiteDashboardService {
               drug, columnMap.get(s), name(s, drug));
           response.put(entry.getKey(), entry.getValue());
         });
-
     return response;
+  }
+
+  private ColumnData getTotals(String genderRange, Map<String, ColumnData> columns,
+      List<String> filters) {
+    Double sum = filters.stream().map(filter -> name(genderRange, filter))
+        .map(key -> columns.get(key))
+        .filter(Objects::nonNull)
+        .map(columnData -> (Double) columnData.getValue())
+        .reduce(0d, Double::sum);
+    return ColumnData.builder().value(sum).build();
   }
 
   private Entry<String, ColumnData> getSupervisorFormData(Plan plan, Location childLocation,
