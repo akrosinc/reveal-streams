@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -391,6 +392,26 @@ public class MDALiteDashboardService {
       columns.put(treatmentCoverage.getKey(), treatmentCoverage.getValue());
     }
 
+    if (type == MdaLiteReportType.AGE_COVERAGE) {
+      columns.put(MALES_1_4,
+          ColumnData.builder().value(getTotals(MALES_1_4, columns, filters)).isHidden(true)
+              .build());
+      columns.put(MALES_5_14,
+          ColumnData.builder().value(getTotals(MALES_5_14, columns, filters)).isHidden(true)
+              .build());
+      columns.put(MALES_15,
+          ColumnData.builder().value(getTotals(MALES_15, columns, filters)).isHidden(true).build());
+      columns.put(FEMALES_1_4,
+          ColumnData.builder().value(getTotals(FEMALES_1_4, columns, filters)).isHidden(true)
+              .build());
+      columns.put(FEMALES_5_14,
+          ColumnData.builder().value(getTotals(FEMALES_5_14, columns, filters)).isHidden(true)
+              .build());
+      columns.put(FEMALES_15,
+          ColumnData.builder().value(getTotals(FEMALES_15, columns, filters)).isHidden(true)
+              .build());
+    }
+
     columns.put(LOCATION_STATUS, getLocationBusinessState(report));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
@@ -419,8 +440,16 @@ public class MDALiteDashboardService {
               drug, columnMap.get(s), name(s, drug));
           response.put(entry.getKey(), entry.getValue());
         });
-
     return response;
+  }
+
+  private Double getTotals(String genderRange, Map<String, ColumnData> columns,
+      List<String> filters) {
+    return filters.stream().map(filter -> name(genderRange, filter))
+        .map(key -> columns.get(key))
+        .filter(Objects::nonNull)
+        .map(columnData -> (Double) columnData.getValue())
+        .reduce(0d, Double::sum);
   }
 
   private Entry<String, ColumnData> getSupervisorFormData(Plan plan, Location childLocation,
