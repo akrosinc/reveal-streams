@@ -34,6 +34,7 @@ public class DashboardService {
   private final IRSLiteDashboardService irsLiteDashboardService;
   private final MDALiteDashboardService mdaLiteDashboardService;
   private final SurveyDashboardService surveyDashboardService;
+  private final LsmDashboardService lsmDashboardService;
 
   public static final String WITHIN_STRUCTURE_LEVEL = "Within Structure";
   public static final String STRUCTURE_LEVEL = "Structure";
@@ -178,6 +179,24 @@ public class DashboardService {
                 loc.getLocation(), filters, type);
 
         }
+      case LSM_HABITAT_SURVEY:
+        switch (reportLevel) {
+          case WITHIN_STRUCTURE_LEVEL:
+          case STRUCTURE_LEVEL:
+            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+          case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
+          case ALL_OTHER_LEVELS:
+            return lsmDashboardService.getIRSFullData(plan, loc.getLocation(), reportTypeEnum);
+        }
+      case LSM_HOUSEHOLD_SURVEY:
+        switch (reportLevel) {
+          case WITHIN_STRUCTURE_LEVEL:
+          case STRUCTURE_LEVEL:
+            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+          case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
+          case ALL_OTHER_LEVELS:
+            return lsmDashboardService.getIRSFullData(plan, loc.getLocation(), reportTypeEnum);
+        }
 
     }
     return null;
@@ -205,6 +224,10 @@ public class DashboardService {
             rowDataMap, reportLevel, filters, type);
       case SURVEY:
         return surveyDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
+            rowDataMap, reportLevel);
+      case LSM_HABITAT_SURVEY:
+      case LSM_HOUSEHOLD_SURVEY:
+        return lsmDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel);
 
 

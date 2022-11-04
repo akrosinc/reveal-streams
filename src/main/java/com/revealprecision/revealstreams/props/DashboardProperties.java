@@ -7,6 +7,7 @@ import static com.revealprecision.revealstreams.service.dashboard.DashboardServi
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.STRUCTURE_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
+import static com.revealprecision.revealstreams.service.dashboard.LsmDashboardService.SURVEY_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE_PERCENTAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE;
@@ -66,6 +67,10 @@ public class DashboardProperties {
   private final Map<String, String> surveyDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,
       VISITATION_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, VISITATION_COVERAGE);
+
+  private final Map<String, String> lsmSurveyDefaultDisplayColumns = Map.of(
+      ALL_OTHER_LEVELS,
+      SURVEY_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, SURVEY_COVERAGE);
 
   private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.ofEntries(
       entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
