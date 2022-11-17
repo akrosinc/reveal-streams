@@ -35,7 +35,7 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
   List<Location> getChildren(@Param("hierarchyIdentifier") UUID hierarchyIdentifier,
       @Param("locationIdentifier") UUID locationIdentifier);
 
-  @Query(value = "select "
+  @Query(value = "select DISTINCT "
       + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "inner join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
@@ -50,7 +50,7 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
           + "group by lr.parent_identifier", nativeQuery = true)
   List<LocationChildrenCountProjection> getLocationChildrenCount(UUID locationHierarchyIdentifier);
 
-  @Query(value = "select "
+  @Query(value = "select DISTINCT "
       + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
@@ -58,14 +58,14 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
   PlanLocationDetails getRootLocationDetailsByAndPlanId(
       @Param("planIdentifier") UUID planIdentifier);
 
-  @Query(value = "select lr.parentLocation from LocationRelationship lr "
+  @Query(value = "select DISTINCT  lr.parentLocation from LocationRelationship lr "
       + "where lr.location.identifier = :locationIdentifier "
       + "and lr.locationHierarchy.identifier = :hierarchyIdentifier")
   Location getParentLocationByLocationIdAndHierarchyId(
       @Param("locationIdentifier") UUID locationIdentifier,
       @Param("hierarchyIdentifier") UUID hierarchyIdentifier);
 
-  @Query(value = "select "
+  @Query(value = "select DISTINCT "
       + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "
       + "left join PlanAssignment pa on pa.planLocations.identifier = pl.identifier "
