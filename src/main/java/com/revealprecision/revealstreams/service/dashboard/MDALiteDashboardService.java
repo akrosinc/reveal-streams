@@ -12,7 +12,10 @@ import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.persistence.projection.CddDrugReceivedAggregationProjection;
+import com.revealprecision.revealstreams.persistence.projection.CddDrugWithdrawalAggregationProjection;
 import com.revealprecision.revealstreams.persistence.projection.CddSupervisorDailySummaryAggregationProjection;
+import com.revealprecision.revealstreams.persistence.projection.TabletAccountabilityAggregationProjection;
 import com.revealprecision.revealstreams.persistence.repository.EventTrackerRepository;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
@@ -47,9 +50,10 @@ public class MDALiteDashboardService {
   public static final String ADMINISTERED = "Administered";
   public static final String DAMAGED = "Damaged";
   public static final String ADVERSE_REACTION = "Adverse reaction";
+  public static final String RETURNED_TO_SUPERVISOR = "Returned to supervisor";
   public static final String SUPERVISOR_DISTRIBUTED = "Supervisor Distributed";
+  public static final String WITHDRAWN_FROM_CDD_FOR_DISTRIBUTION = "Withdrawn from CDD for redistribution";
   public static final String RECEIVED_BY_CDD = "Received by CDD";
-  public static final String RETURNED_TO_SUPERVISOR = "Returned to Supervisor";
   public static final String REMAINING_WITH_CDD = "Remaining with CDD";
   public static final String TOTAL_LIVING_ON_THE_STREET = "Total living on the street";
   public static final String TOTAL_LIVING_WITH_DISABILITY = "Total living with disability";
@@ -80,37 +84,29 @@ public class MDALiteDashboardService {
       List<String> filters, MdaLiteReportType type) {
 
     CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary = eventTrackerRepository.getAggregationDataFromCddSupervisorDailySummary(
-        childLocation.getIdentifier(), filters.get(0));
+        childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
+
+    TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection = eventTrackerRepository.getAggregationDataFromTabletAccountability(
+        childLocation.getIdentifier(), plan.getIdentifier());
+
+    CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugReceived(
+        childLocation.getIdentifier(), plan.getIdentifier());
+
+    CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugWithdrawal(
+        childLocation.getIdentifier(), plan.getIdentifier());
 
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
-      columns = getDrugDistributionDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          tabletAccountabilityAggregationProjection, cddDrugReceivedAggregationProjection,
+          cddDrugWithdrawalAggregationProjection, filters.get(0));
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
-      columns = getTreatmentCoverageDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
-      columns = getPopulationDistributionDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          filters.get(0));
     }
-
-//    columns.put(TARGET_SPRAY_AREAS, getTargetedAreas(plan, childLocation));
-//    columns.put(VISITED_AREAS, operationalAreaVisitedCounts(plan, childLocation));
-//    columns.put(STRUCTURES_ON_THE_GROUND, getTotalStructuresCounts(plan, childLocation));
-//    columns.put(STRUCTURES_SPRAYED, getTotalStructuresSprayed(plan,
-//        childLocation));
-//    columns.put(SPRAY_PROGRESS_SPRAYED_TARGETED,
-//        getSPrayedProgressTargeted(plan, childLocation));
-//    columns.put(STRUCTURES_FOUND, getTotalStructuresFoundCount(plan, childLocation));
-//    columns.put(SPRAY_COVERAGE_OF_FOUND, getSprayCoverageOfFound(plan, childLocation));
-//    columns.put(NUMBER_OF_SPRAY_DAYS,
-//        getNumberOfSprayDays(report));
-//    columns.put(TOTAL_SUPERVISOR_FORMS_SUBMITTED,
-//        getSupervisorFormSubmissions(report));
-//    columns.put(AVERAGE_STRUCTURES_PER_DAY,
-//        getAverageStructuresSprayedPerDay(plan, childLocation, report));
-//    columns.put(AVERAGE_INSECTICIDE_USAGE_RATE,
-//        getAverageInsecticideUsage(plan, childLocation, report));
 
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
@@ -120,7 +116,8 @@ public class MDALiteDashboardService {
   }
 
   private Map<String, ColumnData> getPopulationDistributionDashboardData(
-      CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary, String filter) {
+      CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
+      String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     if (filter.equals(STH)) {
@@ -145,18 +142,38 @@ public class MDALiteDashboardService {
   }
 
   private Map<String, ColumnData> getDrugDistributionDashboardData(
-      CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
+      CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
+      TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection,
+      CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection,
+      CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection,
       String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
+    columns.put(getColumnName(SUPERVISOR_DISTRIBUTED, filter),
+        getSupervisorDistributed(cddDrugReceivedAggregationProjection, filter));
+
+    columns.put(getColumnName(WITHDRAWN_FROM_CDD_FOR_DISTRIBUTION, filter),
+        getWithdrawnFromCdd(cddDrugWithdrawalAggregationProjection, filter));
+
+    columns.put(getColumnName(RECEIVED_BY_CDD, filter),
+        getReceivedByCdd(cddDrugWithdrawalAggregationProjection,
+            cddDrugReceivedAggregationProjection, filter));
+
     columns.put(getColumnName(ADMINISTERED, filter),
-        getAdministered(aggregationDataFromCddSupervisorDailySummary));
+        getAdministered(cddSupervisorDailySummaryAggregationProjection));
 
     columns.put(getColumnName(DAMAGED, filter),
-        getDamaged(aggregationDataFromCddSupervisorDailySummary));
+        getDamaged(cddSupervisorDailySummaryAggregationProjection));
+
+    columns.put(getColumnName(REMAINING_WITH_CDD, filter),
+        getRemainingWithCDD(cddSupervisorDailySummaryAggregationProjection,
+            cddDrugWithdrawalAggregationProjection, cddDrugReceivedAggregationProjection, filter));
+
+    columns.put(getColumnName(RETURNED_TO_SUPERVISOR, filter),
+        getReturned(tabletAccountabilityAggregationProjection, filter));
 
     columns.put(getColumnName(ADVERSE_REACTION, filter),
-        getAdverseReaction(aggregationDataFromCddSupervisorDailySummary));
+        getAdverseReaction(cddSupervisorDailySummaryAggregationProjection));
 
     return columns;
   }
@@ -170,11 +187,9 @@ public class MDALiteDashboardService {
       String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     if (filter.equals(SCH)) {
-      columns.put(SCH_TOTAL_TREATED,
-          getTreated(aggregationDataFromCddSupervisorDailySummary));
+      columns.put(SCH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
     } else {
-      columns.put(STH_TOTAL_TREATED,
-          getTreated(aggregationDataFromCddSupervisorDailySummary));
+      columns.put(STH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
     }
     return columns;
   }
@@ -182,18 +197,28 @@ public class MDALiteDashboardService {
   public List<RowData> getMDALiteCoverageDataOnTargetLevel(Plan plan, Location childLocation,
       List<String> filters, MdaLiteReportType type) {
     CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary = eventTrackerRepository.getAggregationDataFromCddSupervisorDailSummaryOnPlanTarget(
-        childLocation.getIdentifier(), "STH");
+        childLocation.getIdentifier(), "STH", plan.getIdentifier());
+
+    TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection = eventTrackerRepository.getAggregationDataFromTabletAccountabilityOnPlanTarget(
+        childLocation.getIdentifier(), plan.getIdentifier());
+
+    CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugReceivedOnPlanTarget(
+        childLocation.getIdentifier(), plan.getIdentifier());
+
+    CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugWithdrawalOnPlanTarget(
+        childLocation.getIdentifier(), plan.getIdentifier());
 
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
-      columns = getDrugDistributionDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          tabletAccountabilityAggregationProjection, cddDrugReceivedAggregationProjection,
+          cddDrugWithdrawalAggregationProjection, filters.get(0));
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
-      columns = getTreatmentCoverageDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
-      columns = getPopulationDistributionDashboardData(
-          aggregationDataFromCddSupervisorDailySummary, filters.get(0));
+      columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          filters.get(0));
     }
 
 //    columns.put(TARGET_SPRAY_AREAS, getTargetedAreas(plan, childLocation));
@@ -259,8 +284,7 @@ public class MDALiteDashboardService {
       CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection) {
 
     if (cddSupervisorDailySummaryAggregationProjection != null) {
-      return new ColumnData().setValue(
-          cddSupervisorDailySummaryAggregationProjection.getDamaged());
+      return new ColumnData().setValue(cddSupervisorDailySummaryAggregationProjection.getDamaged());
     } else {
       return new ColumnData().setValue(0);
     }
@@ -270,11 +294,107 @@ public class MDALiteDashboardService {
       CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection) {
 
     if (cddSupervisorDailySummaryAggregationProjection != null) {
-      return new ColumnData().setValue(
-          cddSupervisorDailySummaryAggregationProjection.getAdverse());
+      return new ColumnData().setValue(cddSupervisorDailySummaryAggregationProjection.getAdverse());
     } else {
       return new ColumnData().setValue(0);
     }
+  }
+
+  private ColumnData getReturned(
+      TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection,
+      String filter) {
+
+    if (tabletAccountabilityAggregationProjection != null) {
+      int returned = 0;
+      if (filter.equals(STH)) {
+        returned = tabletAccountabilityAggregationProjection.getMbzReturned();
+      } else {
+        returned = tabletAccountabilityAggregationProjection.getPzqReturned();
+      }
+      return new ColumnData().setValue(returned);
+    } else {
+      return new ColumnData().setValue(0);
+    }
+  }
+
+  private ColumnData getRemainingWithCDD(
+      CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
+      CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection,
+      CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection, String filter) {
+
+    ColumnData administered = getAdministered(cddSupervisorDailySummaryAggregationProjection);
+    ColumnData damaged = getDamaged(cddSupervisorDailySummaryAggregationProjection);
+
+    ColumnData receivedByCdd = getReceivedByCdd(cddDrugWithdrawalAggregationProjection,
+        cddDrugReceivedAggregationProjection, filter);
+
+    Integer remainingWithCdd = (
+        ((Integer) (receivedByCdd.getValue() == null ? 0 : receivedByCdd.getValue())) - (
+            ((Integer) (administered.getValue() == null ? 0 : administered.getValue()))
+                + ((Integer) (damaged.getValue() == null ? 0 : damaged.getValue()))));
+
+    return new ColumnData().setValue(remainingWithCdd);
+  }
+
+  private ColumnData getSupervisorDistributed(
+      CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection, String filter) {
+
+    if (cddDrugReceivedAggregationProjection != null) {
+      int returned = 0;
+      if (filter.equals(STH)) {
+        returned = cddDrugReceivedAggregationProjection.getMbzReceived();
+      } else {
+        returned = cddDrugReceivedAggregationProjection.getPzqReceived();
+      }
+      return new ColumnData().setValue(returned);
+    } else {
+      return new ColumnData().setValue(0);
+    }
+  }
+
+  private ColumnData getWithdrawnFromCdd(
+      CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection,
+      String filter) {
+
+    if (cddDrugWithdrawalAggregationProjection != null) {
+      int returned = 0;
+      if (filter.equals(STH)) {
+        returned = cddDrugWithdrawalAggregationProjection.getMbzWithdrawn();
+      } else {
+        returned = cddDrugWithdrawalAggregationProjection.getPzqWithdrawn();
+      }
+      return new ColumnData().setValue(returned);
+    } else {
+      return new ColumnData().setValue(0);
+    }
+  }
+
+  private ColumnData getReceivedByCdd(
+      CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection,
+      CddDrugReceivedAggregationProjection cddDrugReceivedAggregationProjection, String filter) {
+
+    Integer receive = null;
+    if (cddDrugReceivedAggregationProjection != null) {
+
+      if (filter.equals(STH)) {
+        receive = cddDrugReceivedAggregationProjection.getMbzReceived();
+      } else {
+        receive = cddDrugReceivedAggregationProjection.getPzqReceived();
+      }
+    }
+
+    Integer withdrawn = null;
+    if (cddDrugWithdrawalAggregationProjection != null) {
+
+      if (filter.equals(STH)) {
+        withdrawn = cddDrugWithdrawalAggregationProjection.getMbzWithdrawn();
+      } else {
+        withdrawn = cddDrugWithdrawalAggregationProjection.getPzqWithdrawn();
+      }
+    }
+
+    Integer receivedByCdd = (receive == null ? 0 : receive) - (withdrawn == null ? 0 : withdrawn);
+    return new ColumnData().setValue(receivedByCdd);
   }
 
   private ColumnData getTotalLivingWithDisability(
@@ -321,8 +441,7 @@ public class MDALiteDashboardService {
       if (totalBittenBySnake > 0) {
         return new ColumnData().setValue(
                 (double) totalVisitedHealthFacilityAfterSnakeBite / (double) totalBittenBySnake * 100)
-            .setIsPercentage(true)
-            .setMeta("Total visited health facility after snake bite: "
+            .setIsPercentage(true).setMeta("Total visited health facility after snake bite: "
                 + totalVisitedHealthFacilityAfterSnakeBite + " / " + "Total bitten by snake: "
                 + totalBittenBySnake);
       }
@@ -382,8 +501,7 @@ public class MDALiteDashboardService {
     String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumnsWithType()
         .getOrDefault(type.name().concat(filters.get(0)), null);
 
-    response.setDefaultDisplayColumn(
-        defaultColumn);
+    response.setDefaultDisplayColumn(defaultColumn);
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
     return response;
