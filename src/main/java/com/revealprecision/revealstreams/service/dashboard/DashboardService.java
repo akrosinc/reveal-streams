@@ -164,13 +164,7 @@ public class DashboardService {
       case MDA_LITE_COVERAGE:
         switch (reportLevel) {
           case CDD_LEVEL:
-//            return mdaLiteDashboardService.getMDALiteCDDCoverageData(
-//                plan,
-//                loc.getLocation(), filters, parentIdentifierString);
           case SUPERVISOR_LEVEL:
-//            return mdaLiteDashboardService.getMDALiteSupervisorCoverageData(
-//                plan,
-//                loc.getLocation(), filters);
           case IS_ON_PLAN_TARGET:
             return mdaLiteDashboardService.getMDALiteCoverageDataOnTargetLevel(
                 plan,

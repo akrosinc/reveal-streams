@@ -1,20 +1,11 @@
 package com.revealprecision.revealstreams.props;
 
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.ALL_OTHER_LEVELS;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.CDD_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.DIRECTLY_ABOVE_STRUCTURE_LEVEL;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.STRUCTURE_LEVEL;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
 import static com.revealprecision.revealstreams.service.dashboard.LsmDashboardService.SURVEY_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE_PERCENTAGE;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.ADVERSE;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.ALB;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.MALES_1_4;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.MZB;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.PZQ;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE_REACTION;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.NTD;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE;
@@ -81,20 +72,6 @@ public class DashboardProperties {
       ALL_OTHER_LEVELS,
 
       TOTAL_LIVING_ON_THE_STREET,DIRECTLY_ABOVE_STRUCTURE_LEVEL, TOTAL_LIVING_ON_THE_STREET);
-
-  private final Map<String, String> mdaLiteDefaultDisplayColumnsOld = Map.ofEntries(
-      entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-      entry(MZB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-      entry(PZQ + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4), entry(ALB + CDD_LEVEL, MALES_1_4),
-      entry(MZB + CDD_LEVEL, MALES_1_4), entry(PZQ + CDD_LEVEL, MALES_1_4),
-      entry(ALB + SUPERVISOR_LEVEL, ADVERSE), entry(MZB + SUPERVISOR_LEVEL, ADVERSE),
-      entry(PZQ + SUPERVISOR_LEVEL, ADVERSE), entry(ALB + IS_ON_PLAN_TARGET, MALES_1_4),
-      entry(MZB + IS_ON_PLAN_TARGET, MALES_1_4), entry(PZQ + IS_ON_PLAN_TARGET, MALES_1_4),
-      entry(ALB + STRUCTURE_LEVEL, MALES_1_4), entry(MZB + STRUCTURE_LEVEL, MALES_1_4),
-      entry(PZQ + STRUCTURE_LEVEL, MALES_1_4),
-      entry(ALB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-      entry(MZB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-      entry(PZQ + ALL_OTHER_LEVELS, SCH_TREATMENT_COVERAGE));
 
   private final Map<String, String> mdaLiteDefaultDisplayColumnsWithType =
       Map.ofEntries(
