@@ -164,14 +164,11 @@ public class DashboardService {
       case MDA_LITE_COVERAGE:
         switch (reportLevel) {
           case CDD_LEVEL:
-            return mdaLiteDashboardService.getMDALiteCDDCoverageData(
-                plan,
-                loc.getLocation(), filters, parentIdentifierString);
           case SUPERVISOR_LEVEL:
-            return mdaLiteDashboardService.getMDALiteSupervisorCoverageData(
-                plan,
-                loc.getLocation(), filters);
           case IS_ON_PLAN_TARGET:
+            return mdaLiteDashboardService.getMDALiteCoverageDataOnTargetLevel(
+                plan,
+                loc.getLocation(), filters, type);
           case LOWEST_LITE_TOUCH_LEVEL:
           case ALL_OTHER_LEVELS:
             return mdaLiteDashboardService.getMDALiteCoverageData(
@@ -247,7 +244,6 @@ public class DashboardService {
         irsLiteDashboardService.initDataStoresIfNecessary();
         break;
       case MDA_LITE_COVERAGE:
-        mdaLiteDashboardService.initDataStoresIfNecessary();
         break;
     }
   }
@@ -298,6 +294,20 @@ public class DashboardService {
     if (plan.getLocationHierarchy().getNodeOrder().contains(LocationConstants.STRUCTURE)) {
       parentOfGeoLevelDirectlyAboveStructure = plan.getLocationHierarchy().getNodeOrder().get(
           plan.getLocationHierarchy().getNodeOrder().indexOf(LocationConstants.STRUCTURE) - 2);
+    }
+
+    String planTarget = null;
+    String directlyAbovePlanTarget = null;
+
+
+    if (plan.getLocationHierarchy().getNodeOrder().contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
+      planTarget = plan.getLocationHierarchy().getNodeOrder().get(
+          plan.getLocationHierarchy().getNodeOrder().indexOf(plan.getPlanTargetType().getGeographicLevel().getName()) );
+    }
+
+    if (plan.getLocationHierarchy().getNodeOrder().contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
+      directlyAbovePlanTarget = plan.getLocationHierarchy().getNodeOrder().get(
+          plan.getLocationHierarchy().getNodeOrder().indexOf(plan.getPlanTargetType().getGeographicLevel().getName()) - 1);
     }
 
     String geoLevelDirectlyAboveStructure = null;
@@ -352,10 +362,14 @@ public class DashboardService {
             return ALL_OTHER_LEVELS;
           }
         } else {
-          if (parentLocation.getGeographicLevel().getName().equals(lowestLevel)) {
-            return LOWEST_LITE_TOUCH_LEVEL;
+          if (parentLocation.getGeographicLevel().getName().equals(directlyAbovePlanTarget)) {
+           return IS_ON_PLAN_TARGET;
           } else {
-            return ALL_OTHER_LEVELS;
+            if (parentLocation.getGeographicLevel().getName().equals(lowestLevel)) {
+              return LOWEST_LITE_TOUCH_LEVEL;
+            } else {
+              return ALL_OTHER_LEVELS;
+            }
           }
         }
       }

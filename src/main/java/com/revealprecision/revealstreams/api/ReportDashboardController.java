@@ -61,7 +61,7 @@ public class ReportDashboardController {
   @GetMapping("/reportAdditionalInfo")
   public ResponseEntity<AdditionalReportInfo> getDataForReports(
       @RequestParam(name = "reportType") String reportType) {
-    Map<String, List<String>> dashboardFilter = dashboardProperties.getDashboardFilterAssociations()
+    Map<String, String> dashboardFilter = dashboardProperties.getDashboardFilterAssociations()
         .get(ReportTypeEnum.valueOf(reportType));
     return ResponseEntity.status(HttpStatus.OK)
         .body(AdditionalReportInfo.builder()

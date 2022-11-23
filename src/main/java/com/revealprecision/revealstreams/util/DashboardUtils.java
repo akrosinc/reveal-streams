@@ -26,6 +26,9 @@ public class DashboardUtils {
   public static ColumnData getStringValueColumnData() {
     return ColumnData.builder().dataType("string").build();
   }
+  public static ColumnData getIntValueColumnData() {
+    return ColumnData.builder().dataType("integer").build();
+  }
 
   public static ColumnData getLocationBusinessState(Report report) {
     ColumnData column = getStringValueColumnData();

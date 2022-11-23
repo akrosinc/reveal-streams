@@ -1,23 +1,19 @@
 package com.revealprecision.revealstreams.props;
 
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.ALL_OTHER_LEVELS;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.CDD_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.DIRECTLY_ABOVE_STRUCTURE_LEVEL;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.IS_ON_PLAN_TARGET;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.STRUCTURE_LEVEL;
-import static com.revealprecision.revealstreams.service.dashboard.DashboardService.SUPERVISOR_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
 import static com.revealprecision.revealstreams.service.dashboard.LsmDashboardService.SURVEY_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDADashboardService.DISTRIBUTION_COVERAGE_PERCENTAGE;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ALB;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.DRUG;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.MALES_1_4;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.MEB;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.PZQ;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE_REACTION;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.NTD;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.SCH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.SCH_TREATMENT_COVERAGE;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
 
@@ -72,39 +68,29 @@ public class DashboardProperties {
       ALL_OTHER_LEVELS,
       SURVEY_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, SURVEY_COVERAGE);
 
-  private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.ofEntries(
-      entry(ALB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-      entry(MEB + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4),
-      entry(PZQ + DIRECTLY_ABOVE_STRUCTURE_LEVEL, MALES_1_4), entry(ALB + CDD_LEVEL, MALES_1_4),
-      entry(MEB + CDD_LEVEL, MALES_1_4), entry(PZQ + CDD_LEVEL, MALES_1_4),
-      entry(ALB + SUPERVISOR_LEVEL, ADVERSE), entry(MEB + SUPERVISOR_LEVEL, ADVERSE),
-      entry(PZQ + SUPERVISOR_LEVEL, ADVERSE), entry(ALB + IS_ON_PLAN_TARGET, MALES_1_4),
-      entry(MEB + IS_ON_PLAN_TARGET, MALES_1_4), entry(PZQ + IS_ON_PLAN_TARGET, MALES_1_4),
-      entry(ALB + STRUCTURE_LEVEL, MALES_1_4), entry(MEB + STRUCTURE_LEVEL, MALES_1_4),
-      entry(PZQ + STRUCTURE_LEVEL, MALES_1_4),
-      entry(ALB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-      entry(MEB + ALL_OTHER_LEVELS, STH_TREATMENT_COVERAGE),
-      entry(PZQ + ALL_OTHER_LEVELS, SCH_TREATMENT_COVERAGE));
+  private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.of(
+      ALL_OTHER_LEVELS,
+
+      TOTAL_LIVING_ON_THE_STREET,DIRECTLY_ABOVE_STRUCTURE_LEVEL, TOTAL_LIVING_ON_THE_STREET);
 
   private final Map<String, String> mdaLiteDefaultDisplayColumnsWithType =
       Map.ofEntries(
-          entry(MdaLiteReportType.AGE_COVERAGE + ALB, MALES_1_4),
-          entry(MdaLiteReportType.AGE_COVERAGE + MEB, MALES_1_4),
-          entry(MdaLiteReportType.AGE_COVERAGE + PZQ, MALES_1_4),
-          entry(MdaLiteReportType.DRUG_DISTRIBUTION + ALB, ADVERSE),
-          entry(MdaLiteReportType.DRUG_DISTRIBUTION + MEB, ADVERSE),
-          entry(MdaLiteReportType.DRUG_DISTRIBUTION + PZQ, ADVERSE),
-          entry(MdaLiteReportType.TREATMENT_COVERAGE + ALB, STH_TREATMENT_COVERAGE),
-          entry(MdaLiteReportType.TREATMENT_COVERAGE + MEB, STH_TREATMENT_COVERAGE),
-          entry(MdaLiteReportType.TREATMENT_COVERAGE + PZQ, SCH_TREATMENT_COVERAGE));
+          entry(MdaLiteReportType.POPULATION_DISTRIBUTION.name().concat(STH) , PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE),
+
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION.name().concat(STH), ADVERSE_REACTION.concat("(").concat(STH).concat(")")),
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION.name().concat(SCH), ADVERSE_REACTION.concat("(").concat(SCH).concat(")")),
+
+          entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(SCH) , SCH_TREATMENT_COVERAGE),
+          entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(STH) , STH_TREATMENT_COVERAGE)
+      );
 
 
   private Long operationalAreaVisitedThreshold = 20L;
   private Long operationalAreaVisitedEffectivelyThreshold = 85L;
 
-  private final Map<String, List<String>> mdaLiteFilters = Map.of(DRUG, List.of(ALB, MEB, PZQ));
+  private final Map<String, String> mdaLiteFilters = Map.of(NTD, STH);
 
-  private final Map<ReportTypeEnum, Map<String, List<String>>> dashboardFilterAssociations = Map.of(
+  private final Map<ReportTypeEnum, Map<String, String>> dashboardFilterAssociations = Map.of(
       ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters);
 
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(
