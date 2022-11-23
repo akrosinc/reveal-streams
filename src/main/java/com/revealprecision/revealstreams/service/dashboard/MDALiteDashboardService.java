@@ -19,11 +19,7 @@ import com.revealprecision.revealstreams.persistence.projection.TabletAccountabi
 import com.revealprecision.revealstreams.persistence.repository.EventTrackerRepository;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
-import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.MetadataService;
-import com.revealprecision.revealstreams.service.PlanLocationsService;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +39,15 @@ public class MDALiteDashboardService {
   private static final String STH_CENSUS_POP_TARGET = "STH Census Pop Target";
   public static final String SCH_TREATMENT_COVERAGE = "SCH Treatment Coverage";
   public static final String STH_TREATMENT_COVERAGE = "STH Treatment Coverage";
+  public static final String AGE_BREAKDOWN = "AGE BREAK DOWN";
+
+  public static final String MALES_1_4 = "Male 1-4 years";
+  private static final String MALES_5_14 = "Male 5-14 years";
+  private static final String MALES_15 = "Male 15+ years";
+  private static final String MALES_TOTAL = "Total Males";
+  private static final String FEMALES_1_4 = "Female 1-4 years";
+  private static final String FEMALES_5_14 = "Female 5-14 years";
+  private static final String FEMALES_15 = "Female 15+ years";
 
   public static final String STH_TOTAL_TREATED = "Total Treated (STH)";
   public static final String SCH_TOTAL_TREATED = "Total Treated (SCH)";
@@ -68,12 +73,9 @@ public class MDALiteDashboardService {
 
   public static final String NTD = "ntd";
 
-  private final PlanLocationsService planLocationsService;
-  private final LocationBusinessStatusService locationBusinessStatusService;
   private final DashboardProperties dashboardProperties;
   private final MetadataService metadataService;
   private final EventTrackerRepository eventTrackerRepository;
-
 
   private final ReportRepository planReportRepository;
 
@@ -95,6 +97,9 @@ public class MDALiteDashboardService {
     CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugWithdrawal(
         childLocation.getIdentifier(), plan.getIdentifier());
 
+    CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummary(
+        childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
+
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -102,6 +107,7 @@ public class MDALiteDashboardService {
           cddDrugWithdrawalAggregationProjection, filters.get(0));
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          cddSummaryAgeBreakDownAggregationProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -184,13 +190,31 @@ public class MDALiteDashboardService {
 
   private Map<String, ColumnData> getTreatmentCoverageDashboardData(
       CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
+      CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection,
       String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
+    ColumnData treatmentCoverage = getTreatmentCoverage(
+        aggregationDataFromCddSupervisorDailySummary, filter);
     if (filter.equals(SCH)) {
       columns.put(SCH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
+      columns.put(SCH_CENSUS_POP_TARGET,
+          getCensusPopTarget(aggregationDataFromCddSupervisorDailySummary, filter));
+      columns.put(SCH_TREATMENT_COVERAGE,
+          treatmentCoverage);
     } else {
       columns.put(STH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
+      columns.put(STH_CENSUS_POP_TARGET,
+          getCensusPopTarget(aggregationDataFromCddSupervisorDailySummary, filter));
+      columns.put(STH_TREATMENT_COVERAGE,
+          treatmentCoverage);
     }
+
+    Map<String, ColumnData> ageBreakdownMap = getAgeBreakdownMap(cddSummaryAgeBreakDownAggregationProjection);
+
+    columns.putAll(ageBreakdownMap);
+    columns.put(AGE_BREAKDOWN,new ColumnData().setValue(true).setIsHidden(true));
+
+
     return columns;
   }
 
@@ -208,6 +232,9 @@ public class MDALiteDashboardService {
     CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugWithdrawalOnPlanTarget(
         childLocation.getIdentifier(), plan.getIdentifier());
 
+    CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummary(
+        childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
+
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -215,29 +242,12 @@ public class MDALiteDashboardService {
           cddDrugWithdrawalAggregationProjection, filters.get(0));
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
+          cddSummaryAgeBreakDownAggregationProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
           filters.get(0));
     }
-
-//    columns.put(TARGET_SPRAY_AREAS, getTargetedAreas(plan, childLocation));
-//    columns.put(VISITED_AREAS, operationalAreaVisitedCounts(plan, childLocation));
-//    columns.put(STRUCTURES_ON_THE_GROUND, getTotalStructuresCounts(plan, childLocation));
-//    columns.put(STRUCTURES_SPRAYED, getTotalStructuresSprayed(plan,
-//        childLocation));
-//    columns.put(SPRAY_PROGRESS_SPRAYED_TARGETED,
-//        getSPrayedProgressTargeted(plan, childLocation));
-//    columns.put(STRUCTURES_FOUND, getTotalStructuresFoundCount(plan, childLocation));
-//    columns.put(SPRAY_COVERAGE_OF_FOUND, getSprayCoverageOfFound(plan, childLocation));
-//    columns.put(NUMBER_OF_SPRAY_DAYS,
-//        getNumberOfSprayDays(report));
-//    columns.put(TOTAL_SUPERVISOR_FORMS_SUBMITTED,
-//        getSupervisorFormSubmissions(report));
-//    columns.put(AVERAGE_STRUCTURES_PER_DAY,
-//        getAverageStructuresSprayedPerDay(plan, childLocation, report));
-//    columns.put(AVERAGE_INSECTICIDE_USAGE_RATE,
-//        getAverageInsecticideUsage(plan, childLocation, report));
 
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
@@ -266,7 +276,76 @@ public class MDALiteDashboardService {
     } else {
       return new ColumnData().setValue(0);
     }
+  }
 
+  private  Map<String,ColumnData> getAgeBreakdownMap(CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection) {
+    Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
+
+
+    columnDataMap.put(
+        MALES_1_4,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleOneToFour()));
+
+    columnDataMap.put(
+        MALES_5_14,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleFiveToFourteen()));
+
+    columnDataMap.put(
+        MALES_15,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleAboveFifteen()));
+
+    columnDataMap.put(
+        FEMALES_1_4,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleOneToFour()));
+
+    columnDataMap.put(
+        FEMALES_5_14,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleFiveToFourteen()));
+
+    columnDataMap.put(
+        FEMALES_15,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+            cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleAboveFifteen()));
+
+    return columnDataMap;
+  }
+
+  private ColumnData getHiddenColumn(Object value) {
+    return new ColumnData().setIsHidden(true).setValue(value);
+  }
+
+  private ColumnData getTreatmentCoverage(
+      CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
+      String filter) {
+
+    ColumnData censusPopTarget = getCensusPopTarget(cddSupervisorDailySummaryAggregationProjection,
+        filter);
+
+    ColumnData treated = getTreated(
+        cddSupervisorDailySummaryAggregationProjection);
+
+    if (censusPopTarget.getValue() != null && ((Integer) censusPopTarget.getValue()) > 0) {
+      if (treated.getValue() != null && ((Integer) treated.getValue()) > 0) {
+
+        Double treatmentCoverage = ((Integer) treated.getValue()).doubleValue()
+            / ((Integer) censusPopTarget.getValue()).doubleValue() * 100;
+        String meta = "Treated: " + treated.getValue() + " / " + "Census Target " + filter + ": "
+            + censusPopTarget.getValue();
+        return new ColumnData().setValue(treatmentCoverage).setMeta(meta).setIsPercentage(true)
+            .setDataType("double");
+      }
+    }
+    return new ColumnData().setValue(0);
+  }
+
+  private ColumnData getCensusPopTarget(
+      CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
+      String filter) {
+
+    if (filter.equals(SCH)) {
+      return new ColumnData().setValue(10);
+    } else {
+      return new ColumnData().setValue(10);
+    }
   }
 
   private ColumnData getAdministered(
@@ -445,22 +524,8 @@ public class MDALiteDashboardService {
                 + totalVisitedHealthFacilityAfterSnakeBite + " / " + "Total bitten by snake: "
                 + totalBittenBySnake);
       }
-      return new ColumnData().setValue(0);
-    } else {
-      return new ColumnData().setValue(0);
     }
-  }
-
-  public void initDataStoresIfNecessary() throws InterruptedException {
-    if (!datastoresInitialized) {
-      datastoresInitialized = true;
-    }
-  }
-
-  public static void main(String[] args) {
-    String date = "02-09-2022";
-    LocalDate localDateTime = LocalDate.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-    System.out.println(localDateTime);
+    return new ColumnData().setValue(0).setIsPercentage(true).setMeta("0%");
   }
 
 

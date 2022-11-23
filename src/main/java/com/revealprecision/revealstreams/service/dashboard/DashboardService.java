@@ -250,7 +250,6 @@ public class DashboardService {
         irsLiteDashboardService.initDataStoresIfNecessary();
         break;
       case MDA_LITE_COVERAGE:
-        mdaLiteDashboardService.initDataStoresIfNecessary();
         break;
     }
   }

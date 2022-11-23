@@ -15,14 +15,13 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.MALES_1_4;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.MZB;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.PZQ;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.SCH_TREATMENT_COVERAGE;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardOldService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.ADVERSE_REACTION;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.NTD;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.SCH;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.SCH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
-import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TOTAL_TREATED;
+import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
@@ -99,12 +98,14 @@ public class DashboardProperties {
 
   private final Map<String, String> mdaLiteDefaultDisplayColumnsWithType =
       Map.ofEntries(
-          entry(MdaLiteReportType.POPULATION_DISTRIBUTION.name() , PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE),
+          entry(MdaLiteReportType.POPULATION_DISTRIBUTION.name().concat(STH) , PERCENTAGE_VISITED_HEALTH_FACILITY_AFTER_SNAKE_BITE),
 
           entry(MdaLiteReportType.DRUG_DISTRIBUTION.name().concat(STH), ADVERSE_REACTION.concat("(").concat(STH).concat(")")),
           entry(MdaLiteReportType.DRUG_DISTRIBUTION.name().concat(SCH), ADVERSE_REACTION.concat("(").concat(SCH).concat(")")),
 
-          entry(MdaLiteReportType.TREATMENT_COVERAGE.name() , STH_TOTAL_TREATED));
+          entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(SCH) , SCH_TREATMENT_COVERAGE),
+          entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(STH) , STH_TREATMENT_COVERAGE)
+      );
 
 
   private Long operationalAreaVisitedThreshold = 20L;

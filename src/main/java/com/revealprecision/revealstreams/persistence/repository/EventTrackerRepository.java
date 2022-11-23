@@ -67,6 +67,42 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
   CddSupervisorDailySummaryAggregationProjection getAggregationDataFromCddSupervisorDailySummary(
       UUID locationParentIdentifier, String ntdTreated, UUID planIdentifier);
 
+  @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier \n"
+      + "      ,lp.name as locationName \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_1_to_4'->>0) as int),0)) as totalTreatedMaleOneToFour  \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_5_to_14'->>0) as int),0)) as totalTreatedMaleFiveToFourteen     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_above_15'->>0) as int),0)) as totalTreatedMaleAboveFifteen     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_1_to_4'->>0) as int),0)) as totalTreatedFemaleOneToFour     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_5_to_14'->>0) as int),0)) as totalTreatedFemaleFiveToFourteen    \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_above_15'->>0) as int),0)) as totalTreatedFemaleAboveFifteen \n"
+      + "        From event_tracker et \n"
+      + "      left join location_relationships lr on lr.location_identifier = et.location_identifier \n"
+      + "      left join location l on lr.location_identifier = l.identifier \n"
+      + "      left join location lp on lr.location_parent_identifier = lp.identifier \n"
+      + "      WHERE et.event_type = 'cdd_supervisor_daily_summary' "
+      + "       and lp.identifier = :locationParentIdentifier  and   et.plan_identifier = :planIdentifier\n"
+      + "       and et.observations->'ntd_treated'->>0= :ntdTreated \n"
+      + "       group by   \n"
+      + "       lp.identifier,lp.name", nativeQuery = true)
+  CddSupervisorDailySummaryAggregationProjection getAgeBreakDownAggregationFromCddSupervisorDailySummary(
+      UUID locationParentIdentifier, String ntdTreated, UUID planIdentifier);
+
+  @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier \n"
+      + "      ,lp.name as locationName \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_1_to_4'->>0) as int),0)) as totalTreatedMaleOneToFour  \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_5_to_14'->>0) as int),0)) as totalTreatedMaleFiveToFourteen     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_male_above_15'->>0) as int),0)) as totalTreatedMaleAboveFifteen     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_1_to_4'->>0) as int),0)) as totalTreatedFemaleOneToFour     \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_5_to_14'->>0) as int),0)) as totalTreatedFemaleFiveToFourteen    \n"
+      + "      ,sum(COALESCE(CAST((et.observations->'treated_female_above_15'->>0) as int),0)) as totalTreatedFemaleAboveFifteen \n"
+      + "        From event_tracker et \n"
+      + "      WHERE et.event_type = 'cdd_supervisor_daily_summary' "
+      + "       and et.location_identifier = :locationIdentifier  and   et.plan_identifier = :planIdentifier\n"
+      + "       and et.observations->'ntd_treated'->>0= :ntdTreated \n"
+      + "       group by   \n"
+      + "       lp.identifier,lp.name", nativeQuery = true)
+  CddSupervisorDailySummaryAggregationProjection getAgeBreakDownAggregationFromCddSupervisorDailySummaryOnPlanTarget(
+      UUID locationIdentifier, String ntdTreated, UUID planIdentifier);
 
   @Query(value = "SELECT CAST(et.location_identifier as varchar) as locationIdentifier\n"
       + ",sum(COALESCE(CAST((et.observations->'treated_male_1_to_4'->>0) as int),0) +    \n"
@@ -137,7 +173,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
           + " and et.plan_identifier = :planIdentifier "
           + " group by  et.location_identifier", nativeQuery = true)
   TabletAccountabilityAggregationProjection getAggregationDataFromTabletAccountabilityOnPlanTarget(
-      UUID locationIdentifier,  UUID planIdentifier);
+      UUID locationIdentifier, UUID planIdentifier);
 
   @Query(value =
       "SELECT  CAST(lp.identifier as varchar) as locationIdentifier ,lp.name"
@@ -164,7 +200,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
           + " and et.plan_identifier = :planIdentifier "
           + " group by  et.location_identifier", nativeQuery = true)
   CddDrugReceivedAggregationProjection getAggregationDataFromCddDrugReceivedOnPlanTarget(
-      UUID locationIdentifier,  UUID planIdentifier);
+      UUID locationIdentifier, UUID planIdentifier);
 
   @Query(value =
       "SELECT  CAST(lp.identifier as varchar) as locationIdentifier ,lp.name"
@@ -191,5 +227,5 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
           + " and et.plan_identifier = :planIdentifier "
           + " group by  et.location_identifier", nativeQuery = true)
   CddDrugWithdrawalAggregationProjection getAggregationDataFromCddDrugWithdrawalOnPlanTarget(
-      UUID locationIdentifier,  UUID planIdentifier);
+      UUID locationIdentifier, UUID planIdentifier);
 }
