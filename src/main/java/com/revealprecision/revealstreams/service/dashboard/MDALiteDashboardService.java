@@ -232,7 +232,7 @@ public class MDALiteDashboardService {
     CddDrugWithdrawalAggregationProjection cddDrugWithdrawalAggregationProjection = eventTrackerRepository.getAggregationDataFromCddDrugWithdrawalOnPlanTarget(
         childLocation.getIdentifier(), plan.getIdentifier());
 
-    CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummary(
+    CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummaryOnPlanTarget(
         childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
 
     Map<String, ColumnData> columns = new HashMap<>();
