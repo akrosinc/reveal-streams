@@ -87,8 +87,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
   CddSupervisorDailySummaryAggregationProjection getAgeBreakDownAggregationFromCddSupervisorDailySummary(
       UUID locationParentIdentifier, String ntdTreated, UUID planIdentifier);
 
-  @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier \n"
-      + "      ,lp.name as locationName \n"
+  @Query(value = "SELECT CAST(et.location_identifier as varchar) as locationIdentifier \n"
       + "      ,sum(COALESCE(CAST((et.observations->'treated_male_1_to_4'->>0) as int),0)) as totalTreatedMaleOneToFour  \n"
       + "      ,sum(COALESCE(CAST((et.observations->'treated_male_5_to_14'->>0) as int),0)) as totalTreatedMaleFiveToFourteen     \n"
       + "      ,sum(COALESCE(CAST((et.observations->'treated_male_above_15'->>0) as int),0)) as totalTreatedMaleAboveFifteen     \n"
@@ -100,7 +99,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + "       and et.location_identifier = :locationIdentifier  and   et.plan_identifier = :planIdentifier\n"
       + "       and et.observations->'ntd_treated'->>0= :ntdTreated \n"
       + "       group by   \n"
-      + "       lp.identifier,lp.name", nativeQuery = true)
+      + "       et.location_identifier", nativeQuery = true)
   CddSupervisorDailySummaryAggregationProjection getAgeBreakDownAggregationFromCddSupervisorDailySummaryOnPlanTarget(
       UUID locationIdentifier, String ntdTreated, UUID planIdentifier);
 
