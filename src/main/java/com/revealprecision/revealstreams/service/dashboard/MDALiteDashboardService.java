@@ -380,8 +380,14 @@ public class MDALiteDashboardService {
   }
 
   private ColumnData getCensusPopTarget(
-      LocationMetadataDoubleAggregateProjection cddSupervisorDailySummaryAggregationProjection) {
-    return new ColumnData().setValue(cddSupervisorDailySummaryAggregationProjection.getValue());
+      LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection) {
+
+    int sum = 0;
+    if (locationMetadataDoubleAggregateProjection!=null){
+      sum = locationMetadataDoubleAggregateProjection.getValue();
+    }
+
+    return new ColumnData().setValue(sum);
   }
 
   private ColumnData getAdministered(
