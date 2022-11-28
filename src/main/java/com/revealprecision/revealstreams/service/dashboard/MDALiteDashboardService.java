@@ -15,8 +15,10 @@ import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.projection.CddDrugReceivedAggregationProjection;
 import com.revealprecision.revealstreams.persistence.projection.CddDrugWithdrawalAggregationProjection;
 import com.revealprecision.revealstreams.persistence.projection.CddSupervisorDailySummaryAggregationProjection;
+import com.revealprecision.revealstreams.persistence.projection.LocationMetadataDoubleAggregateProjection;
 import com.revealprecision.revealstreams.persistence.projection.TabletAccountabilityAggregationProjection;
 import com.revealprecision.revealstreams.persistence.repository.EventTrackerRepository;
+import com.revealprecision.revealstreams.persistence.repository.LocationMetadataRepository;
 import com.revealprecision.revealstreams.persistence.repository.ReportRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.service.MetadataService;
@@ -79,6 +81,7 @@ public class MDALiteDashboardService {
 
   private final ReportRepository planReportRepository;
 
+  private final LocationMetadataRepository locationMetadataRepository;
   boolean datastoresInitialized = false;
 
 
@@ -100,6 +103,9 @@ public class MDALiteDashboardService {
     CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummary(
         childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
 
+    LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection = getLocationMetadataDoubleAggregateProjection(
+        filters.get(0), childLocation.getIdentifier().toString());
+
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -108,6 +114,7 @@ public class MDALiteDashboardService {
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
           cddSummaryAgeBreakDownAggregationProjection,
+          locationMetadataDoubleAggregateProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -119,6 +126,36 @@ public class MDALiteDashboardService {
     rowData.setColumnDataMap(columns);
     rowData.setLocationName(childLocation.getName());
     return List.of(rowData);
+  }
+
+  private LocationMetadataDoubleAggregateProjection getLocationMetadataDoubleAggregateProjection(
+      String filter, String locationIdentifier) {
+    int sum = 0;
+    if (filter.equals(SCH)) {
+      return locationMetadataRepository.getSumOfDoubleTagByLocationIdentifierAndTag(
+          locationIdentifier,
+          dashboardProperties.getMdaLiteSchImportTag());
+
+    } else {
+      return locationMetadataRepository.getSumOfDoubleTagByLocationIdentifierAndTag(
+          locationIdentifier,
+          dashboardProperties.getMdaLiteSthImportTag());
+    }
+  }
+
+  private LocationMetadataDoubleAggregateProjection getLocationMetadataDoubleAggregateProjectionOnTargetLevel(
+      String filter, String locationIdentifier) {
+    int sum = 0;
+    if (filter.equals(SCH)) {
+      return locationMetadataRepository.getValueOfDoubleTagByLocationIdentifierAndTagOnTargetLevel(
+          locationIdentifier,
+          dashboardProperties.getMdaLiteSchImportTag());
+
+    } else {
+      return locationMetadataRepository.getValueOfDoubleTagByLocationIdentifierAndTagOnTargetLevel(
+          locationIdentifier,
+          dashboardProperties.getMdaLiteSthImportTag());
+    }
   }
 
   private Map<String, ColumnData> getPopulationDistributionDashboardData(
@@ -191,29 +228,30 @@ public class MDALiteDashboardService {
   private Map<String, ColumnData> getTreatmentCoverageDashboardData(
       CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
       CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection,
+      LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection,
       String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     ColumnData treatmentCoverage = getTreatmentCoverage(
-        aggregationDataFromCddSupervisorDailySummary, filter);
+        aggregationDataFromCddSupervisorDailySummary,locationMetadataDoubleAggregateProjection, filter);
     if (filter.equals(SCH)) {
       columns.put(SCH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
       columns.put(SCH_CENSUS_POP_TARGET,
-          getCensusPopTarget(aggregationDataFromCddSupervisorDailySummary, filter));
+          getCensusPopTarget(locationMetadataDoubleAggregateProjection));
       columns.put(SCH_TREATMENT_COVERAGE,
           treatmentCoverage);
     } else {
       columns.put(STH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
       columns.put(STH_CENSUS_POP_TARGET,
-          getCensusPopTarget(aggregationDataFromCddSupervisorDailySummary, filter));
+          getCensusPopTarget(locationMetadataDoubleAggregateProjection));
       columns.put(STH_TREATMENT_COVERAGE,
           treatmentCoverage);
     }
 
-    Map<String, ColumnData> ageBreakdownMap = getAgeBreakdownMap(cddSummaryAgeBreakDownAggregationProjection);
+    Map<String, ColumnData> ageBreakdownMap = getAgeBreakdownMap(
+        cddSummaryAgeBreakDownAggregationProjection);
 
     columns.putAll(ageBreakdownMap);
-    columns.put(AGE_BREAKDOWN,new ColumnData().setValue(true).setIsHidden(true));
-
+    columns.put(AGE_BREAKDOWN, new ColumnData().setValue(true).setIsHidden(true));
 
     return columns;
   }
@@ -235,6 +273,9 @@ public class MDALiteDashboardService {
     CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection = eventTrackerRepository.getAgeBreakDownAggregationFromCddSupervisorDailySummaryOnPlanTarget(
         childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
 
+    LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection = getLocationMetadataDoubleAggregateProjectionOnTargetLevel(
+        filters.get(0), childLocation.getIdentifier().toString());
+
     Map<String, ColumnData> columns = new HashMap<>();
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       columns = getDrugDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -243,6 +284,7 @@ public class MDALiteDashboardService {
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
           cddSummaryAgeBreakDownAggregationProjection,
+          locationMetadataDoubleAggregateProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -278,32 +320,32 @@ public class MDALiteDashboardService {
     }
   }
 
-  private  Map<String,ColumnData> getAgeBreakdownMap(CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection) {
+  private Map<String, ColumnData> getAgeBreakdownMap(
+      CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection) {
     Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
 
-
     columnDataMap.put(
-        MALES_1_4,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        MALES_1_4, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleOneToFour()));
 
     columnDataMap.put(
-        MALES_5_14,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        MALES_5_14, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleFiveToFourteen()));
 
     columnDataMap.put(
-        MALES_15,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        MALES_15, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedMaleAboveFifteen()));
 
     columnDataMap.put(
-        FEMALES_1_4,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        FEMALES_1_4, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleOneToFour()));
 
     columnDataMap.put(
-        FEMALES_5_14,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        FEMALES_5_14, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleFiveToFourteen()));
 
     columnDataMap.put(
-        FEMALES_15,getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
+        FEMALES_15, getHiddenColumn(cddSummaryAgeBreakDownAggregationProjection == null ? 0 :
             cddSummaryAgeBreakDownAggregationProjection.getTotalTreatedFemaleAboveFifteen()));
 
     return columnDataMap;
@@ -315,10 +357,10 @@ public class MDALiteDashboardService {
 
   private ColumnData getTreatmentCoverage(
       CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
+      LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection,
       String filter) {
 
-    ColumnData censusPopTarget = getCensusPopTarget(cddSupervisorDailySummaryAggregationProjection,
-        filter);
+    ColumnData censusPopTarget = getCensusPopTarget(locationMetadataDoubleAggregateProjection);
 
     ColumnData treated = getTreated(
         cddSupervisorDailySummaryAggregationProjection);
@@ -338,14 +380,14 @@ public class MDALiteDashboardService {
   }
 
   private ColumnData getCensusPopTarget(
-      CddSupervisorDailySummaryAggregationProjection cddSupervisorDailySummaryAggregationProjection,
-      String filter) {
+      LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection) {
 
-    if (filter.equals(SCH)) {
-      return new ColumnData().setValue(10);
-    } else {
-      return new ColumnData().setValue(10);
+    int sum = 0;
+    if (locationMetadataDoubleAggregateProjection!=null){
+      sum = locationMetadataDoubleAggregateProjection.getValue();
     }
+
+    return new ColumnData().setValue(sum);
   }
 
   private ColumnData getAdministered(
