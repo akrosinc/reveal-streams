@@ -85,6 +85,9 @@ public class DashboardProperties {
       );
 
 
+  private String mdaLiteSchImportTag="sch-population-target";
+  private String mdaLiteSthImportTag="sth-population-target";
+
   private Long operationalAreaVisitedThreshold = 20L;
   private Long operationalAreaVisitedEffectivelyThreshold = 85L;
 
