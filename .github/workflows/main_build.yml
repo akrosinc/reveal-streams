@@ -5,7 +5,7 @@ name: Reveal Server test, build and deploy
 
 on:
   push:
-    branches: [ main, zambia_2022 , irs-lite-sprayed-and-found-counts ]
+    branches: [ main, zambia_2022 ]
   pull_request:
     branches: [none]
 
