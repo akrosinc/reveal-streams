@@ -11,6 +11,7 @@ import com.revealprecision.revealstreams.persistence.repository.LiteStructureCou
 import com.revealprecision.revealstreams.persistence.repository.LocationAboveStructureCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.TaskBusinessStateTrackerRepository;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +31,12 @@ public class LocationBusinessStatusService {
       UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
 
     if ((plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.IRS_LITE.name())
-        || plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.MDA_LITE.name())) && geographicLevelName.equals(
-        LocationConstants.STRUCTURE)) {
+        || plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.MDA_LITE.name()))
+        && geographicLevelName.equals(LocationConstants.STRUCTURE)) {
       LiteStructureCount liteStructureCount = liteStructureCountRepository.findByParentLocationIdentifierAndLocationHierarchyIdentifier(
           parentLocationIdentifier, locationHierarchyIdentifier);
 
-      if (liteStructureCount!=null){
+      if (liteStructureCount != null) {
         return (long) liteStructureCount.getStructureCounts();
       }
 
@@ -90,6 +91,12 @@ public class LocationBusinessStatusService {
     return locationAboveStructureCountsRepository.getCountOfTreatedLocations(
         locationHierarchyIdentifier, parentLocationIdentifier, planIdentifier,
         childGeographicLevelName);
+  }
+
+  public LocationBusinessStateCount getStructureCountsByLocationParentAndBusinessStatusForLiteIntervention(
+      UUID planIdentifier, UUID locationParentIdentifier, List<String> businessStatus) {
+    return locationCountsRepository.getStructureCountsByLocationParentAndBusinessStatusForLiteIntervention(
+        planIdentifier, locationParentIdentifier, businessStatus);
   }
 
 }
