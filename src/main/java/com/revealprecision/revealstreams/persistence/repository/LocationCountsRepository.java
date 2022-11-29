@@ -16,7 +16,7 @@ public interface LocationCountsRepository extends JpaRepository<LocationCounts, 
       UUID parentLocationIdentifier, UUID locationHierarchyIdentifier, String geographicLevelName);
 
 
-  @Query(value = "SELECT lr.location_parent_identifier as parentLocationIdentifier\n"
+  @Query(value = "SELECT CAST(lr.location_parent_identifier as varchar) as parentLocationIdentifier\n"
       + ",SUM(CAST(l.location_property->>'structures' as int)) as locationCount  From  location_relationships lr\n"
       + "inner join task t on  t.base_entity_identifier = lr.location_identifier \n"
       + "left join location l on l.identifier = lr.location_identifier\n"
