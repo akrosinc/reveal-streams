@@ -5,4 +5,6 @@ public interface TabletAccountabilityAggregationProjection {
   String getLocationName();
   int getPzqReturned();
   int getMbzReturned();
+  int getMzbNumberHouseholdsVisited();
+  int getPzqNumberHouseholdsVisited();
 }
