@@ -178,7 +178,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
   @Query(value =
       "SELECT CAST(et.location_identifier as varchar) as locationIdentifier  "
           + ", sum(COALESCE(CAST((et.observations->'pzq_returned'->>0) as int),0)) as pzqReturned "
-          + ", sum(COALESCE(CAST((et.observations->'mebendezole_returned'->>0) as int),0)) as mbzReturned "
+          + ", sum(COALESCE(CAST((et.observations->'mebendazole_returned'->>0) as int),0)) as mbzReturned "
           + ", sum(COALESCE(CAST(( "
           + "  CASE \n"
           + "   WHEN et.observations->'drug_distributed'->>0='Mebendazole (MEB)' THEN et.observations->'number_households_visited'->>0 "
