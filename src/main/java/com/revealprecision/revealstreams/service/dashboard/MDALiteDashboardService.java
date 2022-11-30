@@ -56,6 +56,7 @@ public class MDALiteDashboardService {
 
   public static final String ADMINISTERED = "Administered";
   public static final String DAMAGED = "Damaged";
+  public static final String NO_OF_HOUSEHOLDS_VISITED = "No. of household visited";
   public static final String ADVERSE_REACTION = "Adverse reaction";
   public static final String RETURNED_TO_SUPERVISOR = "Returned to supervisor";
   public static final String SUPERVISOR_DISTRIBUTED = "Supervisor Distributed";
@@ -115,6 +116,7 @@ public class MDALiteDashboardService {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
           cddSummaryAgeBreakDownAggregationProjection,
           locationMetadataDoubleAggregateProjection,
+          tabletAccountabilityAggregationProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -229,6 +231,7 @@ public class MDALiteDashboardService {
       CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
       CddSupervisorDailySummaryAggregationProjection cddSummaryAgeBreakDownAggregationProjection,
       LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjection,
+      TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection,
       String filter) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     ColumnData treatmentCoverage = getTreatmentCoverage(
@@ -239,12 +242,14 @@ public class MDALiteDashboardService {
           getCensusPopTarget(locationMetadataDoubleAggregateProjection));
       columns.put(SCH_TREATMENT_COVERAGE,
           treatmentCoverage);
+      columns.put(NO_OF_HOUSEHOLDS_VISITED,getNoOfHouseHoldsVisited(tabletAccountabilityAggregationProjection,filter));
     } else {
       columns.put(STH_TOTAL_TREATED, getTreated(aggregationDataFromCddSupervisorDailySummary));
       columns.put(STH_CENSUS_POP_TARGET,
           getCensusPopTarget(locationMetadataDoubleAggregateProjection));
       columns.put(STH_TREATMENT_COVERAGE,
           treatmentCoverage);
+      columns.put(NO_OF_HOUSEHOLDS_VISITED,getNoOfHouseHoldsVisited(tabletAccountabilityAggregationProjection,filter));
     }
 
     Map<String, ColumnData> ageBreakdownMap = getAgeBreakdownMap(
@@ -259,7 +264,7 @@ public class MDALiteDashboardService {
   public List<RowData> getMDALiteCoverageDataOnTargetLevel(Plan plan, Location childLocation,
       List<String> filters, MdaLiteReportType type) {
     CddSupervisorDailySummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary = eventTrackerRepository.getAggregationDataFromCddSupervisorDailSummaryOnPlanTarget(
-        childLocation.getIdentifier(), "STH", plan.getIdentifier());
+        childLocation.getIdentifier(), filters.get(0), plan.getIdentifier());
 
     TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection = eventTrackerRepository.getAggregationDataFromTabletAccountabilityOnPlanTarget(
         childLocation.getIdentifier(), plan.getIdentifier());
@@ -285,6 +290,7 @@ public class MDALiteDashboardService {
       columns = getTreatmentCoverageDashboardData(aggregationDataFromCddSupervisorDailySummary,
           cddSummaryAgeBreakDownAggregationProjection,
           locationMetadataDoubleAggregateProjection,
+          tabletAccountabilityAggregationProjection,
           filters.get(0));
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(aggregationDataFromCddSupervisorDailySummary,
@@ -433,6 +439,23 @@ public class MDALiteDashboardService {
         returned = tabletAccountabilityAggregationProjection.getPzqReturned();
       }
       return new ColumnData().setValue(returned);
+    } else {
+      return new ColumnData().setValue(0);
+    }
+  }
+
+  private ColumnData getNoOfHouseHoldsVisited(
+      TabletAccountabilityAggregationProjection tabletAccountabilityAggregationProjection,
+      String filter) {
+
+    if (tabletAccountabilityAggregationProjection != null) {
+      int householdsVisited = 0;
+      if (filter.equals(STH)) {
+        householdsVisited = tabletAccountabilityAggregationProjection.getMzbNumberHouseholdsVisited();
+      } else {
+        householdsVisited = tabletAccountabilityAggregationProjection.getPzqNumberHouseholdsVisited();
+      }
+      return new ColumnData().setValue(householdsVisited);
     } else {
       return new ColumnData().setValue(0);
     }
