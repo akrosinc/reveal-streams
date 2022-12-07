@@ -37,8 +37,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class MDALiteDashboardService {
 
-  private static final String SCH_CENSUS_POP_TARGET = "SCH Census Pop Target";
-  private static final String STH_CENSUS_POP_TARGET = "STH Census Pop Target";
+  private static final String SCH_CENSUS_POP_TARGET = "SCH target population";
+  private static final String STH_CENSUS_POP_TARGET = "STH target population";
   public static final String SCH_TREATMENT_COVERAGE = "SCH Treatment Coverage";
   public static final String STH_TREATMENT_COVERAGE = "STH Treatment Coverage";
   public static final String AGE_BREAKDOWN = "AGE BREAK DOWN";

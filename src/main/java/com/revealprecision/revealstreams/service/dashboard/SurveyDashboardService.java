@@ -48,9 +48,9 @@ public class SurveyDashboardService {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
     columns.put(TOTAL_STRUCTURES, getTotalStructuresCounts(plan, childLocation));
     columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
-    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE, getTotalStructuresMdaComplete(plan, childLocation));
     columns.put(
         TOTAL_STRUCTURES_VISITED, getTotalStructuresFoundCount(plan, childLocation));
+    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE, getTotalStructuresMdaComplete(plan, childLocation));
     columns.put(VISITATION_COVERAGE, getFoundCoverage(plan, childLocation));
     columns.put(DISTRIBUTION_COVERAGE,getDistributionCoverage(plan, childLocation));
     RowData rowData = new RowData();
