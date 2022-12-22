@@ -88,6 +88,9 @@ public class DashboardProperties {
 
   private String mdaLiteSchImportTag="sch-population-target";
   private String mdaLiteSthImportTag="sth-population-target";
+  private String onchoImportTag="oncho-population-target";
+  private double onchoAveragePerStructure=2;
+  private double onchoMinFieldVerifiedPercentage=30;
 
   private Long operationalAreaVisitedThreshold = 20L;
   private Long operationalAreaVisitedEffectivelyThreshold = 85L;
