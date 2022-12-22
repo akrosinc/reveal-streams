@@ -517,8 +517,10 @@ public class OnchocerciasisDashboardService {
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap,
       String businessStatus) {
 
+    LocationBusinessStateCount locationBusinessStateCount = locationBusinessStateObjPerGeoLevelMap.get(
+        businessStatus);
     return new ColumnData().setValue(
-        locationBusinessStateObjPerGeoLevelMap.get(businessStatus).getLocationCount());
+        locationBusinessStateCount==null?0:locationBusinessStateCount.getLocationCount());
   }
 
 
