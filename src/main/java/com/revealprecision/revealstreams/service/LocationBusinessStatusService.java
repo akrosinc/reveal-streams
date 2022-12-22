@@ -11,7 +11,10 @@ import com.revealprecision.revealstreams.persistence.repository.LiteStructureCou
 import com.revealprecision.revealstreams.persistence.repository.LocationAboveStructureCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.TaskBusinessStateTrackerRepository;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,12 +33,13 @@ public class LocationBusinessStatusService {
       UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
 
     if ((plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.IRS_LITE.name())
-        || plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.MDA_LITE.name())) && geographicLevelName.equals(
+        || plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.MDA_LITE.name()))
+        && geographicLevelName.equals(
         LocationConstants.STRUCTURE)) {
       LiteStructureCount liteStructureCount = liteStructureCountRepository.findByParentLocationIdentifierAndLocationHierarchyIdentifier(
           parentLocationIdentifier, locationHierarchyIdentifier);
 
-      if (liteStructureCount!=null){
+      if (liteStructureCount != null) {
         return (long) liteStructureCount.getStructureCounts();
       }
 
@@ -55,25 +59,27 @@ public class LocationBusinessStatusService {
     return null;
   }
 
-  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForWaterBodies(UUID parentLocationIdentifier,
+  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForWaterBodies(
+      UUID parentLocationIdentifier,
       UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
 
-      log.trace("parms passed: {} {} {}", parentLocationIdentifier, locationHierarchyIdentifier,
-          geographicLevelName);
-      LocationCounts locationCounts = locationCountsRepository.findLocationCountsByParentLocationIdentifierAndLocationHierarchyIdentifierAndGeographicLevelName(
-          parentLocationIdentifier, locationHierarchyIdentifier, geographicLevelName);
-      if (locationCounts != null) {
-        log.trace("result: {} {} {} {} {} {} {} ", parentLocationIdentifier,
-            locationHierarchyIdentifier, geographicLevelName,
-            locationCounts.getParentLocationIdentifier(), locationCounts.getLocationCount(),
-            locationCounts.getParentLocationName(), locationCounts.getParentGeographicLevelName());
-        return locationCounts.getWaterBodyCount();
-      }
+    log.trace("parms passed: {} {} {}", parentLocationIdentifier, locationHierarchyIdentifier,
+        geographicLevelName);
+    LocationCounts locationCounts = locationCountsRepository.findLocationCountsByParentLocationIdentifierAndLocationHierarchyIdentifierAndGeographicLevelName(
+        parentLocationIdentifier, locationHierarchyIdentifier, geographicLevelName);
+    if (locationCounts != null) {
+      log.trace("result: {} {} {} {} {} {} {} ", parentLocationIdentifier,
+          locationHierarchyIdentifier, geographicLevelName,
+          locationCounts.getParentLocationIdentifier(), locationCounts.getLocationCount(),
+          locationCounts.getParentLocationName(), locationCounts.getParentGeographicLevelName());
+      return locationCounts.getWaterBodyCount();
+    }
 
     return null;
   }
 
-  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForNonWaterBodies(UUID parentLocationIdentifier,
+  public Long getLocationCountsForGeoLevelByHierarchyLocationParentForNonWaterBodies(
+      UUID parentLocationIdentifier,
       UUID locationHierarchyIdentifier, String geographicLevelName, Plan plan) {
 
     log.trace("parms passed: {} {} {}", parentLocationIdentifier, locationHierarchyIdentifier,
@@ -97,6 +103,19 @@ public class LocationBusinessStatusService {
     return taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
         planIdentifier, parentLocationIdentifier, taskLocationGeographicLevelName,
         taskBusinessStatus, locationHierarchyIdentifier);
+  }
+
+  public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+       UUID locationHierarchyIdentifier) {
+
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
+        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        locationHierarchyIdentifier);
+    return locationBusinessStateObjPerGeoLevel.stream().collect(
+        Collectors.toMap(LocationBusinessStateCount::getBusinessStatus,
+            locationBusinessStateCount -> locationBusinessStateCount,(a,b)->b));
+
   }
 
   public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(

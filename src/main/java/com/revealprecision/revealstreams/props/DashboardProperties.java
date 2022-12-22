@@ -22,6 +22,7 @@ import com.revealprecision.revealstreams.enums.PlanInterventionTypeEnum;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.service.dashboard.IrsLitePerformanceDashboardService;
 import com.revealprecision.revealstreams.service.dashboard.IrsPerformanceDashboardService;
+import com.revealprecision.revealstreams.service.dashboard.OnchocerciasisDashboardService;
 import com.revealprecision.revealstreams.service.dashboard.PerformanceDashboardService;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +94,10 @@ public class DashboardProperties {
 
   private final Map<String, String> mdaLiteFilters = Map.of(NTD, STH);
 
+  private final Map<String, String> onchocerciasisFilters = Map.of(OnchocerciasisDashboardService.NTD,OnchocerciasisDashboardService.ONCHOCERCIASIS);
+
   private final Map<ReportTypeEnum, Map<String, String>> dashboardFilterAssociations = Map.of(
-      ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters);
+      ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters, ReportTypeEnum.ONCHOCERCIASIS_SURVEY,onchocerciasisFilters);
 
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(
       PlanInterventionTypeEnum.IRS,

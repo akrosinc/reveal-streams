@@ -1,6 +1,9 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
+import static com.revealprecision.revealstreams.enums.ActionTitleEnum.MDA_ONCHOCERCIASIS_SURVEY;
+import static com.revealprecision.revealstreams.enums.ReportTypeEnum.ONCHOCERCIASIS_SURVEY;
+
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LookupUtil;
@@ -10,6 +13,7 @@ import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.exceptions.WrongEnumException;
 import com.revealprecision.revealstreams.models.RowData;
+import com.revealprecision.revealstreams.persistence.domain.Action;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.service.LocationService;
@@ -18,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +40,7 @@ public class DashboardService {
   private final MDALiteDashboardService mdaLiteDashboardService;
   private final SurveyDashboardService surveyDashboardService;
   private final LsmDashboardService lsmDashboardService;
+  private final OnchocerciasisDashboardService onchocerciasisDashboardService;
 
   public static final String WITHIN_STRUCTURE_LEVEL = "Within Structure";
   public static final String STRUCTURE_LEVEL = "Structure";
@@ -77,15 +83,34 @@ public class DashboardService {
 
     String reportLevel = getReportLevel(plan, parentLocation, parentIdentifierString);
 
+    reportTypeEnum = getReportTypeEnum(plan, reportTypeEnum);
+
+    ReportTypeEnum finalReportTypeEnum = reportTypeEnum;
     Map<UUID, RowData> rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
-                getRowData(loc.getParentLocation(), reportTypeEnum, plan, loc, reportLevel, filters,
+                getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
                     parentIdentifierString, type))
             .stream()).filter(Objects::nonNull)
-        .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row));
+        .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a,b)->b));
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
         reportTypeEnum, filters, type);
+  }
+
+  private ReportTypeEnum getReportTypeEnum(Plan plan, ReportTypeEnum reportTypeEnum) {
+
+    if (plan.getGoals() != null && !plan.getGoals().isEmpty() && plan.getGoals().stream()
+        .flatMap(goal -> goal.getActions().stream()).noneMatch(Objects::nonNull)) {
+      return null;
+    }
+    Optional<Action> hasOnchoAction = plan.getGoals().stream().flatMap(goal -> goal.getActions().stream())
+        .filter(action -> action.getTitle().equals(
+            MDA_ONCHOCERCIASIS_SURVEY.getActionTitle())).findFirst();
+    if (hasOnchoAction.isPresent()){
+      return ONCHOCERCIASIS_SURVEY;
+    } else {
+      return reportTypeEnum;
+    }
   }
 
   private void checkSupportedReports(String reportType, UUID planIdentifier,
@@ -145,7 +170,8 @@ public class DashboardService {
         switch (reportLevel) {
           case WITHIN_STRUCTURE_LEVEL:
           case STRUCTURE_LEVEL:
-            return surveyDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+            return surveyDashboardService.getIRSFullCoverageStructureLevelData(plan,
+                loc.getLocation());
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case ALL_OTHER_LEVELS:
             return surveyDashboardService.getIRSFullData(plan, loc.getLocation());
@@ -180,7 +206,8 @@ public class DashboardService {
         switch (reportLevel) {
           case WITHIN_STRUCTURE_LEVEL:
           case STRUCTURE_LEVEL:
-            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan,
+                loc.getLocation());
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case ALL_OTHER_LEVELS:
             return lsmDashboardService.getIRSFullData(plan, loc.getLocation(), reportTypeEnum);
@@ -189,10 +216,29 @@ public class DashboardService {
         switch (reportLevel) {
           case WITHIN_STRUCTURE_LEVEL:
           case STRUCTURE_LEVEL:
-            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan, loc.getLocation());
+            return lsmDashboardService.getIRSFullCoverageStructureLevelData(plan,
+                loc.getLocation());
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case ALL_OTHER_LEVELS:
             return lsmDashboardService.getIRSFullData(plan, loc.getLocation(), reportTypeEnum);
+        }
+      case ONCHOCERCIASIS_SURVEY:
+        switch (reportLevel) {
+          case CDD_LEVEL:
+          case SUPERVISOR_LEVEL:
+          case IS_ON_PLAN_TARGET:
+          case STRUCTURE_LEVEL:
+          case WITHIN_STRUCTURE_LEVEL:
+
+            return onchocerciasisDashboardService.getMDALiteCoverageDataAboveStructureLevel(
+                plan,
+                loc.getLocation(), type,parentLocation);
+          case LOWEST_LITE_TOUCH_LEVEL:
+          case ALL_OTHER_LEVELS:
+          case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
+            return onchocerciasisDashboardService.getMDALiteCoverageData(
+                plan,
+                loc.getLocation(), type);
         }
 
     }
@@ -226,6 +272,9 @@ public class DashboardService {
       case LSM_HOUSEHOLD_SURVEY:
         return lsmDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel);
+      case ONCHOCERCIASIS_SURVEY:
+        return onchocerciasisDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
+            rowDataMap, reportLevel, type);
 
 
     }
@@ -299,15 +348,18 @@ public class DashboardService {
     String planTarget = null;
     String directlyAbovePlanTarget = null;
 
-
-    if (plan.getLocationHierarchy().getNodeOrder().contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
+    if (plan.getLocationHierarchy().getNodeOrder()
+        .contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
       planTarget = plan.getLocationHierarchy().getNodeOrder().get(
-          plan.getLocationHierarchy().getNodeOrder().indexOf(plan.getPlanTargetType().getGeographicLevel().getName()) );
+          plan.getLocationHierarchy().getNodeOrder()
+              .indexOf(plan.getPlanTargetType().getGeographicLevel().getName()));
     }
 
-    if (plan.getLocationHierarchy().getNodeOrder().contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
+    if (plan.getLocationHierarchy().getNodeOrder()
+        .contains(plan.getPlanTargetType().getGeographicLevel().getName())) {
       directlyAbovePlanTarget = plan.getLocationHierarchy().getNodeOrder().get(
-          plan.getLocationHierarchy().getNodeOrder().indexOf(plan.getPlanTargetType().getGeographicLevel().getName()) - 1);
+          plan.getLocationHierarchy().getNodeOrder()
+              .indexOf(plan.getPlanTargetType().getGeographicLevel().getName()) - 1);
     }
 
     String geoLevelDirectlyAboveStructure = null;
@@ -329,6 +381,11 @@ public class DashboardService {
 
     String lowestLevel = plan.getLocationHierarchy().getNodeOrder()
         .get(plan.getLocationHierarchy().getNodeOrder().size() - 1);
+
+
+
+    String secondHighestLevel = plan.getLocationHierarchy().getNodeOrder()
+        .get(1);
 
     if (parentIdentifierString != null && parentIdentifierString.contains("SUPERVISOR")) {
       return SUPERVISOR_LEVEL;
@@ -359,11 +416,16 @@ public class DashboardService {
             }
             return reportLevel;
           } else {
-            return ALL_OTHER_LEVELS;
+            if (parentLocation.getGeographicLevel().getName()
+                .equals(secondHighestLevel)){
+              return ALL_OTHER_LEVELS;
+            } else {
+              return ALL_OTHER_LEVELS;
+            }
           }
         } else {
           if (parentLocation.getGeographicLevel().getName().equals(directlyAbovePlanTarget)) {
-           return IS_ON_PLAN_TARGET;
+            return IS_ON_PLAN_TARGET;
           } else {
             if (parentLocation.getGeographicLevel().getName().equals(lowestLevel)) {
               return LOWEST_LITE_TOUCH_LEVEL;

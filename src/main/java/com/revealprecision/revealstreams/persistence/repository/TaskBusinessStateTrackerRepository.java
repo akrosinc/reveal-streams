@@ -29,6 +29,8 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
 
+
+
   @Query(
       value = "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier, CAST(t.plan_identifier as varchar) as planIdentifier, count(t) as locationCount "
           + "from task_business_state_tracker t "
@@ -58,14 +60,7 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
 
-  @Query(
-      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as taskBusinessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
-          + "where t.parentLocationIdentifier = :parentLocationIdentifier"
-          + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
-          + "t.planIdentifier = :planIdentifier and t.locationHierarchyIdentifier = :locationHierarchyIdentifier"
-          + " group by t.parentLocationIdentifier, t.planIdentifier,t.taskBusinessStatus ")
-  Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(UUID planIdentifier,
-      UUID parentLocationIdentifier, String taskLocationGeographicLevelName);
+
 
   @Query(
       "SELECT DISTINCT new TaskBusinessStateTracker (t.taskLocationIdentifier,t.taskLocationGeographicLevelName,t.taskLocationName,t.taskBusinessStatus) from TaskBusinessStateTracker t WHERE t.planIdentifier = :planIdentifier "
@@ -74,7 +69,7 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);
 
   @Query(
-      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as taskBusinessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
+      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as businessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
           + "where t.parentLocationIdentifier = :parentLocationIdentifier"
           + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
           + "t.planIdentifier = :planIdentifier and t.locationHierarchyIdentifier = :locationHierarchyIdentifier"
