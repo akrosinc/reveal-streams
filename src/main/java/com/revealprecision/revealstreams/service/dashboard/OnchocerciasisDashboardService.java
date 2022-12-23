@@ -113,7 +113,7 @@ public class OnchocerciasisDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(),
         childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
 
-    LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjectionOnTargetLevel = getLocationMetadataDoubleAggregateProjectionOnTargetLevel(
+    LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjectionOnTargetLevel = getLocationMetadataDoubleAggregateProjection(
         childLocation.getIdentifier().toString());
 
     OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData = getHomelessOrPointDistributionColumnData(
@@ -157,6 +157,17 @@ public class OnchocerciasisDashboardService {
     int sum = 0;
 
     return locationMetadataRepository.getValueOfDoubleTagByLocationIdentifierAndTagOnTargetLevel(
+        locationIdentifier,
+        dashboardProperties.getOnchoImportTag());
+
+
+  }
+
+  private LocationMetadataDoubleAggregateProjection getLocationMetadataDoubleAggregateProjection(
+      String locationIdentifier) {
+    int sum = 0;
+
+    return locationMetadataRepository.getSumOfDoubleTagByLocationIdentifierAndTag(
         locationIdentifier,
         dashboardProperties.getOnchoImportTag());
 
