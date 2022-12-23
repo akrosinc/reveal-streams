@@ -14,6 +14,7 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
+import static com.revealprecision.revealstreams.service.dashboard.OnchocerciasisDashboardService.FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
 
@@ -84,6 +85,8 @@ public class DashboardProperties {
           entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(SCH) , SCH_TREATMENT_COVERAGE),
           entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(STH) , STH_TREATMENT_COVERAGE)
       );
+
+  private String onchoDefaultDisplayColumns =  FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
 
 
   private String mdaLiteSchImportTag="sch-population-target";

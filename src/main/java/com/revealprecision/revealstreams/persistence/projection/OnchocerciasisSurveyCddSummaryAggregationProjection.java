@@ -37,5 +37,9 @@ public interface OnchocerciasisSurveyCddSummaryAggregationProjection {
 
   int getNumberOfStructures();
 
+  int getTablets();
+
+  String getBusinessStatus();
+
 
 }

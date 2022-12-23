@@ -1,7 +1,7 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
-import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
+import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
@@ -47,6 +47,7 @@ public class OnchocerciasisDashboardService {
   public static final String FIELD_VERIFIED_POP_TREATMENT_COVERAGE = "Field Verified Pop Treatment Coverage";
   public static final String TOTAL_STRUCTURE_COUNT = "Total Structure Count";
   public static final String STRUCTURES_COMPLETE = "Structures Complete";
+  public static final String STRUCTURES_VISITED = "Structures Visited";
   public static final String STRUCTURES_PARTIALLY_COMPLETE = "Structures Partially Complete";
   public static final String STRUCTURES_REFUSED_ABSENT = "Structures Refused / Absent";
   public static final String STRUCTURES_NOT_YET_VISITED = "Structures Not Visited Yet";
@@ -58,6 +59,8 @@ public class OnchocerciasisDashboardService {
   public static final String LOST_DAMAGED = "Lost / Damaged";
   public static final String ADVERSE_REACTION = "Adverse reaction";
   public static final String RETURNED_TO_SUPERVISOR = "Returned to supervisor";
+  public static final String BUSINESS_STATUS = "Business Status";
+
 
   public static final String HOUSEHOLD_DISTRIBUTION = "Household Distribution";
   public static final String POINT_DISTRIBUTION = "Point Distribution";
@@ -85,6 +88,7 @@ public class OnchocerciasisDashboardService {
 
 
   public static final String NTD = "ntd";
+  public static final String LOCATION = "LOCATION";
 
   private final DashboardProperties dashboardProperties;
   private final EventTrackerRepository eventTrackerRepository;
@@ -127,7 +131,11 @@ public class OnchocerciasisDashboardService {
     if (type == MdaLiteReportType.DRUG_DISTRIBUTION) {
       columns = getDrugDistributionDashboardData(
           onchoSurveyFromDrugAccountability,
-          onchoSurveyFromAdverseEventsRecord);
+          onchoSurveyFromAdverseEventsRecord,
+          locationBusinessStateObjPerGeoLevelMap,
+          onchocerciasisSurvey,
+          pointDistributionData,
+          homelessIndividuals);
     } else if (type == MdaLiteReportType.TREATMENT_COVERAGE) {
       columns = getTreatmentCoverageDashboardData(onchocerciasisSurvey,
           locationMetadataDoubleAggregateProjectionOnTargetLevel,
@@ -140,7 +148,8 @@ public class OnchocerciasisDashboardService {
     } else if (type == MdaLiteReportType.POPULATION_DISTRIBUTION) {
       columns = getPopulationDistributionDashboardData(onchocerciasisSurvey,
           pointDistributionData,
-          homelessIndividuals
+          homelessIndividuals,
+          locationBusinessStateObjPerGeoLevelMap
       );
     }
 
@@ -205,8 +214,33 @@ public class OnchocerciasisDashboardService {
   private Map<String, ColumnData> getPopulationDistributionDashboardData(
       OnchocerciasisSurveyCddSummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
       OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData,
-      OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals) {
+      OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap
+      ) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
+
+    Double totalTreated = getTotalTreatedAccrossHoldAndOutside(
+        aggregationDataFromCddSupervisorDailySummary,
+        pointDistributionData, homelessIndividuals);
+
+    Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> !Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.MDA_COMPLETE)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long notVisited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     columns.put(HOUSEHOLD_DISTRIBUTION,
         new ColumnData().setValue(
@@ -304,6 +338,16 @@ public class OnchocerciasisDashboardService {
                 (aggregationDataFromCddSupervisorDailySummary == null ? 0
                     : aggregationDataFromCddSupervisorDailySummary.getTotalUntreatedRefusal())));
 
+    columns.put(COVERAGE_OF_STRUCTURES_VISITED,
+        getCoverageOfStructuresVisited(visited, total).setIsHidden(true));
+
+    columns.put(COVERAGE_OF_STRUCTURES_COMPLETED,
+        getCoverageOfStructuresCompleted(completed, total).setIsHidden(true));
+
+    columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
+        getTreatmentCoverage(
+            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)).setIsHidden(true));
+
     return columns;
   }
 
@@ -312,7 +356,7 @@ public class OnchocerciasisDashboardService {
       OnchocerciasisSurveyCddSummaryAggregationProjection onchoSurveyFromHouseholdHeadData) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
-    columns.put("LOCATION",
+    columns.put(LOCATION,
         new ColumnData().setIsHidden(true).setDataType("string").setValue(
             (onchoSurveyFromHouseholdHeadData == null ? 0
                 : onchoSurveyFromHouseholdHeadData.getLocationIdentifier())));
@@ -388,7 +432,14 @@ public class OnchocerciasisDashboardService {
                 : onchoSurveyFromHouseholdHeadData.getTotalUntreatedRefusal())));
 
     columns.put(ADMINISTERED,
-        getDummy());
+        new ColumnData().setValue(
+            (onchoSurveyFromHouseholdHeadData == null ? 0
+                : onchoSurveyFromHouseholdHeadData.getTablets())));
+
+    columns.put(BUSINESS_STATUS,
+        new ColumnData().setValue(
+            (onchoSurveyFromHouseholdHeadData == null ? 0
+                : onchoSurveyFromHouseholdHeadData.getBusinessStatus())).setIsHidden(true));
 
     return columns;
   }
@@ -396,8 +447,36 @@ public class OnchocerciasisDashboardService {
 
   private Map<String, ColumnData> getDrugDistributionDashboardData(
       OnchocerciasisSurveyDrugAccountabilityAggregationProjection onchoSurveyFromDrugAccountability,
-      OnchocerciasisSurveyAdverseEventsAggregationProjection onchoSurveyFromAdverseEventsRecord) {
+      OnchocerciasisSurveyAdverseEventsAggregationProjection onchoSurveyFromAdverseEventsRecord,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap,
+      OnchocerciasisSurveyCddSummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
+      OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData,
+      OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals
+      ) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
+
+    Double totalTreated = getTotalTreatedAccrossHoldAndOutside(
+        aggregationDataFromCddSupervisorDailySummary,
+        pointDistributionData, homelessIndividuals);
+
+    Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> !Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.MDA_COMPLETE)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long notVisited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     columns.put(getColumnName(RECEIVED_BY_CDD),
         new ColumnData().setValue(onchoSurveyFromDrugAccountability == null ? 0
@@ -418,6 +497,16 @@ public class OnchocerciasisDashboardService {
     columns.put(getColumnName(RETURNED_TO_SUPERVISOR),
         new ColumnData().setValue(onchoSurveyFromDrugAccountability == null ? 0
             : onchoSurveyFromDrugAccountability.getTabletsReturned()));
+
+    columns.put(COVERAGE_OF_STRUCTURES_VISITED,
+        getCoverageOfStructuresVisited(visited, total).setIsHidden(true));
+
+    columns.put(COVERAGE_OF_STRUCTURES_COMPLETED,
+        getCoverageOfStructuresCompleted(completed, total).setIsHidden(true));
+
+    columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
+        getTreatmentCoverage(
+            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)).setIsHidden(true));
 
     return columns;
   }
@@ -446,18 +535,36 @@ public class OnchocerciasisDashboardService {
 
     ColumnData censusPopTarget = getCensusPopTarget(locationMetadataDoubleAggregateProjection);
 
-    ColumnData fieldVerifiedPopTarget = getFieldVerifiedPopTarget(totalTreated,
-        locationBusinessStateObjPerGeoLevelMap);
+    Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> !Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.MDA_COMPLETE)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long notVisited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     columns.put(OFFICIAL_POP_TARGET,
         censusPopTarget);
 
     columns.put(FIELD_VERIFIED_POP_TARGET,
-        fieldVerifiedPopTarget);
+        getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated));
 
     columns.put(TOTAL_TREATED,
         new ColumnData()
-            .setValue(totalTreated));
+            .setValue(totalTreated).setMeta(getTotalTreatedAccrossHoldAndOutsideMeta(
+                aggregationDataFromCddSupervisorDailySummary,
+                pointDistributionData, homelessIndividuals)));
 
     columns.put(OFFICIAL_POP_TREATMENT_COVERAGE,
         getTreatmentCoverage(
@@ -465,7 +572,7 @@ public class OnchocerciasisDashboardService {
 
     columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
         getTreatmentCoverage(
-            totalTreated, fieldVerifiedPopTarget));
+            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)));
 
     columns.put(TOTAL_STRUCTURE_COUNT,
         new ColumnData()
@@ -474,6 +581,9 @@ public class OnchocerciasisDashboardService {
     columns.put(STRUCTURES_COMPLETE,
         new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
             BusinessStatus.MDA_COMPLETE)));
+
+    columns.put(STRUCTURES_VISITED,
+        new ColumnData().setValue(visited));
 
     columns.put(STRUCTURES_PARTIALLY_COMPLETE,
         new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
@@ -488,13 +598,48 @@ public class OnchocerciasisDashboardService {
             BusinessStatus.NOT_VISITED)));
 
     columns.put(COVERAGE_OF_STRUCTURES_VISITED,
-        getDummy());
+        getCoverageOfStructuresVisited(visited, total));
 
     columns.put(COVERAGE_OF_STRUCTURES_COMPLETED,
-        getDummy());
+        getCoverageOfStructuresCompleted(completed, total));
 
     return columns;
   }
+
+  private ColumnData getCoverageOfStructuresCompleted(Long completed, Long total) {
+    return new ColumnData().setValue((double) completed / (double) total * 100)
+        .setMeta("Completed: " + completed + " / " + " Total: " + total).setIsPercentage(true);
+  }
+
+  private ColumnData getCoverageOfStructuresVisited(Long visited, Long total) {
+    return new ColumnData().setValue((double) visited / (double) total * 100)
+        .setMeta("Visited: " + visited + " / " + " Total: " + total).setIsPercentage(true);
+  }
+
+  private ColumnData getFieldVerifiedPopTarget(Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap, Double totalTreated){
+    Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> !Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.MDA_COMPLETE)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long notVisited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> Objects.equals(key,
+            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .map(locationBusinessStateObjPerGeoLevelMap::get)
+        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+    return getFieldVerifiedPopTarget(totalTreated,
+        locationBusinessStateObjPerGeoLevelMap, visited, notVisited, total);
+  }
+
 
   private Double getTotalTreatedAccrossHoldAndOutside(
       OnchocerciasisSurveyCddSummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
@@ -510,6 +655,21 @@ public class OnchocerciasisDashboardService {
     return (double) pointTreated + (double) homelessTreated + (double) householdTreated;
   }
 
+  private String getTotalTreatedAccrossHoldAndOutsideMeta(
+      OnchocerciasisSurveyCddSummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
+      OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData,
+      OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals) {
+    int pointTreated = pointDistributionData == null ? 0 : pointDistributionData.getTotalTreated();
+
+    int homelessTreated = homelessIndividuals == null ? 0 : homelessIndividuals.getTotalTreated();
+
+    int householdTreated = aggregationDataFromCddSupervisorDailySummary == null ? 0
+        : aggregationDataFromCddSupervisorDailySummary.getTotalTreated();
+
+    return "Point Treated: " + pointTreated + " Homeless Treated: " + homelessTreated
+        + " Household Treated: " + householdTreated;
+  }
+
   public List<RowData> getMDALiteCoverageDataAboveStructureLevel(Plan plan, Location childLocation,
       MdaLiteReportType type, Location parentLocation) {
 
@@ -521,7 +681,7 @@ public class OnchocerciasisDashboardService {
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
           rowData.setLocationIdentifier(
-              UUID.fromString((String) stringColumnDataMap.get("LOCATION").getValue()));
+              UUID.fromString((String) stringColumnDataMap.get(LOCATION).getValue()));
           rowData.setColumnDataMap(stringColumnDataMap);
           rowData.setLocationName((String) stringColumnDataMap.get(HEAD_OF_HOUSE_HOLD).getValue());
           return rowData;
@@ -576,6 +736,8 @@ public class OnchocerciasisDashboardService {
       ColumnData poptarget) {
 
     Double value;
+    ColumnData columnData = new ColumnData().setIsPercentage(true);
+
     if (poptarget.getValue() != null) {
       if (poptarget.getValue() instanceof Double) {
         value = (Double) poptarget.getValue();
@@ -590,12 +752,14 @@ public class OnchocerciasisDashboardService {
               / value * 100;
           String meta = "Treated: " + totalTreated + " / " + "Census Target " + ": "
               + poptarget.getValue();
-          return new ColumnData().setValue(treatmentCoverage).setMeta(meta).setIsPercentage(true)
+          return columnData.setValue(treatmentCoverage).setMeta(meta)
               .setDataType("double");
         }
       }
     }
-    return new ColumnData().setValue(0);
+    return columnData.setValue(0)
+        .setMeta("Treated: " + totalTreated + " / " + "Census Target " + ": "
+            + poptarget.getValue());
   }
 
 
@@ -612,22 +776,8 @@ public class OnchocerciasisDashboardService {
 
   private ColumnData getFieldVerifiedPopTarget(
       Double totalTreated,
-      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
-
-    Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
-        .filter(key -> !Objects.equals(key,
-            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
-        .collect(Collectors.summingLong(o -> o.getLocationCount()));
-
-    Long notVisited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
-        .filter(key -> Objects.equals(key,
-            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
-        .collect(Collectors.summingLong(o -> o.getLocationCount()));
-
-    Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
-        .filter(key -> Objects.equals(key,
-            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
-        .collect(Collectors.summingLong(o -> o.getLocationCount()));
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap, Long visited,
+      Long notVisited, Long total) {
 
     double averageTreated = dashboardProperties.getOnchoAveragePerStructure();
     String meta = "";
@@ -657,11 +807,13 @@ public class OnchocerciasisDashboardService {
       if (rowDataMap.containsKey(loc.getIdentifier())) {
         loc.getProperties()
             .setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
-        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(SPRAY_COVERAGE_OF_TARGETED)
-            != null) {
-          loc.getProperties().setSprayCoverage(
-              rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(SPRAY_COVERAGE_OF_TARGETED)
-                  .getValue());
+        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+            .get(BUSINESS_STATUS) != null) {
+          String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+              .get(BUSINESS_STATUS).getValue();
+          loc.getProperties().setBusinessStatus(
+              businessStatus);
+          loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
         }
       } else {
         return null;
@@ -684,10 +836,11 @@ public class OnchocerciasisDashboardService {
 
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses, reportLevel);
 
-    String defaultColumn = dashboardProperties.getMdaLiteDefaultDisplayColumnsWithType()
-        .getOrDefault(type.name(), null);
+    if (!reportLevel.equals(DashboardService.STRUCTURE_LEVEL)){
+      String defaultColumn = dashboardProperties.getOnchoDefaultDisplayColumns();
+      response.setDefaultDisplayColumn(defaultColumn);
+    }
 
-    response.setDefaultDisplayColumn(defaultColumn);
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
     return response;
