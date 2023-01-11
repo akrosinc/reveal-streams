@@ -176,14 +176,13 @@ public class SurveyDashboardService {
   private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
 
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan, childLocation);
 
+    long totalStructuresTargetedCountObj = locationBusinessStatusService.getTotalLocationsByParentAndPlan(
+        plan.getIdentifier(),
+        childLocation.getIdentifier());
 
     double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresTargetedCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
-    }
+    totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
 
     Long notEligibleStructuresCountObj = null;
     LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(

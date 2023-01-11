@@ -99,6 +99,12 @@ public class LocationBusinessStatusService {
         taskBusinessStatus, locationHierarchyIdentifier);
   }
 
+
+  public long getTotalLocationsByParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier){
+    return taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlan(planIdentifier,parentLocationIdentifier);
+  }
+
   public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier) {

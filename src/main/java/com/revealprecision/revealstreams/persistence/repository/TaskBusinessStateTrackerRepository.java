@@ -82,5 +82,9 @@ public interface TaskBusinessStateTrackerRepository extends
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(UUID planIdentifier,
       UUID parentLocationIdentifier, String taskLocationGeographicLevelName,UUID locationHierarchyIdentifier);
 
+  @Query(value = "SELECT count(*) from task_business_state_tracker tbst\n"
+      + "where tbst.parent_location_identifier = :parentLocationIdentifier and tbst.plan_identifier = :planIdentifier;",nativeQuery = true)
+  long getTotalLocationsByParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier);
 
 }
