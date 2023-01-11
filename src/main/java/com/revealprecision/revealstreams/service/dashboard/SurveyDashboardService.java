@@ -81,8 +81,6 @@ public class SurveyDashboardService {
 
     if (locationBusinessState!=null){
       columnData.setValue( locationBusinessState.getTaskBusinessStatus());
-    } else {
-      columnData.setValue(BusinessStatus.NOT_VISITED);
     }
 
     return columnData;
