@@ -296,7 +296,7 @@ public class SurveyDashboardService {
         String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
             .get(STRUCTURE_STATUS).getValue();
         loc.getProperties().setBusinessStatus(
-            businessStatus);
+            businessStatus==null?"No State":businessStatus);
         loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
       }
 
