@@ -41,6 +41,9 @@ public class DashboardUtils {
   }
 
   public static String getBusinessStatusColor(String businessStatus) {
+    if (businessStatus == null){
+      return Colors.grey;
+    }
     switch (businessStatus) {
       case BusinessStatus.NOT_VISITED:
         return Colors.yellow;
