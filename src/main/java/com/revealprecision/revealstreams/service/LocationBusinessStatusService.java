@@ -11,7 +11,10 @@ import com.revealprecision.revealstreams.persistence.repository.LiteStructureCou
 import com.revealprecision.revealstreams.persistence.repository.LocationAboveStructureCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationCountsRepository;
 import com.revealprecision.revealstreams.persistence.repository.TaskBusinessStateTrackerRepository;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -149,4 +152,16 @@ public class LocationBusinessStatusService {
         childGeographicLevelName);
   }
 
+  public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier) {
+
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
+        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        locationHierarchyIdentifier);
+    return locationBusinessStateObjPerGeoLevel.stream().collect(
+        Collectors.toMap(LocationBusinessStateCount::getBusinessStatus,
+            locationBusinessStateCount -> locationBusinessStateCount,(a,b)->b));
+
+  }
 }
