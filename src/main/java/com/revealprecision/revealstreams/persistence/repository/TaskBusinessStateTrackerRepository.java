@@ -76,7 +76,10 @@ public interface TaskBusinessStateTrackerRepository extends
 
   @Query(
       value =
-          "SELECT tbst.parent_location_identifier as parentLocationIdentifier,tbst.plan_identifier as planIdentifier, tbst.task_business_status as taskBusinessStatus, count(*) as locationCount from task_business_state_tracker tbst\n"
+          "SELECT CAST(tbst.parent_location_identifier as varchar) as parentLocationIdentifier"
+              + ", CAST(tbst.plan_identifier  as varchar) as planIdentifier"
+              + ", tbst.task_business_status as taskBusinessStatus"
+              + ", count(*) as locationCount from task_business_state_tracker tbst\n"
               + "WHERE tbst.parent_location_identifier = :parentLocationIdentifier and tbst.task_location_geographic_level_name = :taskLocationGeographicLevelName \n"
               + "and tbst.plan_identifier = :planIdentifier and tbst.location_hierarchy_identifier = :locationHierarchyIdentifier \n"
               + "group by tbst.parent_location_identifier, tbst.plan_identifier, tbst.task_business_status", nativeQuery = true)
