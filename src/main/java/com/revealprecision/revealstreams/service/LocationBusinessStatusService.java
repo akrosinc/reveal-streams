@@ -169,10 +169,10 @@ public class LocationBusinessStatusService {
 
     locationBusinessStateObjPerGeoLevel.forEach(
         locationBusinessStateCount -> log.debug("{} - locationBusinessStateObjPerGeoLevel({})",
-            parentLocationIdentifier, locationBusinessStateCount.getBusinessStatus()));
+            parentLocationIdentifier, locationBusinessStateCount.getTaskBusinessStatus()));
 
     return locationBusinessStateObjPerGeoLevel.stream().collect(
-        Collectors.toMap(LocationBusinessStateCount::getBusinessStatus,
+        Collectors.toMap(LocationBusinessStateCount::getTaskBusinessStatus,
             locationBusinessStateCount -> locationBusinessStateCount, (a, b) -> b));
 
   }
