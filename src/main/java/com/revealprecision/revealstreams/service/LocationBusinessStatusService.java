@@ -160,6 +160,9 @@ public class LocationBusinessStatusService {
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       UUID locationHierarchyIdentifier) {
 
+    log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
+        planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
+
     Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
         planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
         locationHierarchyIdentifier);

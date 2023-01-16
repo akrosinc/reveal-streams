@@ -53,12 +53,10 @@ public class SurveyDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(),
         childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
 
-
     Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
         LocationConstants.STRUCTURE, plan);
-
-
+    
     long totalStructuresTargetedCountObj = locationBusinessStatusService.getTotalLocationsByParentAndPlan(
         plan.getIdentifier(),
         childLocation.getIdentifier());
