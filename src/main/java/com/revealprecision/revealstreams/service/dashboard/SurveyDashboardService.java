@@ -25,10 +25,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class SurveyDashboardService {
 
   private final PlanLocationsService planLocationsService;
@@ -51,13 +53,25 @@ public class SurveyDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(),
         childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
 
+
     Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
         LocationConstants.STRUCTURE, plan);
 
+
     long totalStructuresTargetedCountObj = locationBusinessStatusService.getTotalLocationsByParentAndPlan(
         plan.getIdentifier(),
         childLocation.getIdentifier());
+
+    log.debug("child location: {} - {}, totalStructuresCountObj: {}",
+        childLocation.getIdentifier(), childLocation.getName(), totalStructuresCountObj);
+
+    log.debug("child location: {} - {}, locationBusinessStateObjPerGeoLevelMap: {}",
+        childLocation.getIdentifier(), childLocation.getName(),
+        locationBusinessStateObjPerGeoLevelMap);
+
+    log.debug("child location: {} - {}, totalStructuresTargetedCountObj: {}",
+        childLocation.getIdentifier(), childLocation.getName(), totalStructuresTargetedCountObj);
 
     columns.put(TOTAL_STRUCTURES,
         getTotalStructuresCounts(totalStructuresCountObj, locationBusinessStateObjPerGeoLevelMap));
