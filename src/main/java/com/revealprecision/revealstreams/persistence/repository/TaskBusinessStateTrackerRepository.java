@@ -30,15 +30,16 @@ public interface TaskBusinessStateTrackerRepository extends
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
 
   @Query(
-      value = "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier, CAST(t.plan_identifier as varchar) as planIdentifier, count(t) as locationCount "
-          + "from task_business_state_tracker t "
-          + "left join location l on l.identifier = t.task_location_identifier "
-          + "where t.parent_location_identifier = :parentLocationIdentifier "
-          + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
-          + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
-          + "and l.location_property ->>'surveyLocationType'='waterbody' "
-          + "and t.task_business_status = :taskBusinessStatus "
-          + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
+      value =
+          "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier, CAST(t.plan_identifier as varchar) as planIdentifier, count(t) as locationCount "
+              + "from task_business_state_tracker t "
+              + "left join location l on l.identifier = t.task_location_identifier "
+              + "where t.parent_location_identifier = :parentLocationIdentifier "
+              + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
+              + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
+              + "and l.location_property ->>'surveyLocationType'='waterbody' "
+              + "and t.task_business_status = :taskBusinessStatus "
+              + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
   LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForWaterBodies(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
@@ -46,14 +47,14 @@ public interface TaskBusinessStateTrackerRepository extends
   @Query(
       value = "SELECT CAST(t.parent_location_identifier as varchar) as parentLocationIdentifier"
           + ", CAST(t.plan_identifier  as varchar) as planIdentifier, count(t) as locationCount "
-            + "from task_business_state_tracker t "
-            + "left join location l on l.identifier = t.task_location_identifier "
-            + "where t.parent_location_identifier = :parentLocationIdentifier "
-            + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
-            + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
-            + "and jsonb_exists_any(l.location_property,ARRAY['surveyLocationType'])=false "
-            + "and t.task_business_status = :taskBusinessStatus "
-            + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
+          + "from task_business_state_tracker t "
+          + "left join location l on l.identifier = t.task_location_identifier "
+          + "where t.parent_location_identifier = :parentLocationIdentifier "
+          + "and t.task_location_geographic_level_name = :taskLocationGeographicLevelName and  "
+          + "t.plan_identifier = :planIdentifier  and t.location_hierarchy_identifier = :locationHierarchyIdentifier "
+          + "and jsonb_exists_any(l.location_property,ARRAY['surveyLocationType'])=false "
+          + "and t.task_business_status = :taskBusinessStatus "
+          + "group by t.parent_location_identifier, t.plan_identifier ", nativeQuery = true)
   LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier);
@@ -74,13 +75,21 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);
 
   @Query(
-      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as taskBusinessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
-          + "where t.parentLocationIdentifier = :parentLocationIdentifier"
-          + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
-          + "t.planIdentifier = :planIdentifier and t.locationHierarchyIdentifier = :locationHierarchyIdentifier"
-          + " group by t.parentLocationIdentifier, t.planIdentifier,t.taskBusinessStatus ")
+      value =
+          "SELECT CAST(tbst.parent_location_identifier as varchar) as parentLocationIdentifier"
+              + ", CAST(tbst.plan_identifier  as varchar) as planIdentifier"
+              + ", tbst.task_business_status as taskBusinessStatus"
+              + ", count(*) as locationCount from task_business_state_tracker tbst\n"
+              + "WHERE tbst.parent_location_identifier = :parentLocationIdentifier and tbst.task_location_geographic_level_name = :taskLocationGeographicLevelName \n"
+              + "and tbst.plan_identifier = :planIdentifier and tbst.location_hierarchy_identifier = :locationHierarchyIdentifier \n"
+              + "group by tbst.parent_location_identifier, tbst.plan_identifier, tbst.task_business_status", nativeQuery = true)
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(UUID planIdentifier,
-      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,UUID locationHierarchyIdentifier);
+      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier);
 
+  @Query(value = "SELECT count(*) from task_business_state_tracker tbst\n"
+      + "where tbst.parent_location_identifier = :parentLocationIdentifier and tbst.plan_identifier = :planIdentifier", nativeQuery = true)
+  long getTotalLocationsByParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier);
 
 }
