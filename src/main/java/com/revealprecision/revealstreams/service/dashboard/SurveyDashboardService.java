@@ -38,7 +38,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
-  private static final String TOTAL_STRUCTURES_MDA_COMPLETE = "Total Structures MDA Complete";
+  private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
@@ -50,7 +50,7 @@ public class SurveyDashboardService {
     columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
     columns.put(
         TOTAL_STRUCTURES_VISITED, getTotalStructuresFoundCount(plan, childLocation));
-    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE, getTotalStructuresMdaComplete(plan, childLocation));
+    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE, getTotalStructuresMdaCompleteOrPartiallyCompleted(plan, childLocation));
     columns.put(VISITATION_COVERAGE, getFoundCoverage(plan, childLocation));
     columns.put(DISTRIBUTION_COVERAGE,getDistributionCoverage(plan, childLocation));
     RowData rowData = new RowData();
@@ -105,7 +105,7 @@ public class SurveyDashboardService {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
     double foundStructures = (double) getTotalStructuresFoundCount(plan, childLocation).getValue();
-    double mdaComplete = (double) getTotalStructuresMdaComplete(plan, childLocation).getValue();
+    double mdaComplete = (double) getTotalStructuresMdaCompleteOrPartiallyCompleted(plan, childLocation).getValue();
     if (foundStructures == 0) {
       columnData.setValue(0d);
     } else {
@@ -115,25 +115,33 @@ public class SurveyDashboardService {
     return columnData;
   }
 
-  private ColumnData getTotalStructuresMdaComplete(Plan plan, Location childLocation) {
+  private ColumnData getTotalStructuresMdaCompleteOrPartiallyCompleted(Plan plan, Location childLocation) {
 
     ColumnData columnData = new ColumnData();
-    columnData.setValue(0d);
 
-    Long completedStructuresCountObj = null;
+    double completedStructuresCount;
     LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
         plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
         BusinessStatus.MDA_COMPLETE, plan.getLocationHierarchy().getIdentifier());
     if (completedStructuresCountObjCount != null) {
-      completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
+      completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
+    } else {
+      completedStructuresCount = 0L;
     }
 
-    double completedStructuresCount = 0;
-    if (completedStructuresCountObj != null) {
-      completedStructuresCount = completedStructuresCountObj;
+    double partiallyCompletedStructuresCount;
+    LocationBusinessStateCount partiallyCompletedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
+        BusinessStatus.PARTIALLY_COMPLETE, plan.getLocationHierarchy().getIdentifier());
+    if (partiallyCompletedStructuresCountObjCount != null) {
+      partiallyCompletedStructuresCount = partiallyCompletedStructuresCountObjCount.getLocationCount();
+    } else {
+      partiallyCompletedStructuresCount = 0;
     }
 
-    columnData.setValue(completedStructuresCount);
+    double partiallyCompleteOrComplete = partiallyCompletedStructuresCount + completedStructuresCount;
+
+    columnData.setValue(partiallyCompleteOrComplete);
 
     return columnData;
   }
