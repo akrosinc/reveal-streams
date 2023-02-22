@@ -84,26 +84,38 @@ public class MetadataAggregateListener extends Listener {
 
         if (locationFormDataSumAggregateEvent.getSum() != null) {
 
-          Optional<EntityTag> entityTagByTagName = entityTagService.getEntityTagByTagName(
-              entityTag.getTag() + "-sum");
+          submitAggregate(k, plan, entityParentIdentifier, location, locationFormDataSumAggregateEvent,
+              currentPrincipleName, entityTag,"sum");
+        }
+        if (locationFormDataSumAggregateEvent.getAverage() != null) {
 
-          if (entityTagByTagName.isPresent()) {
-            EntityTagEvent entityTagEvent = EntityTagEventFactory.getEntityTagEvent(
-                entityTagByTagName.get());
-            entityTagEvent.setValueType(EntityTagDataTypes.DOUBLE);
-            if (entityTagEvent.isAggregate()) {
-              metadataService.updateMetaData(UUID.fromString(entityParentIdentifier),
-                  locationFormDataSumAggregateEvent.getSum(),
-                  plan, null,currentPrincipleName
-                  , entityTagEvent.getValueType(), entityTagEvent,
-                  "aggregate", location, "aggregate",
-                  Location.class, k + "-sum", null);
-            }
-          }
+          submitAggregate(k, plan, entityParentIdentifier, location, locationFormDataSumAggregateEvent,
+              currentPrincipleName, entityTag,"average");
         }
       }
     }
 
 
+  }
+
+  private void submitAggregate(String k, Plan plan, String entityParentIdentifier, Location location,
+      LocationFormDataSumAggregateEvent locationFormDataSumAggregateEvent,
+      String currentPrincipleName, EntityTag entityTag,String aggregate) {
+    Optional<EntityTag> entityTagByTagName = entityTagService.getEntityTagByTagName(
+        entityTag.getTag() + "-"+aggregate);
+
+    if (entityTagByTagName.isPresent()) {
+      EntityTagEvent entityTagEvent = EntityTagEventFactory.getEntityTagEvent(
+          entityTagByTagName.get());
+      entityTagEvent.setValueType(EntityTagDataTypes.DOUBLE);
+      if (entityTagEvent.isAggregate()) {
+        metadataService.updateMetaData(UUID.fromString(entityParentIdentifier),
+            locationFormDataSumAggregateEvent.getSum(),
+            plan, null, currentPrincipleName
+            , entityTagEvent.getValueType(), entityTagEvent,
+            "aggregate", location, "aggregate",
+            Location.class, k + "-sum", null);
+      }
+    }
   }
 }
