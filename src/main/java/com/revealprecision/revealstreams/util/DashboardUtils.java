@@ -41,6 +41,9 @@ public class DashboardUtils {
   }
 
   public static String getBusinessStatusColor(String businessStatus) {
+    if (businessStatus == null){
+      return Colors.grey;
+    }
     switch (businessStatus) {
       case BusinessStatus.NOT_VISITED:
         return Colors.yellow;
@@ -53,6 +56,8 @@ public class DashboardUtils {
       case BusinessStatus.NONE_RECEIVED:
       case BusinessStatus.MDA_REFUSED_OR_ABSENT:
       case BusinessStatus.REFUSED_OR_PERMANENTLY_ABSENT:
+      case BusinessStatus.REFUSED:
+      case BusinessStatus.PERMANENTLY_ABSENT:
         return Colors.red;
       case BusinessStatus.SPRAYED:
       case BusinessStatus.SMC_COMPLETE:
@@ -71,6 +76,8 @@ public class DashboardUtils {
       case BusinessStatus.MDA_PARTIALLY_COMPLETE:
       case BusinessStatus.PARTIALLY_RECEIVED:
       case BusinessStatus.PARTIALLY_COMPLETE_OR_TEMPORARILY_ABSENT:
+      case BusinessStatus.PARTIALLY_COMPLETE:
+      case BusinessStatus.TEMPORARILY_ABSENT:
         return Colors.orange;
       default:
         log.debug(String.format("business status ( %s ) is not defined", businessStatus));

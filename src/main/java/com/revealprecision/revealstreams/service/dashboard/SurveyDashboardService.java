@@ -25,10 +25,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class SurveyDashboardService {
 
   private final PlanLocationsService planLocationsService;
@@ -38,7 +40,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
-  private static final String TOTAL_STRUCTURES_MDA_COMPLETE = "Total Structures MDA Complete";
+  private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
@@ -46,13 +48,45 @@ public class SurveyDashboardService {
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
     Map<String, ColumnData> columns = new LinkedHashMap<>();
-    columns.put(TOTAL_STRUCTURES, getTotalStructuresCounts(plan, childLocation));
-    columns.put(TOTAL_STRUCTURES_TARGETED, getTotalStructuresTargetedCount(plan, childLocation));
+
+    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevel(
+        plan.getIdentifier(), childLocation.getIdentifier(),
+        childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
+
+    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+        LocationConstants.STRUCTURE, plan);
+    
+    long totalStructuresTargetedCountObj = locationBusinessStatusService.getTotalLocationsByParentAndPlan(
+        plan.getIdentifier(),
+        childLocation.getIdentifier());
+
+    log.debug("child location: {} - {}, totalStructuresCountObj: {}",
+        childLocation.getIdentifier(), childLocation.getName(), totalStructuresCountObj);
+
+    log.debug("child location: {} - {}, locationBusinessStateObjPerGeoLevelMap: {}",
+        childLocation.getIdentifier(), childLocation.getName(),
+        locationBusinessStateObjPerGeoLevelMap);
+
+    log.debug("child location: {} - {}, totalStructuresTargetedCountObj: {}",
+        childLocation.getIdentifier(), childLocation.getName(), totalStructuresTargetedCountObj);
+
+    columns.put(TOTAL_STRUCTURES,
+        getTotalStructuresCounts(totalStructuresCountObj, locationBusinessStateObjPerGeoLevelMap));
+    columns.put(TOTAL_STRUCTURES_TARGETED,
+        getTotalStructuresTargetedCount(totalStructuresTargetedCountObj,
+            locationBusinessStateObjPerGeoLevelMap));
     columns.put(
-        TOTAL_STRUCTURES_VISITED, getTotalStructuresFoundCount(plan, childLocation));
-    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE, getTotalStructuresMdaComplete(plan, childLocation));
-    columns.put(VISITATION_COVERAGE, getFoundCoverage(plan, childLocation));
-    columns.put(DISTRIBUTION_COVERAGE,getDistributionCoverage(plan, childLocation));
+        TOTAL_STRUCTURES_VISITED,
+        getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
+            locationBusinessStateObjPerGeoLevelMap));
+    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE,
+        getTotalStructuresMdaCompleteOrPartiallyCompleted(
+            locationBusinessStateObjPerGeoLevelMap));
+    columns.put(VISITATION_COVERAGE,
+        getFoundCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
+    columns.put(DISTRIBUTION_COVERAGE,
+        getDistributionCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -64,7 +98,7 @@ public class SurveyDashboardService {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     columns.put(STRUCTURE_STATUS,
-        getLocationBusinessState(plan,childLocation));
+        getLocationBusinessState(plan, childLocation));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -72,80 +106,89 @@ public class SurveyDashboardService {
     return List.of(rowData);
   }
 
-  private ColumnData getLocationBusinessState(Plan plan,Location location){
+  private ColumnData getLocationBusinessState(Plan plan, Location location) {
     TaskBusinessStateTracker locationBusinessState = locationBusinessStatusService.findLocationBusinessState(
         plan.getLocationHierarchy().getIdentifier(), location.getIdentifier(),
         plan.getIdentifier());
 
     ColumnData columnData = DashboardUtils.getStringValueColumnData();
 
-    if (locationBusinessState!=null){
-      columnData.setValue( locationBusinessState.getTaskBusinessStatus());
-    } else {
-      columnData.setValue(BusinessStatus.NOT_VISITED);
+    if (locationBusinessState != null) {
+      columnData.setValue(locationBusinessState.getTaskBusinessStatus());
     }
 
     return columnData;
   }
 
-  private ColumnData getFoundCoverage(Plan plan, Location childLocation) {
+  private ColumnData getFoundCoverage(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
-    double foundStructures = (double) getTotalStructuresFoundCount(plan, childLocation).getValue();
-    double targetedStructures = (double) getTotalStructuresTargetedCount(plan,
-        childLocation).getValue();
+    double foundStructures = (double) getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
+        locationBusinessStateObjPerGeoLevelMap).getValue();
+    double targetedStructures = (double) getTotalStructuresTargetedCount(
+        totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
     if (targetedStructures == 0) {
       columnData.setValue(0d);
     } else {
       columnData.setValue((foundStructures / targetedStructures) * 100);
     }
-    columnData.setMeta("Visited Structures: "+foundStructures+ " / " + "Targeted Structure: "+targetedStructures);
+    columnData.setMeta("Visited Structures: " + foundStructures + " / " + "Targeted Structure: "
+        + targetedStructures);
     return columnData;
   }
 
-  private ColumnData getDistributionCoverage(Plan plan, Location childLocation) {
+  private ColumnData getDistributionCoverage(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
-    double foundStructures = (double) getTotalStructuresFoundCount(plan, childLocation).getValue();
-    double mdaComplete = (double) getTotalStructuresMdaComplete(plan, childLocation).getValue();
+    double foundStructures = (double) getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
+        locationBusinessStateObjPerGeoLevelMap).getValue();
+    double mdaComplete = (double) getTotalStructuresMdaCompleteOrPartiallyCompleted(
+        locationBusinessStateObjPerGeoLevelMap).getValue();
     if (foundStructures == 0) {
       columnData.setValue(0d);
     } else {
       columnData.setValue((mdaComplete / foundStructures) * 100);
     }
-    columnData.setMeta("MDA Complete: "+mdaComplete+ " / " + "Visited: "+foundStructures);
+    columnData.setMeta("MDA Complete: " + mdaComplete + " / " + "Visited: " + foundStructures);
     return columnData;
   }
 
-  private ColumnData getTotalStructuresMdaComplete(Plan plan, Location childLocation) {
+  private ColumnData getTotalStructuresMdaCompleteOrPartiallyCompleted(
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
     ColumnData columnData = new ColumnData();
-    columnData.setValue(0d);
 
-    Long completedStructuresCountObj = null;
-    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.MDA_COMPLETE, plan.getLocationHierarchy().getIdentifier());
+    double completedStructuresCount;
+    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.MDA_COMPLETE);
     if (completedStructuresCountObjCount != null) {
-      completedStructuresCountObj = completedStructuresCountObjCount.getLocationCount();
+      completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
+    } else {
+      completedStructuresCount = 0L;
     }
 
-    double completedStructuresCount = 0;
-    if (completedStructuresCountObj != null) {
-      completedStructuresCount = completedStructuresCountObj;
+    double partiallyCompletedStructuresCount;
+    LocationBusinessStateCount partiallyCompletedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.PARTIALLY_COMPLETE);
+    if (partiallyCompletedStructuresCountObjCount != null) {
+      partiallyCompletedStructuresCount = partiallyCompletedStructuresCountObjCount.getLocationCount();
+    } else {
+      partiallyCompletedStructuresCount = 0;
     }
 
-    columnData.setValue(completedStructuresCount);
+    double partiallyCompleteOrComplete =
+        partiallyCompletedStructuresCount + completedStructuresCount;
+
+    columnData.setValue(partiallyCompleteOrComplete);
 
     return columnData;
   }
 
 
-  private ColumnData getTotalStructuresCounts(Plan plan, Location childLocation) {
-
-    Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
-        childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
-        LocationConstants.STRUCTURE, plan);
+  private ColumnData getTotalStructuresCounts(Long totalStructuresCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
     double totalStructuresCount = 0;
     if (totalStructuresCountObj != null) {
@@ -153,9 +196,9 @@ public class SurveyDashboardService {
     }
 
     Long notEligibleStructuresCountObj = null;
-    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.NOT_ELIGIBLE);
 
     if (notEligibleStructuresCountObjCount != null) {
       notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
@@ -175,22 +218,15 @@ public class SurveyDashboardService {
     return totalStructuresColumnData;
   }
 
-  private ColumnData getTotalStructuresTargetedCount(Plan plan, Location childLocation) {
-
-
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan, childLocation);
-
+  private ColumnData getTotalStructuresTargetedCount(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
     double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresTargetedCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
-    }
+    totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
 
     Long notEligibleStructuresCountObj = null;
-    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.NOT_ELIGIBLE);
 
     if (notEligibleStructuresCountObjCount != null) {
       notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
@@ -210,24 +246,15 @@ public class SurveyDashboardService {
     return totalStructuresTargetedColumnData;
   }
 
-  private ColumnData getTotalStructuresFoundCount(Plan plan, Location childLocation) {
+  private ColumnData getTotalStructuresFoundCount(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
     ColumnData columnData = new ColumnData();
     columnData.setValue(0d);
 
-    Long totalStructuresTargetedCountObj = planLocationsService.getAssignedStructureCountByLocationParentAndPlan(
-        plan, childLocation);
-
-
-    double totalStructuresInPlanLocationCount = 0;
-    if (totalStructuresTargetedCountObj != null) {
-      totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
-    }
-
     Long notEligibleStructuresCountObj = null;
-    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.NOT_ELIGIBLE, plan.getLocationHierarchy().getIdentifier());
+    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.NOT_ELIGIBLE);
 
     if (notEligibleStructuresCountObjCount != null) {
       notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
@@ -239,12 +266,11 @@ public class SurveyDashboardService {
     }
 
     double totalStructuresInTargetedCount =
-        totalStructuresInPlanLocationCount - notEligibleStructuresCount;
+        (double) totalStructuresTargetedCountObj - notEligibleStructuresCount;
 
     Long notVisitedStructuresCountObj = null;
-    LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStatusService.getLocationBusinessStateObjPerBusinessStatusAndGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(), LocationConstants.STRUCTURE,
-        BusinessStatus.NOT_VISITED, plan.getLocationHierarchy().getIdentifier());
+    LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.NOT_VISITED);
 
     if (notVisitedStructuresCountObjCount != null) {
       notVisitedStructuresCountObj = notVisitedStructuresCountObjCount.getLocationCount();
@@ -254,7 +280,6 @@ public class SurveyDashboardService {
     if (notVisitedStructuresCountObj != null) {
       notVisitedStructuresCount = notVisitedStructuresCountObj;
     }
-
 
     double found = totalStructuresInTargetedCount - notVisitedStructuresCount;
 
@@ -298,7 +323,7 @@ public class SurveyDashboardService {
         String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
             .get(STRUCTURE_STATUS).getValue();
         loc.getProperties().setBusinessStatus(
-            businessStatus);
+            businessStatus == null ? "No State" : businessStatus);
         loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
       }
 

@@ -6,7 +6,7 @@ public interface LocationBusinessStateCount {
 
   String getPlanIdentifier();
 
-  String getBusinessStatus();
+  String getTaskBusinessStatus();
 
   Long getLocationCount();
 }

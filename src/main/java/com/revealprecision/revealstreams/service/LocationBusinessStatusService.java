@@ -118,6 +118,13 @@ public class LocationBusinessStatusService {
 
   }
 
+  public long getTotalLocationsByParentAndPlan(UUID planIdentifier,
+      UUID parentLocationIdentifier) {
+    return taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlan(planIdentifier,
+        parentLocationIdentifier);
+  }
+
+
   public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       String taskBusinessStatus, UUID locationHierarchyIdentifier) {
@@ -162,4 +169,24 @@ public class LocationBusinessStatusService {
         childGeographicLevelName);
   }
 
+  public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier) {
+
+    log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
+        planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
+
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
+        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        locationHierarchyIdentifier);
+
+    locationBusinessStateObjPerGeoLevel.forEach(
+        locationBusinessStateCount -> log.debug("{} - locationBusinessStateObjPerGeoLevel({})",
+            parentLocationIdentifier, locationBusinessStateCount.getTaskBusinessStatus()));
+
+    return locationBusinessStateObjPerGeoLevel.stream().collect(
+        Collectors.toMap(LocationBusinessStateCount::getTaskBusinessStatus,
+            locationBusinessStateCount -> locationBusinessStateCount, (a, b) -> b));
+
+  }
 }

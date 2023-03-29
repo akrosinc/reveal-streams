@@ -112,7 +112,11 @@ public interface FormConstants {
         TASKS_INCOMPLETE, COMPLETE, NOT_ELIGIBLE, FAMILY_NO_TASK_REGISTERED, ALL_TASKS_COMPLETE,
         SPAQ_COMPLETE);
     String REFUSED_OR_PERMANENTLY_ABSENT = "Refused or Permanently Absent";
+    String REFUSED = "Refused";
+    String PERMANENTLY_ABSENT = "Permanently Absent";
     String PARTIALLY_COMPLETE_OR_TEMPORARILY_ABSENT = "Partially complete or Temporarily Absent";
+    String PARTIALLY_COMPLETE = "Partially complete";
+    String TEMPORARILY_ABSENT = "Temporarily Absent";
   }
 
   interface AboveStructureStatus {
