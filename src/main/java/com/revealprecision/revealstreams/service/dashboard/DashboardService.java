@@ -90,7 +90,7 @@ public class DashboardService {
                 getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
                     parentIdentifierString, type))
             .stream()).filter(Objects::nonNull)
-        .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a,b)->b));
+        .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
@@ -103,10 +103,11 @@ public class DashboardService {
         .flatMap(goal -> goal.getActions().stream()).noneMatch(Objects::nonNull)) {
       return null;
     }
-    Optional<Action> hasOnchoAction = plan.getGoals().stream().flatMap(goal -> goal.getActions().stream())
+    Optional<Action> hasOnchoAction = plan.getGoals().stream()
+        .flatMap(goal -> goal.getActions().stream())
         .filter(action -> action.getTitle().equals(
             MDA_ONCHOCERCIASIS_SURVEY.getActionTitle())).findFirst();
-    if (hasOnchoAction.isPresent()){
+    if (hasOnchoAction.isPresent()) {
       return ONCHOCERCIASIS_SURVEY;
     } else {
       return reportTypeEnum;
@@ -232,12 +233,12 @@ public class DashboardService {
 
             return onchocerciasisDashboardService.getMDALiteCoverageDataAboveStructureLevel(
                 plan,
-                loc.getLocation(), type,parentLocation);
+                loc.getLocation(), type, parentLocation);
           case LOWEST_LITE_TOUCH_LEVEL:
 
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
-            if (type.equals(MdaLiteReportType.DRUG_DISTRIBUTION)){
-               return new ArrayList<>();
+            if (type.equals(MdaLiteReportType.DRUG_DISTRIBUTION)) {
+              return new ArrayList<>();
             }
             return onchocerciasisDashboardService.getMDALiteCoverageData(
                 plan,
@@ -280,7 +281,8 @@ public class DashboardService {
         return lsmDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
             rowDataMap, reportLevel);
       case ONCHOCERCIASIS_SURVEY:
-        return onchocerciasisDashboardService.getFeatureSetResponse(parentIdentifier, locationDetails,
+        return onchocerciasisDashboardService.getFeatureSetResponse(parentIdentifier,
+            locationDetails,
             rowDataMap, reportLevel, type);
 
 
@@ -389,8 +391,6 @@ public class DashboardService {
     String lowestLevel = plan.getLocationHierarchy().getNodeOrder()
         .get(plan.getLocationHierarchy().getNodeOrder().size() - 1);
 
-
-
     String secondHighestLevel = plan.getLocationHierarchy().getNodeOrder()
         .get(1);
 
@@ -424,7 +424,7 @@ public class DashboardService {
             return reportLevel;
           } else {
             if (parentLocation.getGeographicLevel().getName()
-                .equals(secondHighestLevel)){
+                .equals(secondHighestLevel)) {
               return ALL_OTHER_LEVELS;
             } else {
               return ALL_OTHER_LEVELS;
