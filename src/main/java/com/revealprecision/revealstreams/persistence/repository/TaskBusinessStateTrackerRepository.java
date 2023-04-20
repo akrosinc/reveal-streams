@@ -13,11 +13,6 @@ import org.springframework.stereotype.Repository;
 public interface TaskBusinessStateTrackerRepository extends
     JpaRepository<TaskBusinessStateTracker, UUID> {
 
-  @Query(
-      "SELECT DISTINCT new TaskBusinessStateTracker (t.taskLocationIdentifier,t.parentGeographicLevelName,t.taskLocationName,t.taskBusinessStatus) from TaskBusinessStateTracker t WHERE t.planIdentifier = :planIdentifier "
-          + "and t.locationHierarchyIdentifier = :locationHierarchyIdentifier and t.taskLocationIdentifier = :taskLocationIdentifier")
-  TaskBusinessStateTracker findTaskBusinessStateTrackerByLocationHierarchyIdentifierAndTaskLocationIdentifierAndPlanIdentifier(
-      UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);
 
   @Query(
       "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier, count(t) as locationCount from TaskBusinessStateTracker t "
@@ -70,11 +65,6 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID locationHierarchyIdentifier, UUID taskLocationIdentifier, UUID planIdentifier);
 
   @Query(
-      "SELECT t.parentLocationIdentifier as parentLocationIdentifier, t.planIdentifier as planIdentifier,t.taskBusinessStatus as businessStatus, count(t) as locationCount from TaskBusinessStateTracker t "
-          + "where t.parentLocationIdentifier = :parentLocationIdentifier"
-          + " and t.taskLocationGeographicLevelName = :taskLocationGeographicLevelName and "
-          + "t.planIdentifier = :planIdentifier and t.locationHierarchyIdentifier = :locationHierarchyIdentifier"
-          + " group by t.parentLocationIdentifier, t.planIdentifier,t.taskBusinessStatus ")
       value =
           "SELECT CAST(tbst.parent_location_identifier as varchar) as parentLocationIdentifier"
               + ", CAST(tbst.plan_identifier  as varchar) as planIdentifier"

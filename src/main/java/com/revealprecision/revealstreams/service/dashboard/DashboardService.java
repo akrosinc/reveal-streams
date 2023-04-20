@@ -234,8 +234,15 @@ public class DashboardService {
                 plan,
                 loc.getLocation(), type,parentLocation);
           case LOWEST_LITE_TOUCH_LEVEL:
-          case ALL_OTHER_LEVELS:
+
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
+            if (type.equals(MdaLiteReportType.DRUG_DISTRIBUTION)){
+               return new ArrayList<>();
+            }
+            return onchocerciasisDashboardService.getMDALiteCoverageData(
+                plan,
+                loc.getLocation(), type);
+          case ALL_OTHER_LEVELS:
             return onchocerciasisDashboardService.getMDALiteCoverageData(
                 plan,
                 loc.getLocation(), type);

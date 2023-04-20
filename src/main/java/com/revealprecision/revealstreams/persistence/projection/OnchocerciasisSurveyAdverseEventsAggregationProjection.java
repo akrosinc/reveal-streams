@@ -7,4 +7,5 @@ public interface OnchocerciasisSurveyAdverseEventsAggregationProjection {
 
   String getLocationName();
   int getReadminstered();
+  int getAdverseEventCount();
 }

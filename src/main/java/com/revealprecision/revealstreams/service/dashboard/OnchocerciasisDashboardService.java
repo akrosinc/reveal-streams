@@ -57,7 +57,7 @@ public class OnchocerciasisDashboardService {
   public static final String RECEIVED_BY_CDD = "Received by CDD";
   public static final String ADMINISTERED = "Administered";
   public static final String LOST_DAMAGED = "Lost / Damaged";
-  public static final String ADVERSE_REACTION = "Adverse reaction";
+  public static final String NUMBER_OF_ADVERSE_EVENTS = "# of adverse events";
   public static final String RETURNED_TO_SUPERVISOR = "Returned to supervisor";
   public static final String BUSINESS_STATUS = "Business Status";
 
@@ -72,11 +72,11 @@ public class OnchocerciasisDashboardService {
   private static final String FEMALES_15 = "Female 15+ years";
 
   public static final String TOTAL_UNTREATED = "Total Untreated";
-  public static final String PREGNANT = "Pregnant";
-  public static final String CHILD_UNDER_5 = "Child < 5";
-  public static final String SICK = "Sick";
-  public static final String ABSENT = "Absent";
-  public static final String REFUSAL = "Refusal";
+  public static final String PREGNANT = "Total Untreated Pregnant";
+  public static final String CHILD_UNDER_5 = "Total Untreated Child < 5";
+  public static final String SICK = "Total Untreated Sick";
+  public static final String ABSENT = "Total Untreated Absent";
+  public static final String REFUSAL = "Total Untreated Refusal";
 
   public static final String PHONE_NUMBER = "Phone Number";
   public static final String NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD = "Number of Structures within household";
@@ -216,7 +216,7 @@ public class OnchocerciasisDashboardService {
       OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData,
       OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals,
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap
-      ) {
+  ) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     Double totalTreated = getTotalTreatedAccrossHoldAndOutside(
@@ -306,14 +306,6 @@ public class OnchocerciasisDashboardService {
                 (aggregationDataFromCddSupervisorDailySummary == null ? 0
                     : aggregationDataFromCddSupervisorDailySummary.getTotalUntreatedPregnant())));
 
-    columns.put(CHILD_UNDER_5,
-        new ColumnData().setValue(
-            (homelessIndividuals == null ? 0 : homelessIndividuals.getTotalUntreatedUnderFive()) +
-                (pointDistributionData == null ? 0
-                    : pointDistributionData.getTotalUntreatedUnderFive()) +
-                (aggregationDataFromCddSupervisorDailySummary == null ? 0
-                    : aggregationDataFromCddSupervisorDailySummary.getTotalUntreatedUnderFive())));
-
     columns.put(SICK,
         new ColumnData().setValue(
             (homelessIndividuals == null ? 0 : homelessIndividuals.getTotalUntreatedSick()) +
@@ -346,7 +338,8 @@ public class OnchocerciasisDashboardService {
 
     columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
         getTreatmentCoverage(
-            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)).setIsHidden(true));
+            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,
+                totalTreated)).setIsHidden(true));
 
     return columns;
   }
@@ -411,11 +404,6 @@ public class OnchocerciasisDashboardService {
             (onchoSurveyFromHouseholdHeadData == null ? 0
                 : onchoSurveyFromHouseholdHeadData.getTotalUntreatedPregnant())));
 
-    columns.put(CHILD_UNDER_5,
-        new ColumnData().setValue(
-            (onchoSurveyFromHouseholdHeadData == null ? 0
-                : onchoSurveyFromHouseholdHeadData.getTotalUntreatedUnderFive())));
-
     columns.put(SICK,
         new ColumnData().setValue(
             (onchoSurveyFromHouseholdHeadData == null ? 0
@@ -452,7 +440,7 @@ public class OnchocerciasisDashboardService {
       OnchocerciasisSurveyCddSummaryAggregationProjection aggregationDataFromCddSupervisorDailySummary,
       OnchocerciasisSurveyCddSummaryAggregationProjection pointDistributionData,
       OnchocerciasisSurveyCddSummaryAggregationProjection homelessIndividuals
-      ) {
+  ) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     Double totalTreated = getTotalTreatedAccrossHoldAndOutside(
@@ -490,13 +478,13 @@ public class OnchocerciasisDashboardService {
         new ColumnData().setValue(onchoSurveyFromDrugAccountability == null ? 0
             : onchoSurveyFromDrugAccountability.getTabletsLost()));
 
-    columns.put(getColumnName(ADVERSE_REACTION),
-        new ColumnData().setValue(onchoSurveyFromAdverseEventsRecord == null ? 0
-            : onchoSurveyFromAdverseEventsRecord.getReadminstered()));
-
     columns.put(getColumnName(RETURNED_TO_SUPERVISOR),
         new ColumnData().setValue(onchoSurveyFromDrugAccountability == null ? 0
             : onchoSurveyFromDrugAccountability.getTabletsReturned()));
+
+    columns.put(getColumnName(NUMBER_OF_ADVERSE_EVENTS),
+        new ColumnData().setValue(onchoSurveyFromAdverseEventsRecord == null ? 0
+            : onchoSurveyFromAdverseEventsRecord.getAdverseEventCount()));
 
     columns.put(COVERAGE_OF_STRUCTURES_VISITED,
         getCoverageOfStructuresVisited(visited, total).setIsHidden(true));
@@ -506,7 +494,8 @@ public class OnchocerciasisDashboardService {
 
     columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
         getTreatmentCoverage(
-            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)).setIsHidden(true));
+            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,
+                totalTreated)).setIsHidden(true));
 
     return columns;
   }
@@ -558,7 +547,7 @@ public class OnchocerciasisDashboardService {
         censusPopTarget);
 
     columns.put(FIELD_VERIFIED_POP_TARGET,
-        getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated));
+        getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap, totalTreated));
 
     columns.put(TOTAL_TREATED,
         new ColumnData()
@@ -572,7 +561,8 @@ public class OnchocerciasisDashboardService {
 
     columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
         getTreatmentCoverage(
-            totalTreated, getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap,totalTreated)));
+            totalTreated,
+            getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap, totalTreated)));
 
     columns.put(TOTAL_STRUCTURE_COUNT,
         new ColumnData()
@@ -607,16 +597,29 @@ public class OnchocerciasisDashboardService {
   }
 
   private ColumnData getCoverageOfStructuresCompleted(Long completed, Long total) {
-    return new ColumnData().setValue((double) completed / (double) total * 100)
+
+    double value = 0;
+    if (total > 0) {
+      value = (double) completed / (double) total * 100;
+    }
+
+    return new ColumnData().setValue(value)
         .setMeta("Completed: " + completed + " / " + " Total: " + total).setIsPercentage(true);
   }
 
   private ColumnData getCoverageOfStructuresVisited(Long visited, Long total) {
-    return new ColumnData().setValue((double) visited / (double) total * 100)
+    double value = 0;
+    if (total > 0) {
+      value = (double) visited / (double) total * 100;
+    }
+
+    return new ColumnData().setValue(value)
         .setMeta("Visited: " + visited + " / " + " Total: " + total).setIsPercentage(true);
   }
 
-  private ColumnData getFieldVerifiedPopTarget(Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap, Double totalTreated){
+  private ColumnData getFieldVerifiedPopTarget(
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap,
+      Double totalTreated) {
     Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
         .filter(key -> !Objects.equals(key,
             BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
@@ -836,7 +839,7 @@ public class OnchocerciasisDashboardService {
 
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses, reportLevel);
 
-    if (!reportLevel.equals(DashboardService.STRUCTURE_LEVEL)){
+    if (!reportLevel.equals(DashboardService.STRUCTURE_LEVEL)) {
       String defaultColumn = dashboardProperties.getOnchoDefaultDisplayColumns();
       response.setDefaultDisplayColumn(defaultColumn);
     }

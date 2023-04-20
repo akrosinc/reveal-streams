@@ -66,11 +66,11 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + ",sum(COALESCE(CAST((et.observations->'untreated_refusal'->>0) as int),0))  as totalUntreatedRefusal   \n"
       + ",sum(COALESCE(CAST((et.observations->'untreated_pregnant'->>0) as int),0))   as totalUntreatedPregnant  \n"
       + ",sum(COALESCE(CAST((et.observations->'untreated_sick'->>0) as int),0)) as totalUntreatedSick \n"
-      + ",sum(COALESCE(CAST((et.observations->'untreated_childrenu5'->>0) as int),0))   as totalUntreatedUnderFive  \n"
+//      + ",sum(COALESCE(CAST((et.observations->'untreated_childrenu5'->>0) as int),0))   as totalUntreatedUnderFive  \n"
       + ",sum(COALESCE(CAST((et.observations->'untreated_absent'->>0) as int),0) +    \n"
       + "\t COALESCE(CAST((et.observations->'untreated_refusal'->>0) as int),0) +    \n"
       + "\t COALESCE(CAST((et.observations->'untreated_pregnant'->>0) as int),0) +     \n"
-      + "\t COALESCE(CAST((et.observations->'untreated_childrenu5'->>0) as int),0) +     \n"
+//      + "\t COALESCE(CAST((et.observations->'untreated_childrenu5'->>0) as int),0) +     \n"
       + "\t COALESCE(CAST((et.observations->'untreated_sick'->>0) as int),0)) as totalUntreated \n"
       + "  From event_tracker et "
       + "left join location_relationships lr on lr.location_identifier = et.location_identifier "
@@ -193,6 +193,7 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
   @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier "
       + ",lp.name as locationName "
       + ",sum(COALESCE(CAST((et.observations->'readminstered'->>0) as int),0)) as readminstered   \n"
+      + ",count(et.*) as adverseEventCount \n"
       + "  From event_tracker et "
       + "left join location_relationships lr on lr.location_identifier = et.location_identifier "
       + "left join location l on lr.location_identifier = l.identifier "
@@ -203,6 +204,8 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + " lp.identifier,lp.name", nativeQuery = true)
   OnchocerciasisSurveyAdverseEventsAggregationProjection getOnchoSurveyFromAdverseEventsRecord(
       UUID locationParentIdentifier, UUID planIdentifier);
+
+
 
   @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier "
       + ",lp.name as locationName "

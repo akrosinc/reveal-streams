@@ -105,19 +105,6 @@ public class LocationBusinessStatusService {
         taskBusinessStatus, locationHierarchyIdentifier);
   }
 
-  public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevel(
-      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
-       UUID locationHierarchyIdentifier) {
-
-    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
-        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
-        locationHierarchyIdentifier);
-    return locationBusinessStateObjPerGeoLevel.stream().collect(
-        Collectors.toMap(LocationBusinessStateCount::getBusinessStatus,
-            locationBusinessStateCount -> locationBusinessStateCount,(a,b)->b));
-
-  }
-
   public long getTotalLocationsByParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier) {
     return taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlan(planIdentifier,
