@@ -454,6 +454,7 @@ public class FormDataStream {
     }
     if (!locationRelationships.isEmpty()) {
       List<FormDataEntityTagValueEvent> collect = locationRelationships.stream()
+          .filter(Objects::nonNull)
           .flatMap(locationRelationshipItem ->
               {
                 List<UUID> ancestry = locationRelationshipItem.getAncestry();
