@@ -54,8 +54,8 @@ public class KafkaConsumerConfig {
         "com.revealprecision.revealstreams.messaging.message.Message");
     props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.revealprecision");
     props.put(JsonDeserializer.KEY_DEFAULT_TYPE, String.class);
-    props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 30);
-    props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(10*1000));
+    props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 15);
+    props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,String.valueOf(120*1000));
     props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG,String.valueOf(10*1000));
     props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG,300000);
 
