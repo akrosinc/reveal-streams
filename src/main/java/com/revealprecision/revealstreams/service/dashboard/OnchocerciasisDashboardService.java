@@ -1,6 +1,40 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
+import static com.revealprecision.revealstreams.constants.DashboardColumns.ABSENT;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.ADMINISTERED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.BUSINESS_STATUS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_COMPLETED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_VISITED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_15;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_5_14;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FIELD_VERIFIED_POP_TARGET;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.HEAD_OF_HOUSE_HOLD;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.HOUSEHOLD_DISTRIBUTION;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.LOST_DAMAGED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.MALES_15;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.MALES_5_14;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_ADVERSE_EVENTS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TARGET;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TREATMENT_COVERAGE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.PHONE_NUMBER;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.POINT_DISTRIBUTION;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.PREGNANT;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.RECEIVED_BY_CDD;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.REFUSAL;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.RETURNED_TO_SUPERVISOR;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.SICK;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_COMPLETE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_NOT_YET_VISITED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_PARTIALLY_COMPLETE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REFUSED_ABSENT;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_VISITED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_LIVING_ON_THE_STREET;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURE_COUNT;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_TREATED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_UNTREATED;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
@@ -39,49 +73,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class OnchocerciasisDashboardService {
-
-  private static final String OFFICIAL_POP_TARGET = "Official Pop Target";
-  private static final String FIELD_VERIFIED_POP_TARGET = "Field Verified Pop Target";
-  public static final String TOTAL_TREATED = "Total Treated";
-  public static final String OFFICIAL_POP_TREATMENT_COVERAGE = "Official Pop Treatment Coverage";
-  public static final String FIELD_VERIFIED_POP_TREATMENT_COVERAGE = "Field Verified Pop Treatment Coverage";
-  public static final String TOTAL_STRUCTURE_COUNT = "Total Structure Count";
-  public static final String STRUCTURES_COMPLETE = "Structures Complete";
-  public static final String STRUCTURES_VISITED = "Structures Visited";
-  public static final String STRUCTURES_PARTIALLY_COMPLETE = "Structures Partially Complete";
-  public static final String STRUCTURES_REFUSED_ABSENT = "Structures Refused / Absent";
-  public static final String STRUCTURES_NOT_YET_VISITED = "Structures Not Visited Yet";
-  public static final String COVERAGE_OF_STRUCTURES_VISITED = "Coverage Of Structures Visited";
-  public static final String COVERAGE_OF_STRUCTURES_COMPLETED = "Coverage Of Structures Completed";
-
-  public static final String RECEIVED_BY_CDD = "Received by CDD";
-  public static final String ADMINISTERED = "Administered";
-  public static final String LOST_DAMAGED = "Lost / Damaged";
-  public static final String NUMBER_OF_ADVERSE_EVENTS = "# of adverse events";
-  public static final String RETURNED_TO_SUPERVISOR = "Returned to supervisor";
-  public static final String BUSINESS_STATUS = "Business Status";
-
-
-  public static final String HOUSEHOLD_DISTRIBUTION = "Household Distribution";
-  public static final String POINT_DISTRIBUTION = "Point Distribution";
-  public static final String TOTAL_LIVING_ON_THE_STREET = "Total living on the street";
-
-  private static final String MALES_5_14 = "Male 5-14 years";
-  private static final String MALES_15 = "Male 15+ years";
-  private static final String FEMALES_5_14 = "Female 5-14 years";
-  private static final String FEMALES_15 = "Female 15+ years";
-
-  public static final String TOTAL_UNTREATED = "Total Untreated";
-  public static final String PREGNANT = "Total Untreated Pregnant";
-  public static final String CHILD_UNDER_5 = "Total Untreated Child < 5";
-  public static final String SICK = "Total Untreated Sick";
-  public static final String ABSENT = "Total Untreated Absent";
-  public static final String REFUSAL = "Total Untreated Refusal";
-
-  public static final String PHONE_NUMBER = "Phone Number";
-  public static final String NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD = "Number of Structures within household";
-  public static final String HEAD_OF_HOUSE_HOLD = "Head of Household";
-
 
   public static final String ONCHOCERCIASIS = "Onchocerciasis";
   public static final String SCH = "SCH";
@@ -241,6 +232,8 @@ public class OnchocerciasisDashboardService {
     Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
         .map(locationBusinessStateObjPerGeoLevelMap::get)
         .collect(Collectors.summingLong(o -> o.getLocationCount()));
+
+
 
     columns.put(HOUSEHOLD_DISTRIBUTION,
         new ColumnData().setValue(

@@ -1,6 +1,24 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FOUND_COVERAGE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.MOBILIZED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_FEMALES;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_MALES;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_PREGNANT_WOMEN;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_ROOMS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.PERCENTAGE_VISITED_EFFECTIVELY;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.REVIEWED_WITH_DECISION;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.SPRAY_COVERAGE_OF_FOUND_STRUCTURES;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REMAINING_TO_SPRAY_TO_REACH_90;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_SPRAYED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURE_STATUS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TARGET_SPRAY_AREAS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_SPRAY_AREAS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES_FOUND;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES_TARGETED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.VISITED_AREAS;
 import static com.revealprecision.revealstreams.props.DashboardProperties.SPRAY_COVERAGE_OF_TARGETED;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getGeoNameDirectlyAboveStructure;
@@ -44,25 +62,6 @@ public class IRSDashboardService {
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
 
-  private static final String TOTAL_SPRAY_AREAS = "Total spray areas";
-  private static final String TARGET_SPRAY_AREAS = "Targeted spray areas";
-  private static final String VISITED_AREAS = "Total  Spray Areas Visited";
-  private static final String TOTAL_STRUCTURES = "Total structures";
-  private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
-  private static final String TOTAL_STRUCTURES_FOUND = "Total Structures Found";
-  private static final String STRUCTURES_SPRAYED = "Total Structures Sprayed";
-  private static final String PERCENTAGE_VISITED_EFFECTIVELY = "Spray Areas Effectively sprayed";
-  private static final String STRUCTURE_STATUS = "Structure Status";
-  private static final String NO_OF_ROOMS = "No of Rooms";
-  private static final String NO_OF_MALES = "No of Males";
-  private static final String NO_OF_FEMALES = "No of Females";
-  private static final String NO_OF_PREGNANT_WOMEN = "No of Pregnant Women";
-  private static final String FOUND_COVERAGE = "Found Coverage (Found/Target)";
-  private static final String SPRAY_COVERAGE_OF_FOUND_STRUCTURES = "Spray Coverage of Found(Sprayed/Found)";
-  private static final String STRUCTURES_REMAINING_TO_SPRAY_TO_REACH_90 = "Structures remaining to spray to reach 90% spray coverage";
-  private static final String REVIEWED_WITH_DECISION = "Reviewed with decision";
-  private static final String MOBILIZED = "Mobilized";
-
   boolean isDatastoresInitialized = false;
   private final ReportRepository planReportRepository;
 
@@ -82,6 +81,7 @@ public class IRSDashboardService {
     columns.put(FOUND_COVERAGE, getFoundCoverage(plan, childLocation));
     columns.put(SPRAY_COVERAGE_OF_FOUND_STRUCTURES,
         getSprayCoverageFoundStructures(plan, childLocation));
+
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);

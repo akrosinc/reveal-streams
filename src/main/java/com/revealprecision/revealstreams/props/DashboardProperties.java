@@ -1,5 +1,6 @@
 package com.revealprecision.revealstreams.props;
 
+import static com.revealprecision.revealstreams.constants.DashboardColumns.FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.ALL_OTHER_LEVELS;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.DIRECTLY_ABOVE_STRUCTURE_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
@@ -14,7 +15,6 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
-import static com.revealprecision.revealstreams.service.dashboard.OnchocerciasisDashboardService.FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
 
