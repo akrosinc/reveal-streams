@@ -27,7 +27,7 @@ public interface OnchocerciasisSurveyCddSummaryAggregationProjection {
 
   int getTotalUntreatedSick();
 
-  int getTotalUntreatedUnderFive();
+  int getTotalUntreatedTravel();
 
   int getTotalUntreated();
 

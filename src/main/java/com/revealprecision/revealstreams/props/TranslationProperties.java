@@ -52,6 +52,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURE_COUNT;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_UNTREATED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TRAVEL;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.VISITED_AREAS;
 
 import java.util.Map;
@@ -122,6 +123,7 @@ public class TranslationProperties {
           Pair.of(SICK, "Total Untreated Sick"),
           Pair.of(ABSENT, "Total Untreated Absent"),
           Pair.of(REFUSAL, "Total Untreated Refusal"),
+          Pair.of(TRAVEL,"Total Untreated Travel"),
           Pair.of(PHONE_NUMBER, "Phone Number"),
           Pair.of(NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD, "Number of Structures within household"),
           Pair.of(HEAD_OF_HOUSE_HOLD, "Head of Household")).collect(
@@ -181,6 +183,7 @@ public class TranslationProperties {
           Pair.of(CHILD_UNDER_5, "Total des enfants non traités < 5"),
           Pair.of(SICK, "Total des malades non traités"),
           Pair.of(ABSENT, "Total des absences non traitées"),
+          Pair.of(TRAVEL,"Total Non traité, voyageant"),
           Pair.of(REFUSAL, "Refus total non traité"),
           Pair.of(PHONE_NUMBER, "Numéro de téléphone"),
           Pair.of(NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD, "Nombre de structures au sein du ménage"),

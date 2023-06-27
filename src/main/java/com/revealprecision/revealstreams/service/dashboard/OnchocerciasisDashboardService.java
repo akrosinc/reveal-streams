@@ -35,6 +35,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURE_COUNT;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_UNTREATED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TRAVEL;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
@@ -322,6 +323,11 @@ public class OnchocerciasisDashboardService {
                     : pointDistributionData.getTotalUntreatedRefusal()) +
                 (aggregationDataFromCddSupervisorDailySummary == null ? 0
                     : aggregationDataFromCddSupervisorDailySummary.getTotalUntreatedRefusal())));
+
+    columns.put(TRAVEL,
+        new ColumnData().setValue(
+                (aggregationDataFromCddSupervisorDailySummary == null ? 0
+                    : aggregationDataFromCddSupervisorDailySummary.getTotalUntreatedTravel())));
 
     columns.put(COVERAGE_OF_STRUCTURES_VISITED,
         getCoverageOfStructuresVisited(visited, total).setIsHidden(true));
