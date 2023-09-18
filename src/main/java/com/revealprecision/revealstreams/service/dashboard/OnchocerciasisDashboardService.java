@@ -525,7 +525,8 @@ public class OnchocerciasisDashboardService {
 
     Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
         .filter(key -> !Objects.equals(key,
-            BusinessStatus.NOT_VISITED)).map(locationBusinessStateObjPerGeoLevelMap::get)
+            BusinessStatus.NOT_VISITED) && !Objects.equals(key,
+            BusinessStatus.NOT_ELIGIBLE)).map(locationBusinessStateObjPerGeoLevelMap::get)
         .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
@@ -539,6 +540,8 @@ public class OnchocerciasisDashboardService {
         .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     Long total = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
+        .filter(key -> !Objects.equals(key,
+            BusinessStatus.NOT_ELIGIBLE))
         .map(locationBusinessStateObjPerGeoLevelMap::get)
         .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
@@ -679,6 +682,7 @@ public class OnchocerciasisDashboardService {
         parentLocation.getIdentifier(), plan.getIdentifier());
 
     List<RowData> collect = onchoSurveyFromHouseholdHeadDataList.stream()
+        .filter(onchocerciasisSurveyCddSummaryAggregationProjection -> onchocerciasisSurveyCddSummaryAggregationProjection.getHouseholdHead()!=null)
         .map(this::getOperationalData)
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
