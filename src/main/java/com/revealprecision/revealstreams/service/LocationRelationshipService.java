@@ -40,6 +40,10 @@ public class LocationRelationshipService {
     return locationRelationshipRepository.getRootLocationDetailsByAndPlanId(planIdentifier);
   }
 
+  public List<PlanLocationDetails> getRootLocationsDetailsByPlanId(UUID planIdentifier) {
+    return locationRelationshipRepository.getRootLocationsDetailByAndPlanId(planIdentifier);
+  }
+
   public List<LocationChildrenCountProjection> getLocationAssignedChildrenCount(
       UUID locationHierarchyIdentifier, UUID planIdentifier) {
     return locationRelationshipRepository.getLocationAssignedChildrenCount(

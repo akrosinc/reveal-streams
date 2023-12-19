@@ -313,7 +313,7 @@ public class DashboardService {
         !parentLocation.getGeographicLevel().getName().equals(LocationConstants.STRUCTURE)) {
 
       if (parentIdentifier == null) {
-        locationDetails.add(locationService.getRootLocationByPlanIdentifier(planIdentifier));
+        locationDetails.addAll(locationService.getRootLocationsByPlanIdentifier(planIdentifier));
       } else {
 
         int structureNodeIndex = plan.getLocationHierarchy().getNodeOrder()
