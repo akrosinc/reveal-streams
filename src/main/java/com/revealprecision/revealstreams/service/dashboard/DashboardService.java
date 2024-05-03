@@ -19,6 +19,7 @@ import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.service.LocationService;
 import com.revealprecision.revealstreams.service.PlanService;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,11 +87,25 @@ public class DashboardService {
     reportTypeEnum = getReportTypeEnum(plan, reportTypeEnum);
 
     ReportTypeEnum finalReportTypeEnum = reportTypeEnum;
-    Map<UUID, RowData> rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
-                getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
-                    parentIdentifierString, type))
-            .stream()).filter(Objects::nonNull)
-        .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+    Map<UUID, RowData> rowDataMap = new HashMap<>();
+    if (finalReportTypeEnum!= null && finalReportTypeEnum.equals(ONCHOCERCIASIS_SURVEY) && reportLevel.equals(STRUCTURE_LEVEL)) {
+      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
+          reportLevel, filters,
+          parentIdentifierString, type);
+
+      if (rowData !=null){
+        rowDataMap = rowData.stream()
+            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+      }
+    } else {
+      rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
+                  getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
+                      parentIdentifierString, type))
+              .stream()).filter(Objects::nonNull)
+          .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+
+    }
+
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
@@ -233,7 +248,7 @@ public class DashboardService {
 
             return onchocerciasisDashboardService.getMDALiteCoverageDataAboveStructureLevel(
                 plan,
-                loc.getLocation(), type, parentLocation);
+                null, type, parentLocation);
           case LOWEST_LITE_TOUCH_LEVEL:
 
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:

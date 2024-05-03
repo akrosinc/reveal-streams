@@ -179,6 +179,46 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + "WHERE hoh_aggregate.location_parent_identifier = :locationParentIdentifier",nativeQuery = true)
   List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromHouseholdHeadData(UUID locationParentIdentifier, UUID planIdentifier);
 
+  @Query(value = "SELECT COALESCE(et.observations -> 'hoh_typed' ->> 0, '')                 as householdHead\n"
+      + "     , COALESCE(et.observations -> 'hoh_phone' ->> 0, '')                 as householdHeadPhoneNumber\n"
+      + "     , cast(l.identifier as varchar)                                      as locationIdentifier\n"
+      + "     , COALESCE(CAST(et.observations -> 'treated_male_5_to_14' ->> 0 as int),\n"
+      + "                0)                                                        as totalTreatedMaleFiveFourteen\n"
+      + "     , COALESCE(CAST(et.observations -> 'treated_male_above_15' ->> 0 as int),\n"
+      + "                0)                                                        as totalTreatedMaleAboveFifteen\n"
+      + "     , COALESCE(CAST(et.observations -> 'treated_female_5_to_14' ->> 0 as int),\n"
+      + "                0)                                                        as totalTreatedFemaleFiveFourteen\n"
+      + "     , COALESCE(CAST(et.observations -> 'treated_female_above_15' ->> 0 as int),\n"
+      + "                0)                                                        as totalTreatedFemaleAboveFifteen\n"
+      + "     , COALESCE(CAST(et.observations -> 'total_treated' ->> 0 as int), 0) as totalTreated\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_absent' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedAbsent\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_refusal' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedRefusal\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_pregnant' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedPregnant\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_sick' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedSick\n"
+      + "     , COALESCE(CAST(et.observations -> 'total_under_5' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedUnderFive\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_travel' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreatedTravel\n"
+      + "     , COALESCE(CAST(et.observations -> 'untreated_total' ->> 0 as int),\n"
+      + "                0)                                                        as totalUntreated\n"
+      + "     , COALESCE(CAST(et.observations -> 'tablets' ->> 0 as int), 0)       as tablets\n"
+      + "     , COALESCE(et.observations -> 'business_status' ->> 0 ,'Not Visited')                        as businessStatus\n"
+      + "From location l\n"
+      + "    left join location_relationship lr on lr.location_identifier = l.identifier\n"
+      + "         left join event_tracker et on et.location_identifier = l.identifier\n"
+      + "WHERE (et.identifier IS NOT NULL and et.plan_identifier = :planIdentifier\n"
+      + "    and et.event_type = 'mda_onchocerciasis_survey' and\n"
+      + "       lr.parent_identifier = :parentLocationIdentifier\n"
+      + "    )\n"
+      + "   or (et.identifier IS NULL and  lr.parent_identifier = :parentLocationIdentifier) ",nativeQuery = true)
+  List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromStructureData(UUID parentLocationIdentifier, UUID planIdentifier);
+
+
+
   @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier "
       + ",lp.name as locationName "
       + ",sum(COALESCE(CAST((et.observations->'tablets_used'->>0) as int),0)) as tabletsUsed   \n"

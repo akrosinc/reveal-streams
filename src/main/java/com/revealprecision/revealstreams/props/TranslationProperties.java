@@ -23,6 +23,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF
 import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_PREGNANT_WOMEN;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.NO_OF_ROOMS;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_ADVERSE_EVENTS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_STRUCTURES;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TARGET;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TREATMENT_COVERAGE;
@@ -126,6 +127,7 @@ public class TranslationProperties {
           Pair.of(TRAVEL,"Total Untreated Travel"),
           Pair.of(PHONE_NUMBER, "Phone Number"),
           Pair.of(NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD, "Number of Structures within household"),
+          Pair.of(NUMBER_OF_STRUCTURES, "Number of Structures"),
           Pair.of(HEAD_OF_HOUSE_HOLD, "Head of Household")).collect(
           Collectors.toMap(Pair::getFirst, Pair::getSecond)),
       "pt",
@@ -187,6 +189,7 @@ public class TranslationProperties {
           Pair.of(REFUSAL, "Refus total non traité"),
           Pair.of(PHONE_NUMBER, "Numéro de téléphone"),
           Pair.of(NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD, "Nombre de structures au sein du ménage"),
+          Pair.of(NUMBER_OF_STRUCTURES, "Nombre de structures"),
           Pair.of(HEAD_OF_HOUSE_HOLD, "Chef de ménage")).collect(
           Collectors.toMap(Pair::getFirst, Pair::getSecond)));
 }

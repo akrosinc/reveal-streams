@@ -16,7 +16,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.LOST_
 import static com.revealprecision.revealstreams.constants.DashboardColumns.MALES_15;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.MALES_5_14;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_ADVERSE_EVENTS;
-import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.NUMBER_OF_STRUCTURES;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TARGET;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.PHONE_NUMBER;
@@ -68,6 +68,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -358,15 +359,14 @@ public class OnchocerciasisDashboardService {
             (onchoSurveyFromHouseholdHeadData == null ? 0
                 : onchoSurveyFromHouseholdHeadData.getHouseholdHead())));
 
+
     columns.put(PHONE_NUMBER,
         new ColumnData().setDataType("string").setValue(
             (onchoSurveyFromHouseholdHeadData == null ? 0
                 : onchoSurveyFromHouseholdHeadData.getHouseholdHeadPhoneNumber())));
 
-    columns.put(NUMBER_OF_STRUCTURES_WITHIN_HOUSEHOLD,
-        new ColumnData().setValue(
-            (onchoSurveyFromHouseholdHeadData == null ? 0
-                : onchoSurveyFromHouseholdHeadData.getNumberOfStructures())));
+    columns.put(NUMBER_OF_STRUCTURES,
+        new ColumnData().setValue(1));
 
     columns.put(TOTAL_TREATED,
         new ColumnData().setValue(
@@ -424,9 +424,9 @@ public class OnchocerciasisDashboardService {
                 : onchoSurveyFromHouseholdHeadData.getTablets())));
 
     columns.put(BUSINESS_STATUS,
-        new ColumnData().setValue(
+        new ColumnData().setDataType("string").setValue(
             (onchoSurveyFromHouseholdHeadData == null ? 0
-                : onchoSurveyFromHouseholdHeadData.getBusinessStatus())).setIsHidden(true));
+                : onchoSurveyFromHouseholdHeadData.getBusinessStatus())).setIsHidden(false));
 
     return columns;
   }
@@ -675,14 +675,13 @@ public class OnchocerciasisDashboardService {
         + " Household Treated: " + householdTreated;
   }
 
-  public List<RowData> getMDALiteCoverageDataAboveStructureLevel(Plan plan, Location childLocation,
-      MdaLiteReportType type, Location parentLocation) {
+  public List<RowData> getMDALiteCoverageDataAboveStructureLevel(Plan plan,@Nullable Location childLocation,
+      MdaLiteReportType type,   Location parentLocation) {
 
-    List<OnchocerciasisSurveyCddSummaryAggregationProjection> onchoSurveyFromHouseholdHeadDataList = eventTrackerRepository.getOnchoSurveyFromHouseholdHeadData(
+    List<OnchocerciasisSurveyCddSummaryAggregationProjection> onchoSurveyFromHouseholdHeadDataList = eventTrackerRepository.getOnchoSurveyFromStructureData(
         parentLocation.getIdentifier(), plan.getIdentifier());
 
     List<RowData> collect = onchoSurveyFromHouseholdHeadDataList.stream()
-        .filter(onchocerciasisSurveyCddSummaryAggregationProjection -> onchocerciasisSurveyCddSummaryAggregationProjection.getHouseholdHead()!=null)
         .map(this::getOperationalData)
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
