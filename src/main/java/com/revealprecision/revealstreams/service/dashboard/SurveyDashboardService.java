@@ -56,7 +56,7 @@ public class SurveyDashboardService {
     Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
         LocationConstants.STRUCTURE, plan);
-    
+
     long totalStructuresTargetedCountObj = locationBusinessStatusService.getTotalLocationsByParentAndPlan(
         plan.getIdentifier(),
         childLocation.getIdentifier());
@@ -80,13 +80,13 @@ public class SurveyDashboardService {
         TOTAL_STRUCTURES_VISITED,
         getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
             locationBusinessStateObjPerGeoLevelMap));
-    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE,
-        getTotalStructuresMdaCompleteOrPartiallyCompleted(
-            locationBusinessStateObjPerGeoLevelMap));
+//    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE,
+//        getTotalStructuresMdaCompleteOrPartiallyCompleted(
+//            locationBusinessStateObjPerGeoLevelMap));
     columns.put(VISITATION_COVERAGE,
         getFoundCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
-    columns.put(DISTRIBUTION_COVERAGE,
-        getDistributionCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
+//    columns.put(DISTRIBUTION_COVERAGE,
+//        getDistributionCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
