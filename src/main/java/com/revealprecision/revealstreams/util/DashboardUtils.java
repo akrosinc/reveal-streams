@@ -67,6 +67,7 @@ public class DashboardUtils {
       case BusinessStatus.FULLY_RECEIVED:
       case BusinessStatus.MDA_COMPLETE:
       case PARTIALLY_SPRAYED:
+      case BusinessStatus.ROUND_3:
         return Colors.green;
       case BusinessStatus.NOT_SPRAYABLE:
       case BusinessStatus.NOT_ELIGIBLE:
@@ -78,7 +79,14 @@ public class DashboardUtils {
       case BusinessStatus.PARTIALLY_COMPLETE_OR_TEMPORARILY_ABSENT:
       case BusinessStatus.PARTIALLY_COMPLETE:
       case BusinessStatus.TEMPORARILY_ABSENT:
+      case BusinessStatus.ROUNDREFUSED:
         return Colors.orange;
+      case BusinessStatus.ENROLLED:
+        return Colors.magenta;
+      case BusinessStatus.ROUND_1:
+        return Colors.cyan;
+      case BusinessStatus.ROUND_2:
+        return Colors.blue;
       default:
         log.debug(String.format("business status ( %s ) is not defined", businessStatus));
         return null;

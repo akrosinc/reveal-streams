@@ -15,7 +15,10 @@ import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
+import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
+import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
+import com.revealprecision.revealstreams.props.InstanceProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import com.revealprecision.revealstreams.util.DashboardUtils;
@@ -36,6 +39,8 @@ public class SurveyDashboardService {
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
+  private final InstanceProperties instanceProperties;
+  private final LocationRepository locationRepository;
 
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
@@ -44,6 +49,15 @@ public class SurveyDashboardService {
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
+
+  public static final String ROUND_1_COUNT = "Round 1";
+  public static final String ROUND_2_COUNT = "Round 2";
+  public static final String ROUND_3_COUNT = "Round 3";
+  public static final String ENROLLED_COUNT = "Enrolled";
+  public static final String REFUSED_COUNT = "Refused";
+  public static final String ROUND_REFUSED_COUNT = "Round Refused";
+  public static final String CLUSTER_COUNT = "Cluster Count";
+
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
@@ -80,6 +94,41 @@ public class SurveyDashboardService {
         TOTAL_STRUCTURES_VISITED,
         getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
             locationBusinessStateObjPerGeoLevelMap));
+
+    if (instanceProperties.getClient().equals("uw")) {
+
+      LocationMultipartCountProjection clusterCount = locationRepository.getMultipartLocationCountByLocationParent(
+          childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(), "cluster");
+
+      columns.put(ROUND_1_COUNT,
+        getTotalStructuresByState(BusinessStatus.ROUND_1,
+            locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(ROUND_2_COUNT,
+          getTotalStructuresByState(BusinessStatus.ROUND_2,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(ROUND_3_COUNT,
+          getTotalStructuresByState(BusinessStatus.ROUND_3,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(REFUSED_COUNT,
+          getTotalStructuresByState(BusinessStatus.REFUSED,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(ROUND_REFUSED_COUNT,
+          getTotalStructuresByState(BusinessStatus.ROUNDREFUSED,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(ENROLLED_COUNT,
+          getTotalStructuresByState(BusinessStatus.ENROLLED,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(CLUSTER_COUNT,
+          ColumnData.builder().value(clusterCount.getLocationCount()).build());
+    }
+
+
 //    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE,
 //        getTotalStructuresMdaCompleteOrPartiallyCompleted(
 //            locationBusinessStateObjPerGeoLevelMap));
@@ -138,50 +187,40 @@ public class SurveyDashboardService {
     return columnData;
   }
 
-  private ColumnData getDistributionCoverage(long totalStructuresTargetedCountObj,
-      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
-    ColumnData columnData = new ColumnData();
-    columnData.setIsPercentage(true);
-    double foundStructures = (double) getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
-        locationBusinessStateObjPerGeoLevelMap).getValue();
-    double mdaComplete = (double) getTotalStructuresMdaCompleteOrPartiallyCompleted(
-        locationBusinessStateObjPerGeoLevelMap).getValue();
-    if (foundStructures == 0) {
-      columnData.setValue(0d);
-    } else {
-      columnData.setValue((mdaComplete / foundStructures) * 100);
-    }
-    columnData.setMeta("MDA Complete: " + mdaComplete + " / " + "Visited: " + foundStructures);
-    return columnData;
-  }
+//  private ColumnData getDistributionCoverage(long totalStructuresTargetedCountObj,
+//      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+//    ColumnData columnData = new ColumnData();
+//    columnData.setIsPercentage(true);
+//    double foundStructures = (double) getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
+//        locationBusinessStateObjPerGeoLevelMap).getValue();
+//    double mdaComplete = (double) getTotalStructuresMdaCompleteOrPartiallyCompleted(
+//        locationBusinessStateObjPerGeoLevelMap).getValue();
+//    if (foundStructures == 0) {
+//      columnData.setValue(0d);
+//    } else {
+//      columnData.setValue((mdaComplete / foundStructures) * 100);
+//    }
+//    columnData.setMeta("MDA Complete: " + mdaComplete + " / " + "Visited: " + foundStructures);
+//    return columnData;
+//  }
 
-  private ColumnData getTotalStructuresMdaCompleteOrPartiallyCompleted(
+  private ColumnData getTotalStructuresByState(String businessState,
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
     ColumnData columnData = new ColumnData();
 
     double completedStructuresCount;
     LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        BusinessStatus.MDA_COMPLETE);
+        businessState);
     if (completedStructuresCountObjCount != null) {
       completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
     } else {
       completedStructuresCount = 0L;
     }
 
-    double partiallyCompletedStructuresCount;
-    LocationBusinessStateCount partiallyCompletedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        BusinessStatus.PARTIALLY_COMPLETE);
-    if (partiallyCompletedStructuresCountObjCount != null) {
-      partiallyCompletedStructuresCount = partiallyCompletedStructuresCountObjCount.getLocationCount();
-    } else {
-      partiallyCompletedStructuresCount = 0;
-    }
 
-    double partiallyCompleteOrComplete =
-        partiallyCompletedStructuresCount + completedStructuresCount;
 
-    columnData.setValue(partiallyCompleteOrComplete);
+    columnData.setValue(completedStructuresCount);
 
     return columnData;
   }

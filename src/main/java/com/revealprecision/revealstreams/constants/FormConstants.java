@@ -82,6 +82,12 @@ public interface FormConstants {
     String ADHERENCE_VISIT_DONE = "Adherence Visit Done";
     String PARTIALLY_RECEIVED = "Partially Received";
 
+    String ENROLLED = "enrolled";
+    String ROUND_1 = "round_one";
+    String ROUND_2 = "round_two";
+    String ROUND_3 = "round_three";
+    String ROUNDREFUSED = "round_refused";
+
     String MDA_COMPLETE = "MDA complete";
     String MDA_REFUSED_OR_ABSENT = "MDA refused or absent";
     String MDA_PARTIALLY_COMPLETE = "MDA partially complete";
@@ -113,6 +119,7 @@ public interface FormConstants {
         SPAQ_COMPLETE);
     String REFUSED_OR_PERMANENTLY_ABSENT = "Refused or Permanently Absent";
     String REFUSED = "Refused";
+
     String PERMANENTLY_ABSENT = "Permanently Absent";
     String PARTIALLY_COMPLETE_OR_TEMPORARILY_ABSENT = "Partially complete or Temporarily Absent";
     String PARTIALLY_COMPLETE = "Partially complete";
@@ -138,5 +145,10 @@ public interface FormConstants {
 
     String green = "#6CBF0F";
     String yellow = "#FFCA16";
+
+    String magenta = "#F032e6";
+    String cyan = "#42D4F4";
+
+    String blue = "#4363D8";
   }
 }
