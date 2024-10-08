@@ -56,7 +56,7 @@ public class DashboardUtils {
       case BusinessStatus.NONE_RECEIVED:
       case BusinessStatus.MDA_REFUSED_OR_ABSENT:
       case BusinessStatus.REFUSED_OR_PERMANENTLY_ABSENT:
-      case BusinessStatus.REFUSED:
+      case BusinessStatus.NOT_ENROLLED:
       case BusinessStatus.PERMANENTLY_ABSENT:
         return Colors.red;
       case BusinessStatus.SPRAYED:
@@ -66,6 +66,7 @@ public class DashboardUtils {
       case BusinessStatus.COMPLETE:
       case BusinessStatus.FULLY_RECEIVED:
       case BusinessStatus.MDA_COMPLETE:
+      case BusinessStatus.MONTH_SIX_COMPLETE:
       case PARTIALLY_SPRAYED:
       case BusinessStatus.ROUND_3:
         return Colors.green;
@@ -80,10 +81,12 @@ public class DashboardUtils {
       case BusinessStatus.PARTIALLY_COMPLETE:
       case BusinessStatus.TEMPORARILY_ABSENT:
       case BusinessStatus.ROUNDREFUSED:
+      case BusinessStatus.ENROLLED_NOT_COMPLETE:
         return Colors.orange;
       case BusinessStatus.ENROLLED:
         return Colors.magenta;
       case BusinessStatus.ROUND_1:
+      case BusinessStatus.MONTH_THREE_COMPLETE:
         return Colors.cyan;
       case BusinessStatus.ROUND_2:
         return Colors.blue;

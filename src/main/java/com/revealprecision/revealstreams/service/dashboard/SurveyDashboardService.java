@@ -50,12 +50,12 @@ public class SurveyDashboardService {
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
-  public static final String ROUND_1_COUNT = "Round 1";
-  public static final String ROUND_2_COUNT = "Round 2";
-  public static final String ROUND_3_COUNT = "Round 3";
+
+  public static final String MONTH_THREE_COMPLETE_COUNT = "Month Three Complete";
+  public static final String MONTH_SIX_COMPLETE_COUNT = "Month Six Complete";
   public static final String ENROLLED_COUNT = "Enrolled";
-  public static final String REFUSED_COUNT = "Refused";
-  public static final String ROUND_REFUSED_COUNT = "Round Refused";
+  public static final String NOT_ENROLLED_COUNT = "Not Enrolled";
+  public static final String ENROLLED_NOT_COMPLETE = "Enrolled Not Complete";
   public static final String CLUSTER_COUNT = "Cluster Count";
 
 
@@ -100,42 +100,34 @@ public class SurveyDashboardService {
       LocationMultipartCountProjection clusterCount = locationRepository.getMultipartLocationCountByLocationParent(
           childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(), "cluster");
 
-      columns.put(ROUND_1_COUNT,
-        getTotalStructuresByState(BusinessStatus.ROUND_1,
-            locationBusinessStateObjPerGeoLevelMap));
-
-      columns.put(ROUND_2_COUNT,
-          getTotalStructuresByState(BusinessStatus.ROUND_2,
-              locationBusinessStateObjPerGeoLevelMap));
-
-      columns.put(ROUND_3_COUNT,
-          getTotalStructuresByState(BusinessStatus.ROUND_3,
-              locationBusinessStateObjPerGeoLevelMap));
-
-      columns.put(REFUSED_COUNT,
-          getTotalStructuresByState(BusinessStatus.REFUSED,
-              locationBusinessStateObjPerGeoLevelMap));
-
-      columns.put(ROUND_REFUSED_COUNT,
-          getTotalStructuresByState(BusinessStatus.ROUNDREFUSED,
-              locationBusinessStateObjPerGeoLevelMap));
-
       columns.put(ENROLLED_COUNT,
           getTotalStructuresByState(BusinessStatus.ENROLLED,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(NOT_ENROLLED_COUNT,
+          getTotalStructuresByState(BusinessStatus.NOT_ENROLLED,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(ENROLLED_NOT_COMPLETE,
+          getTotalStructuresByState(BusinessStatus.ENROLLED_NOT_COMPLETE,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(MONTH_THREE_COMPLETE_COUNT,
+          getTotalStructuresByState(BusinessStatus.MONTH_THREE_COMPLETE,
+              locationBusinessStateObjPerGeoLevelMap));
+
+
+      columns.put(MONTH_SIX_COMPLETE_COUNT,
+          getTotalStructuresByState(BusinessStatus.MONTH_SIX_COMPLETE,
               locationBusinessStateObjPerGeoLevelMap));
 
       columns.put(CLUSTER_COUNT,
           ColumnData.builder().value(clusterCount.getLocationCount()).build());
     }
 
-
-//    columns.put(TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE,
-//        getTotalStructuresMdaCompleteOrPartiallyCompleted(
-//            locationBusinessStateObjPerGeoLevelMap));
     columns.put(VISITATION_COVERAGE,
         getFoundCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
-//    columns.put(DISTRIBUTION_COVERAGE,
-//        getDistributionCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
+
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
     rowData.setColumnDataMap(columns);
@@ -218,9 +210,49 @@ public class SurveyDashboardService {
       completedStructuresCount = 0L;
     }
 
-
-
     columnData.setValue(completedStructuresCount);
+
+    return columnData;
+  }
+
+  private ColumnData getTotalStructuresByRoundRefuse(
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+
+    ColumnData columnData = new ColumnData();
+
+    double refusedCount;
+
+    LocationBusinessStateCount refused = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.REFUSED);
+
+    LocationBusinessStateCount roundOneRefused = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.ROUND_ONE_REFUSED);
+
+    LocationBusinessStateCount roundTwoRefused = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.ROUND_TWO_REFUSED);
+
+    LocationBusinessStateCount roundThreeRefused = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.ROUND_THREE_REFUSED);
+
+    if (refused != null) {
+      refusedCount = refused.getLocationCount();
+    } else {
+      refusedCount = 0L;
+    }
+
+    if (roundOneRefused != null) {
+      refusedCount += roundOneRefused.getLocationCount();
+    }
+
+    if (roundTwoRefused != null) {
+      refusedCount += roundTwoRefused.getLocationCount();
+    }
+
+    if (roundThreeRefused != null) {
+      refusedCount += roundThreeRefused.getLocationCount();
+    }
+
+    columnData.setValue(refusedCount);
 
     return columnData;
   }

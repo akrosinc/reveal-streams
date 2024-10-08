@@ -83,10 +83,18 @@ public interface FormConstants {
     String PARTIALLY_RECEIVED = "Partially Received";
 
     String ENROLLED = "enrolled";
+    String NOT_ENROLLED = "notenrolled";
+    String ENROLLED_NOT_COMPLETE = "enrollednotcomplete";
+    String MONTH_THREE_COMPLETE = "monththreecomplete";
+    String MONTH_SIX_COMPLETE = "monthsixcomplete";
     String ROUND_1 = "round_one";
     String ROUND_2 = "round_two";
     String ROUND_3 = "round_three";
-    String ROUNDREFUSED = "round_refused";
+    String ROUNDREFUSED = "Refused";
+    String ROUND_ONE_REFUSED = "round_one_refused";
+    String ROUND_TWO_REFUSED = "round_two_refused";
+    String ROUND_THREE_REFUSED = "round_three_refused";
+
 
     String MDA_COMPLETE = "MDA complete";
     String MDA_REFUSED_OR_ABSENT = "MDA refused or absent";
