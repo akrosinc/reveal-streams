@@ -50,7 +50,7 @@ public class SurveyDashboardService {
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
-
+  public static final String COMPLETE = "Complete";
   public static final String MONTH_THREE_COMPLETE_COUNT = "Month Three Complete";
   public static final String MONTH_SIX_COMPLETE_COUNT = "Month Six Complete";
   public static final String ENROLLED_COUNT = "Enrolled";
@@ -123,6 +123,11 @@ public class SurveyDashboardService {
 
       columns.put(CLUSTER_COUNT,
           ColumnData.builder().value(clusterCount.getLocationCount()).build());
+    } else {
+      columns.put(
+          COMPLETE,
+          getTotalStructuresCompleteCount(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
     }
 
     columns.put(VISITATION_COVERAGE,
@@ -358,7 +363,24 @@ public class SurveyDashboardService {
 
     return columnData;
   }
+  private ColumnData getTotalStructuresCompleteCount(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
+    ColumnData columnData = new ColumnData();
+    columnData.setValue(0d);
+
+    Long completeStructuresCountObj = null;
+    LocationBusinessStateCount completeStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.COMPLETE);
+
+    if (completeStructuresCountObjCount != null) {
+      completeStructuresCountObj = completeStructuresCountObjCount.getLocationCount();
+
+      columnData.setValue(completeStructuresCountObj);
+    }
+
+    return columnData;
+  }
 
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails, Map<UUID, RowData> rowDataMap,
