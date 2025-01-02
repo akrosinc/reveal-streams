@@ -21,6 +21,8 @@ public class HttpLoggingProperties {
   private boolean shouldLogToConsole = true;
   private boolean shouldLogToDatabase = true;
 
+  private boolean logPostBody = false;
+
   private  Integer logLength = 2000;
 
   private List<String> excludedPaths = List.of("/actuator/");
