@@ -1,6 +1,6 @@
 package com.revealprecision.revealstreams.props;
 
-import static com.revealprecision.revealstreams.constants.DashboardColumns.FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.ALL_OTHER_LEVELS;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.DIRECTLY_ABOVE_STRUCTURE_LEVEL;
 import static com.revealprecision.revealstreams.service.dashboard.IRSLiteDashboardService.SPRAY_PROGRESS_SPRAYED_TARGETED;
@@ -86,7 +86,7 @@ public class DashboardProperties {
           entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(STH) , STH_TREATMENT_COVERAGE)
       );
 
-  private String onchoDefaultDisplayColumns =  FIELD_VERIFIED_POP_TREATMENT_COVERAGE;
+  private String onchoDefaultDisplayColumns =  OFFICIAL_POP_TREATMENT_COVERAGE;
 
 
   private String mdaLiteSchImportTag="sch-population-target";
