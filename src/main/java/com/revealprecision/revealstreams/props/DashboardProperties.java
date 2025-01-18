@@ -1,5 +1,6 @@
 package com.revealprecision.revealstreams.props;
 
+import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.OFFICIAL_POP_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.ALL_OTHER_LEVELS;
 import static com.revealprecision.revealstreams.service.dashboard.DashboardService.DIRECTLY_ABOVE_STRUCTURE_LEVEL;
@@ -84,6 +85,15 @@ public class DashboardProperties {
 
           entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(SCH) , SCH_TREATMENT_COVERAGE),
           entry(MdaLiteReportType.TREATMENT_COVERAGE.name().concat(STH) , STH_TREATMENT_COVERAGE)
+      );
+
+  private final Map<String, String> onchoDefaultDisplayColumnsMap =
+      Map.ofEntries(
+          entry(MdaLiteReportType.POPULATION_DISTRIBUTION.name() , OFFICIAL_POP_TREATMENT_COVERAGE),
+
+          entry(MdaLiteReportType.DRUG_DISTRIBUTION.name(), COVERAGE_OF_STRUCTURES_VISITED),
+
+          entry(MdaLiteReportType.TREATMENT_COVERAGE.name() , COVERAGE_OF_STRUCTURES_VISITED)
       );
 
   private String onchoDefaultDisplayColumns =  OFFICIAL_POP_TREATMENT_COVERAGE;

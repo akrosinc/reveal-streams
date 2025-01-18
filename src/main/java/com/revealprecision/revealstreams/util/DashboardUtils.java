@@ -58,6 +58,7 @@ public class DashboardUtils {
       case BusinessStatus.REFUSED_OR_PERMANENTLY_ABSENT:
       case BusinessStatus.NOT_ENROLLED:
       case BusinessStatus.PERMANENTLY_ABSENT:
+      case BusinessStatus.NO_ELIGIBLE_PEOPLE:
         return Colors.red;
       case BusinessStatus.SPRAYED:
       case BusinessStatus.SMC_COMPLETE:
@@ -90,6 +91,10 @@ public class DashboardUtils {
         return Colors.cyan;
       case BusinessStatus.ROUND_2:
         return Colors.blue;
+      case BusinessStatus.STRUCTURE_PART_OF_HOH:
+        return Colors.greendark1;
+      case BusinessStatus.REQUIRE_REVISIT:
+        return Colors.cyandark1;
       default:
         log.debug(String.format("business status ( %s ) is not defined", businessStatus));
         return null;

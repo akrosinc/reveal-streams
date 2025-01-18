@@ -41,6 +41,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.SPRAY
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_COMPLETE;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_NOT_YET_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_PARTIALLY_COMPLETE;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_PART_OF_HOH;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REFUSED_ABSENT;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REMAINING_TO_SPRAY_TO_REACH_90;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_SPRAYED;
@@ -105,6 +106,7 @@ public class TranslationProperties {
           Pair.of(STRUCTURES_REFUSED_ABSENT, "Structures Refused / Absent"),
           Pair.of(STRUCTURES_NOT_YET_VISITED, "Structures Not Visited Yet"),
           Pair.of(STRUCTURES_TREATED,"Structures Treated"),
+          Pair.of(STRUCTURES_PART_OF_HOH,"Structures Part of HoH"),
           Pair.of(COVERAGE_OF_STRUCTURES_VISITED, "Coverage Of Structures Visited"),
           Pair.of(COVERAGE_OF_STRUCTURES_COMPLETED, "Coverage Of Structures Completed"),
           Pair.of(COVERAGE_OF_STRUCTURES_TREATED, "Coverage Of Structures Treated"),
@@ -169,6 +171,7 @@ public class TranslationProperties {
           Pair.of(STRUCTURES_REFUSED_ABSENT, "Structures Refusées / Absentes"),
           Pair.of(STRUCTURES_NOT_YET_VISITED, "Structures non encore visitées"),
           Pair.of(STRUCTURES_TREATED,"Structures traitées"),
+          Pair.of(STRUCTURES_PART_OF_HOH,"Structures faisant partie de HoH"),
           Pair.of(COVERAGE_OF_STRUCTURES_VISITED, "Couverture des structures visitées"),
           Pair.of(COVERAGE_OF_STRUCTURES_COMPLETED, "Couverture des structures achevées"),
           Pair.of(COVERAGE_OF_STRUCTURES_TREATED, "Couverture des structures traitées"),

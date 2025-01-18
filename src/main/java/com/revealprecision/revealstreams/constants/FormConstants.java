@@ -99,6 +99,9 @@ public interface FormConstants {
     String MDA_COMPLETE = "MDA complete";
     String MDA_REFUSED_OR_ABSENT = "MDA refused or absent";
     String MDA_PARTIALLY_COMPLETE = "MDA partially complete";
+    String STRUCTURE_PART_OF_HOH = "Structure part of HOH";
+    String REQUIRE_REVISIT = "Require Revisit";
+    String NO_ELIGIBLE_PEOPLE = "No Eligible People";
 
     String SMC_COMPLETE = "SMC Complete";
     String SPAQ_COMPLETE = "SPAQ Complete";
@@ -152,10 +155,12 @@ public interface FormConstants {
     String orange = "#ED8231";
 
     String green = "#6CBF0F";
+    String greendark1 = "#277023";
     String yellow = "#FFCA16";
 
     String magenta = "#F032e6";
     String cyan = "#42D4F4";
+    String cyandark1 = "#43d4f4";
 
     String blue = "#4363D8";
   }
