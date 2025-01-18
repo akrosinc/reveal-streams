@@ -6,6 +6,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.ADMIN
 import static com.revealprecision.revealstreams.constants.DashboardColumns.BUSINESS_STATUS;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.CHILD_UNDER_5;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_COMPLETED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_15;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_5_14;
@@ -43,15 +44,16 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUC
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REFUSED_ABSENT;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REMAINING_TO_SPRAY_TO_REACH_90;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_SPRAYED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURE_STATUS;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TARGET_SPRAY_AREAS;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_INDIVIDUALS_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_LIVING_ON_THE_STREET;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES_FOUND;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURES_TARGETED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURE_COUNT;
-import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_UNTREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TRAVEL;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.VISITED_AREAS;
@@ -93,7 +95,7 @@ public class TranslationProperties {
           Pair.of(REVIEWED_WITH_DECISION, "Reviewed with decision"),
           Pair.of(MOBILIZED, "Mobilized"), Pair.of(OFFICIAL_POP_TARGET, "Official Pop Target"),
           Pair.of(FIELD_VERIFIED_POP_TARGET, "Field Verified Pop Target"),
-          Pair.of(TOTAL_TREATED, "Total Treated"),
+          Pair.of(TOTAL_INDIVIDUALS_TREATED, "Total Individuals Treated"),
           Pair.of(OFFICIAL_POP_TREATMENT_COVERAGE, "Official Pop Treatment Coverage"),
           Pair.of(FIELD_VERIFIED_POP_TREATMENT_COVERAGE, "Field Verified Pop Treatment Coverage"),
           Pair.of(TOTAL_STRUCTURE_COUNT, "Total Structure Count"),
@@ -102,9 +104,10 @@ public class TranslationProperties {
           Pair.of(STRUCTURES_PARTIALLY_COMPLETE, "Structures Partially Complete"),
           Pair.of(STRUCTURES_REFUSED_ABSENT, "Structures Refused / Absent"),
           Pair.of(STRUCTURES_NOT_YET_VISITED, "Structures Not Visited Yet"),
+          Pair.of(STRUCTURES_TREATED,"Structures Treated"),
           Pair.of(COVERAGE_OF_STRUCTURES_VISITED, "Coverage Of Structures Visited"),
           Pair.of(COVERAGE_OF_STRUCTURES_COMPLETED, "Coverage Of Structures Completed"),
-
+          Pair.of(COVERAGE_OF_STRUCTURES_TREATED, "Coverage Of Structures Treated"),
           Pair.of(RECEIVED_BY_CDD, "Received by CDD"),
           Pair.of(ADMINISTERED, "Administered"),
           Pair.of(LOST_DAMAGED, "Lost / Damaged"),
@@ -155,7 +158,7 @@ public class TranslationProperties {
       Stream.<Pair<String, String>>of(
           Pair.of(OFFICIAL_POP_TARGET, "Couverture officielle du anti-pop"),
           Pair.of(FIELD_VERIFIED_POP_TARGET, "Couverture du anti-pop vérifiée sur le terrain"),
-          Pair.of(TOTAL_TREATED, "totale traitée"),
+          Pair.of(TOTAL_INDIVIDUALS_TREATED, "Nombre total de personnes traitées"),
           Pair.of(OFFICIAL_POP_TREATMENT_COVERAGE, "Couverture officielle du traitement anti-pop"),
           Pair.of(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
               "Couverture du traitement anti-pop vérifiée sur le terrain"),
@@ -165,8 +168,10 @@ public class TranslationProperties {
           Pair.of(STRUCTURES_PARTIALLY_COMPLETE, "Structures partiellement achevées"),
           Pair.of(STRUCTURES_REFUSED_ABSENT, "Structures Refusées / Absentes"),
           Pair.of(STRUCTURES_NOT_YET_VISITED, "Structures non encore visitées"),
+          Pair.of(STRUCTURES_TREATED,"Structures traitées"),
           Pair.of(COVERAGE_OF_STRUCTURES_VISITED, "Couverture des structures visitées"),
           Pair.of(COVERAGE_OF_STRUCTURES_COMPLETED, "Couverture des structures achevées"),
+          Pair.of(COVERAGE_OF_STRUCTURES_TREATED, "Couverture des structures traitées"),
           Pair.of(RECEIVED_BY_CDD, "Reçu par CDD"),
           Pair.of(ADMINISTERED, "Administré"),
           Pair.of(LOST_DAMAGED, "Perdu / Endommagé"),

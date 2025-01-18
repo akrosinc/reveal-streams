@@ -5,6 +5,7 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.ABSEN
 import static com.revealprecision.revealstreams.constants.DashboardColumns.ADMINISTERED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.BUSINESS_STATUS;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_COMPLETED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.COVERAGE_OF_STRUCTURES_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_15;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.FEMALES_5_14;
@@ -30,10 +31,11 @@ import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUC
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_NOT_YET_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_PARTIALLY_COMPLETE;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_REFUSED_ABSENT;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.STRUCTURES_VISITED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_LIVING_ON_THE_STREET;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_STRUCTURE_COUNT;
-import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_TREATED;
+import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_INDIVIDUALS_TREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TOTAL_UNTREATED;
 import static com.revealprecision.revealstreams.constants.DashboardColumns.TRAVEL;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
@@ -368,7 +370,7 @@ public class OnchocerciasisDashboardService {
     columns.put(NUMBER_OF_STRUCTURES,
         new ColumnData().setValue(1));
 
-    columns.put(TOTAL_TREATED,
+    columns.put(TOTAL_INDIVIDUALS_TREATED,
         new ColumnData().setValue(
             (onchoSurveyFromHouseholdHeadData == null ? 0
                 : onchoSurveyFromHouseholdHeadData.getTotalTreated())));
@@ -551,7 +553,7 @@ public class OnchocerciasisDashboardService {
     columns.put(FIELD_VERIFIED_POP_TARGET,
         getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap, totalTreated));
 
-    columns.put(TOTAL_TREATED,
+    columns.put(TOTAL_INDIVIDUALS_TREATED,
         new ColumnData()
             .setValue(totalTreated).setMeta(getTotalTreatedAccrossHoldAndOutsideMeta(
                 aggregationDataFromCddSupervisorDailySummary,
@@ -561,25 +563,30 @@ public class OnchocerciasisDashboardService {
         getTreatmentCoverage(
             totalTreated, censusPopTarget));
 
-    columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
-        getTreatmentCoverage(
-            totalTreated,
-            getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap, totalTreated)));
+//    columns.put(FIELD_VERIFIED_POP_TREATMENT_COVERAGE,
+//        getTreatmentCoverage(
+//            totalTreated,
+//            getFieldVerifiedPopTarget(locationBusinessStateObjPerGeoLevelMap, totalTreated)));
 
     columns.put(TOTAL_STRUCTURE_COUNT,
         new ColumnData()
             .setValue(totalStructureCountValue));
 
+    Long structuresComplete = getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
+        BusinessStatus.MDA_COMPLETE);
     columns.put(STRUCTURES_COMPLETE,
-        new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
-            BusinessStatus.MDA_COMPLETE)));
+        new ColumnData().setValue(structuresComplete));
 
     columns.put(STRUCTURES_VISITED,
         new ColumnData().setValue(visited));
 
+    Long partiallyComplete = getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
+        BusinessStatus.MDA_PARTIALLY_COMPLETE);
+
     columns.put(STRUCTURES_PARTIALLY_COMPLETE,
-        new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
-            BusinessStatus.MDA_PARTIALLY_COMPLETE)));
+        new ColumnData().setValue(partiallyComplete));
+
+    columns.put(STRUCTURES_TREATED,new ColumnData().setValue(structuresComplete+partiallyComplete));
 
     columns.put(STRUCTURES_REFUSED_ABSENT,
         new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
@@ -595,6 +602,9 @@ public class OnchocerciasisDashboardService {
     columns.put(COVERAGE_OF_STRUCTURES_COMPLETED,
         getCoverageOfStructuresCompleted(completed, total));
 
+    columns.put(COVERAGE_OF_STRUCTURES_TREATED,
+        getCoverageOfStructuresTreated(totalTreated, total));
+
     return columns;
   }
 
@@ -607,6 +617,18 @@ public class OnchocerciasisDashboardService {
 
     return new ColumnData().setValue(value)
         .setMeta("Completed: " + completed + " / " + " Total: " + total).setIsPercentage(true);
+  }
+
+
+  private ColumnData getCoverageOfStructuresTreated(Double treated, Long total) {
+
+    double value = 0;
+    if (total > 0) {
+      value = (double) treated / (double) total * 100;
+    }
+
+    return new ColumnData().setValue(value)
+        .setMeta("Treated: " + treated + " / " + " Total: " + total).setIsPercentage(true);
   }
 
   private ColumnData getCoverageOfStructuresVisited(Long visited, Long total) {
