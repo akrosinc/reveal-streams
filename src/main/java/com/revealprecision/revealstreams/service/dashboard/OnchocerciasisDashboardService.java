@@ -586,7 +586,9 @@ public class OnchocerciasisDashboardService {
     columns.put(STRUCTURES_PARTIALLY_COMPLETE,
         new ColumnData().setValue(partiallyComplete));
 
-    columns.put(STRUCTURES_TREATED,new ColumnData().setValue(structuresComplete+partiallyComplete));
+    Long totalTreatedLong = structuresComplete+partiallyComplete;
+
+    columns.put(STRUCTURES_TREATED,new ColumnData().setValue(totalTreatedLong));
 
     columns.put(STRUCTURES_REFUSED_ABSENT,
         new ColumnData().setValue(getBusinessStatusCount(locationBusinessStateObjPerGeoLevelMap,
@@ -607,7 +609,7 @@ public class OnchocerciasisDashboardService {
         getCoverageOfStructuresCompleted(completed, total));
 
     columns.put(COVERAGE_OF_STRUCTURES_TREATED,
-        getCoverageOfStructuresTreated(totalTreated, total));
+        getCoverageOfStructuresTreated(totalTreatedLong, total));
 
     return columns;
   }
@@ -624,7 +626,7 @@ public class OnchocerciasisDashboardService {
   }
 
 
-  private ColumnData getCoverageOfStructuresTreated(Double treated, Long total) {
+  private ColumnData getCoverageOfStructuresTreated(Long treated, Long total) {
 
     double value = 0;
     if (total > 0) {
