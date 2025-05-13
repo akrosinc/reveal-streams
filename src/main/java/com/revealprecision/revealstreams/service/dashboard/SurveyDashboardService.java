@@ -100,9 +100,18 @@ public class SurveyDashboardService {
       LocationMultipartCountProjection clusterCount = locationRepository.getMultipartLocationCountByLocationParent(
           childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(), "cluster");
 
+      ColumnData totalEnrolledStructuresByState = getTotalEnrolledStructuresByState(
+          locationBusinessStateObjPerGeoLevelMap);
+
+      ColumnData totalMonthThreeStructuresByState = getTotalMonthThreeStructuresByState(
+          locationBusinessStateObjPerGeoLevelMap);
+
+      ColumnData totalMonthSixStructuresByState = getTotalStructuresByState(
+          BusinessStatus.MONTH_SIX_COMPLETE,
+          locationBusinessStateObjPerGeoLevelMap);
+
       columns.put(ENROLLED_COUNT,
-          getTotalStructuresByState(BusinessStatus.ENROLLED,
-              locationBusinessStateObjPerGeoLevelMap));
+          totalEnrolledStructuresByState);
 
       columns.put(NOT_ENROLLED_COUNT,
           getTotalStructuresByState(BusinessStatus.NOT_ENROLLED,
@@ -112,14 +121,13 @@ public class SurveyDashboardService {
           getTotalStructuresByState(BusinessStatus.ENROLLED_NOT_COMPLETE,
               locationBusinessStateObjPerGeoLevelMap));
 
+
       columns.put(MONTH_THREE_COMPLETE_COUNT,
-          getTotalStructuresByState(BusinessStatus.MONTH_THREE_COMPLETE,
-              locationBusinessStateObjPerGeoLevelMap));
+          totalMonthThreeStructuresByState);
 
 
       columns.put(MONTH_SIX_COMPLETE_COUNT,
-          getTotalStructuresByState(BusinessStatus.MONTH_SIX_COMPLETE,
-              locationBusinessStateObjPerGeoLevelMap));
+          totalMonthSixStructuresByState);
 
       columns.put(CLUSTER_COUNT,
           ColumnData.builder().value(clusterCount.getLocationCount()).build());
@@ -216,6 +224,83 @@ public class SurveyDashboardService {
     }
 
     columnData.setValue(completedStructuresCount);
+
+    return columnData;
+  }
+
+  private ColumnData getTotalEnrolledStructuresByState(
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+
+    String enrolled = BusinessStatus.ENROLLED;
+    String monthThree = BusinessStatus.MONTH_THREE_COMPLETE;
+    String monthSix = BusinessStatus.MONTH_SIX_COMPLETE;
+
+    ColumnData columnData = new ColumnData();
+
+    double enrolledStructuresCount;
+    LocationBusinessStateCount enrolledStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        enrolled);
+    if (enrolledStructuresCountObjCount != null) {
+      enrolledStructuresCount = enrolledStructuresCountObjCount.getLocationCount();
+    } else {
+      enrolledStructuresCount = 0L;
+    }
+
+    double monthThreeStructuresCount;
+    LocationBusinessStateCount monthThreeStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        monthThree);
+    if (monthThreeStructuresCountObjCount != null) {
+      monthThreeStructuresCount = monthThreeStructuresCountObjCount.getLocationCount();
+    } else {
+      monthThreeStructuresCount = 0L;
+    }
+
+    double monthSixStructuresCount;
+    LocationBusinessStateCount monthSixStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        monthSix);
+    if (monthSixStructuresCountObjCount != null) {
+      monthSixStructuresCount = monthSixStructuresCountObjCount.getLocationCount();
+    } else {
+      monthSixStructuresCount = 0L;
+    }
+
+    double totalEnrolled = enrolledStructuresCount + monthThreeStructuresCount + monthSixStructuresCount;
+
+    columnData.setValue(totalEnrolled);
+
+    return columnData;
+  }
+
+  private ColumnData getTotalMonthThreeStructuresByState(
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+
+
+    String monthThree = BusinessStatus.MONTH_THREE_COMPLETE;
+    String monthSix = BusinessStatus.MONTH_SIX_COMPLETE;
+
+    ColumnData columnData = new ColumnData();
+
+    double monthThreeStructuresCount;
+    LocationBusinessStateCount monthThreeStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        monthThree);
+    if (monthThreeStructuresCountObjCount != null) {
+      monthThreeStructuresCount = monthThreeStructuresCountObjCount.getLocationCount();
+    } else {
+      monthThreeStructuresCount = 0L;
+    }
+
+    double monthSixStructuresCount;
+    LocationBusinessStateCount monthSixStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        monthSix);
+    if (monthSixStructuresCountObjCount != null) {
+      monthSixStructuresCount = monthSixStructuresCountObjCount.getLocationCount();
+    } else {
+      monthSixStructuresCount = 0L;
+    }
+
+    double totalMonthThree = monthThreeStructuresCount + monthSixStructuresCount;
+
+    columnData.setValue(totalMonthThree);
 
     return columnData;
   }
