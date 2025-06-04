@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCompounds, UUID> {
 
-  @Query(value = "SELECT lp.identifier as locationIdentifier, lp.name as locationName,count(*) as individualCount\n"
+  @Query(value = "SELECT cast(lp.identifier as varchar) as locationIdentifier, lp.name as locationName,count(*) as individualCount\n"
       + "from hdss.hdss_compounds hc\n"
       + "left join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
       + "        from location_relationship lr,\n"
