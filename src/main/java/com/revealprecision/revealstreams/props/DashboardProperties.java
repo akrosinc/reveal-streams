@@ -16,6 +16,7 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
+import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.PASSIVE_CASE_PERCENTAGE;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
 
@@ -63,9 +64,15 @@ public class DashboardProperties {
       DIRECTLY_ABOVE_STRUCTURE_LEVEL, SPRAY_COVERAGE_OF_TARGETED, ALL_OTHER_LEVELS,
       SPRAY_COVERAGE_OF_TARGETED);
 
-  private final Map<String, String> surveyDefaultDisplayColumns = Map.of(
+  private final Map<String, String> uwSurveyDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,
-      VISITATION_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, VISITATION_COVERAGE);
+      VISITATION_COVERAGE
+      ,DIRECTLY_ABOVE_STRUCTURE_LEVEL, VISITATION_COVERAGE);
+
+  private final Map<String, String> nihGhaSurveyDefaultDisplayColumns = Map.of(
+      ALL_OTHER_LEVELS,
+      PASSIVE_CASE_PERCENTAGE
+      ,DIRECTLY_ABOVE_STRUCTURE_LEVEL, PASSIVE_CASE_PERCENTAGE);
 
   private final Map<String, String> lsmSurveyDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,

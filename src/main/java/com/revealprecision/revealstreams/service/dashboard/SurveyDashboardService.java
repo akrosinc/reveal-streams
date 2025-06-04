@@ -39,6 +39,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class SurveyDashboardService {
 
+
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
@@ -68,6 +69,8 @@ public class SurveyDashboardService {
   public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection %";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
 
+  public static final String INDEX_CASE_MEMBER = "Index Case Member";
+  public static final String SECONDARY_INDEX_CASE_MEMBER = "Secondary Index Case Member";
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
@@ -158,13 +161,13 @@ public class SurveyDashboardService {
 
       Integer totalIndexCases = businessStateByLocationProjections == null ? 0
           : businessStateByLocationProjections.stream().filter(item ->
-                  List.of("Index Case Member", "Secondary Index Case Member").contains(item.getTitle()))
+                  List.of(INDEX_CASE_MEMBER, SECONDARY_INDEX_CASE_MEMBER).contains(item.getTitle()))
               .mapToInt(IndividualTaskBusinessStateByLocationProjection::getBusinessStatusCount)
               .sum();
 
       Integer totalIndexCasesConfirmed = businessStateByLocationProjections == null ? 0
           : businessStateByLocationProjections.stream().filter(item ->
-                  List.of("Index Case Member", "Secondary Index Case Member").contains(item.getTitle()))
+                  List.of(INDEX_CASE_MEMBER, SECONDARY_INDEX_CASE_MEMBER).contains(item.getTitle()))
               .filter(item -> BusinessStatus.COMPLETE.equals(item.getBusinessStatus()))
               .mapToInt(IndividualTaskBusinessStateByLocationProjection::getBusinessStatusCount)
               .sum();
@@ -539,8 +542,14 @@ public class SurveyDashboardService {
         .collect(Collectors.toList());
 
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses);
-    response.setDefaultDisplayColumn(
-        dashboardProperties.getSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
+    if ("uw".equals(instanceProperties.getClient())) {
+      response.setDefaultDisplayColumn(
+          dashboardProperties.getUwSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
+    } else {
+      response.setDefaultDisplayColumn(
+          dashboardProperties.getNihGhaSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
+    }
+
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
     return response;
