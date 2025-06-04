@@ -1,0 +1,42 @@
+package com.revealprecision.revealstreams.persistence.repository;
+
+import com.cosium.spring.data.jpa.entity.graph.repository.EntityGraphJpaRepository;
+import com.revealprecision.revealstreams.persistence.domain.HdssCompounds;
+import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
+import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.Query;
+
+public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCompounds, UUID> {
+
+  @Query(value = "SELECT lp.identifier as locationIdentifier, lp.name as locationName,count(*) as individualCount\n"
+      + "from hdss.hdss_compounds hc\n"
+      + "left join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
+      + "        from location_relationship lr,\n"
+      + "             unnest(lr.ancestry) with ordinality arr(ancestor, pos)\n"
+      + "        ) as lr on lr.child_location = hc.structure_id\n"
+      + "left join location lp on lr.ancestor = lp.identifier\n"
+      + "left join geographic_level gl on gl.identifier = lp.geographic_level_identifier\n"
+      + "where lp.identifier = :locationIdentifier\n"
+      + "group by lp.identifier,lp.name;",nativeQuery = true)
+  IndividualsByLocationProjection getNumberOfIndividualsByLocation(UUID locationIdentifier);
+
+
+  @Query(value = "SELECT a.title as title, t.business_status as businessStatus, count(*) as businessStatusCount\n"
+      + "from task t\n"
+      + "    left join action a on a.identifier = t.action_identifier\n"
+      + "         inner join person p on p.identifier = t.base_entity_identifier\n"
+      + "         inner join person_location pl on pl.person_identifier = p.identifier\n"
+      + "    inner join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
+      + "               from location_relationship lr,\n"
+      + "                    unnest(lr.ancestry) with ordinality arr(ancestor, pos)\n"
+      + "                ) as lr on lr.child_location = pl.location_identifier\n"
+      + "    left join location lp on lr.ancestor = lp.identifier\n"
+      + "    left join geographic_level gl on gl.identifier = lp.geographic_level_identifier\n"
+      + "where\n"
+      + "      t.plan_identifier = :planIdentifier\n"
+      + "  and lp.identifier = :locationIdentifier\n"
+      + "group by a.title, t.business_status", nativeQuery = true)
+  List<IndividualTaskBusinessStateByLocationProjection> getTaskBusinessStateCountsByLocation(UUID planIdentifier,UUID locationIdentifier);
+}

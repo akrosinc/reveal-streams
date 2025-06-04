@@ -14,8 +14,11 @@ import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
+import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
+import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
+import com.revealprecision.revealstreams.persistence.repository.HdssCompoundsRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.props.InstanceProperties;
@@ -41,6 +44,7 @@ public class SurveyDashboardService {
   private final LocationBusinessStatusService locationBusinessStatusService;
   private final InstanceProperties instanceProperties;
   private final LocationRepository locationRepository;
+  private final HdssCompoundsRepository hdssCompoundsRepository;
 
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
@@ -58,14 +62,22 @@ public class SurveyDashboardService {
   public static final String ENROLLED_NOT_COMPLETE = "Enrolled Not Complete";
   public static final String CLUSTER_COUNT = "Cluster Count";
 
+  public static final String TOTAL_INDIVIDUALS = "total # HDSS Individuals";
+  public static final String TOTAL_INDEX_CASES = "total # Index cases";
+  public static final String TOTAL_CASES = "total # cases (inclusive of index cases)";
+  public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection %";
+  public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
+
 
   public List<RowData> getIRSFullData(Plan plan, Location childLocation) {
 
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
-    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevel(
-        plan.getIdentifier(), childLocation.getIdentifier(),
-        childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
+    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap =
+        locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevel(
+            plan.getIdentifier(), childLocation.getIdentifier(),
+            childLocation.getGeographicLevel().getName(),
+            plan.getLocationHierarchy().getIdentifier());
 
     Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
         childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
@@ -85,17 +97,19 @@ public class SurveyDashboardService {
     log.debug("child location: {} - {}, totalStructuresTargetedCountObj: {}",
         childLocation.getIdentifier(), childLocation.getName(), totalStructuresTargetedCountObj);
 
-    columns.put(TOTAL_STRUCTURES,
-        getTotalStructuresCounts(totalStructuresCountObj, locationBusinessStateObjPerGeoLevelMap));
-    columns.put(TOTAL_STRUCTURES_TARGETED,
-        getTotalStructuresTargetedCount(totalStructuresTargetedCountObj,
-            locationBusinessStateObjPerGeoLevelMap));
-    columns.put(
-        TOTAL_STRUCTURES_VISITED,
-        getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
-            locationBusinessStateObjPerGeoLevelMap));
-
     if (instanceProperties.getClient().equals("uw")) {
+
+      columns.put(TOTAL_STRUCTURES,
+          getTotalStructuresCounts(totalStructuresCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(TOTAL_STRUCTURES_TARGETED,
+          getTotalStructuresTargetedCount(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+      columns.put(
+          TOTAL_STRUCTURES_VISITED,
+          getTotalStructuresFoundCount(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
 
       LocationMultipartCountProjection clusterCount = locationRepository.getMultipartLocationCountByLocationParent(
           childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(), "cluster");
@@ -121,25 +135,72 @@ public class SurveyDashboardService {
           getTotalStructuresByState(BusinessStatus.ENROLLED_NOT_COMPLETE,
               locationBusinessStateObjPerGeoLevelMap));
 
-
       columns.put(MONTH_THREE_COMPLETE_COUNT,
           totalMonthThreeStructuresByState);
-
 
       columns.put(MONTH_SIX_COMPLETE_COUNT,
           totalMonthSixStructuresByState);
 
       columns.put(CLUSTER_COUNT,
           ColumnData.builder().value(clusterCount.getLocationCount()).build());
-    } else {
-      columns.put(
-          COMPLETE,
-          getTotalStructuresCompleteCount(totalStructuresTargetedCountObj,
-              locationBusinessStateObjPerGeoLevelMap));
-    }
 
-    columns.put(VISITATION_COVERAGE,
-        getFoundCoverage(totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap));
+      columns.put(VISITATION_COVERAGE,
+          getFoundCoverage(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+    } else {
+
+      IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
+          childLocation.getIdentifier());
+
+      List<IndividualTaskBusinessStateByLocationProjection> businessStateByLocationProjections
+          = hdssCompoundsRepository.getTaskBusinessStateCountsByLocation(plan.getIdentifier(),
+          childLocation.getIdentifier());
+
+      Integer totalIndexCases = businessStateByLocationProjections == null ? 0
+          : businessStateByLocationProjections.stream().filter(item ->
+                  List.of("Index Case Member", "Secondary Index Case Member").contains(item.getTitle()))
+              .mapToInt(IndividualTaskBusinessStateByLocationProjection::getBusinessStatusCount)
+              .sum();
+
+      Integer totalIndexCasesConfirmed = businessStateByLocationProjections == null ? 0
+          : businessStateByLocationProjections.stream().filter(item ->
+                  List.of("Index Case Member", "Secondary Index Case Member").contains(item.getTitle()))
+              .filter(item -> BusinessStatus.COMPLETE.equals(item.getBusinessStatus()))
+              .mapToInt(IndividualTaskBusinessStateByLocationProjection::getBusinessStatusCount)
+              .sum();
+
+      Integer totalCases = businessStateByLocationProjections == null ? 0
+          : businessStateByLocationProjections.stream()
+              .mapToInt(IndividualTaskBusinessStateByLocationProjection::getBusinessStatusCount)
+              .sum();
+
+      columns.put(TOTAL_INDIVIDUALS, ColumnData.builder().value(
+          numberOfIndividualsByLocation == null ? 0
+              : numberOfIndividualsByLocation.getIndividualCount()).build());
+
+      columns.put(TOTAL_INDEX_CASES, ColumnData.builder().value(totalIndexCases).build());
+
+      columns.put(TOTAL_CASES, ColumnData.builder().value(totalCases).build());
+
+      double passiveIndexCaseDetectionPerc = 0;
+      if (totalIndexCasesConfirmed > 0) {
+        passiveIndexCaseDetectionPerc =
+            (double) totalIndexCases / (double) totalIndexCasesConfirmed * 100;
+      }
+
+      columns.put(PASSIVE_CASE_PERCENTAGE,
+          ColumnData.builder().value(passiveIndexCaseDetectionPerc).build());
+
+      double racdMalariaPrevalence = 0;
+      if (numberOfIndividualsByLocation != null
+          && numberOfIndividualsByLocation.getIndividualCount() > 0) {
+        racdMalariaPrevalence =
+            (double) totalCases / (double) numberOfIndividualsByLocation.getIndividualCount() * 100;
+      }
+
+      columns.put(RACD_BASED_MALARIA_PREVALENCE,
+          ColumnData.builder().value(racdMalariaPrevalence).build());
+    }
 
     RowData rowData = new RowData();
     rowData.setLocationIdentifier(childLocation.getIdentifier());
@@ -264,7 +325,8 @@ public class SurveyDashboardService {
       monthSixStructuresCount = 0L;
     }
 
-    double totalEnrolled = enrolledStructuresCount + monthThreeStructuresCount + monthSixStructuresCount;
+    double totalEnrolled =
+        enrolledStructuresCount + monthThreeStructuresCount + monthSixStructuresCount;
 
     columnData.setValue(totalEnrolled);
 
@@ -273,7 +335,6 @@ public class SurveyDashboardService {
 
   private ColumnData getTotalMonthThreeStructuresByState(
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
-
 
     String monthThree = BusinessStatus.MONTH_THREE_COMPLETE;
     String monthSix = BusinessStatus.MONTH_SIX_COMPLETE;
@@ -448,6 +509,7 @@ public class SurveyDashboardService {
 
     return columnData;
   }
+
   private ColumnData getTotalStructuresCompleteCount(long totalStructuresTargetedCountObj,
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
