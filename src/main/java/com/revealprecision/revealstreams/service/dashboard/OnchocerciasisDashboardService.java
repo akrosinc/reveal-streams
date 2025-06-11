@@ -541,6 +541,9 @@ public class OnchocerciasisDashboardService {
         locationBusinessStateObjPerGeoLevelMap);
 
 
+    locationBusinessStateObjPerGeoLevelMap.forEach(
+        (key1, value) -> log.debug("entry: {} - {}", key1, value));
+
     Long visited = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
         .filter(key -> !Objects.equals(key,
             BusinessStatus.NOT_VISITED) && !Objects.equals(key,
