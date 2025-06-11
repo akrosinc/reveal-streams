@@ -217,7 +217,25 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + "   or (et.identifier IS NULL and  lr.parent_identifier = :parentLocationIdentifier) ",nativeQuery = true)
   List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromStructureData(UUID parentLocationIdentifier, UUID planIdentifier);
 
-  @Query(value = "SELECT * from event_business_state_and_event_tracker ebst\n"
+  @Query(value = "SELECT "
+      + "    cast(ebst.locationIdentifier as varchar) as locationIdentifier,\n"
+      + "    ebst.locationName as locationName,\n"
+      + "    ebst.totalTreatedMaleFiveFourteen as totalTreatedMaleFiveFourteen,\n"
+      + "    ebst.totalTreatedMaleAboveFifteen as totalTreatedMaleAboveFifteen,\n"
+      + "    ebst.totalTreatedFemaleFiveFourteen as totalTreatedFemaleFiveFourteen,\n"
+      + "    ebst.totalTreatedFemaleAboveFifteen as totalTreatedFemaleAboveFifteen,\n"
+      + "    ebst.totalTreated as totalTreated,\n"
+      + "    ebst.totalUntreatedAbsent as totalUntreatedAbsent,\n"
+      + "    ebst.totalUntreatedRefusal as totalUntreatedRefusal,\n"
+      + "    ebst.totalUntreatedPregnant  as totalUntreatedPregnant,\n"
+      + "    ebst.totalUntreatedSick as totalUntreatedSick,\n"
+      + "    ebst.totalUntreatedTravel as totalUntreatedTravel,\n"
+      + "    ebst.totalUntreated as totalUntreated,\n"
+      + "    ebst.householdHead as householdHead,\n"
+      + "    ebst.householdHeadPhoneNumber as householdHeadPhoneNumber,\n"
+      + "    ebst.tablets as tablets,\n"
+      + "    ebst.businessStatus as businessStatus "
+      + " from event_business_state_and_event_tracker ebst\n"
       + "WHERE (ebst.plan_identifier = :planIdentifier and ebst.parent = :parentLocationIdentifier)\n"
       + "      OR (ebst.plan_identifier IS NULL and ebst.businessStatus = 'Not Visited') ",nativeQuery = true)
   List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromStructureDataFromEventTracker(UUID parentLocationIdentifier, UUID planIdentifier);
