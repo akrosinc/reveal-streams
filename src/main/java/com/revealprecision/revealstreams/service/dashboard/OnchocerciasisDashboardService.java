@@ -548,6 +548,7 @@ public class OnchocerciasisDashboardService {
         .filter(key -> !Objects.equals(key,
             BusinessStatus.NOT_VISITED) && !Objects.equals(key,
             BusinessStatus.NOT_ELIGIBLE)).map(locationBusinessStateObjPerGeoLevelMap::get)
+        .peek(obj -> log.debug("count: {}",obj.getLocationCount()))
         .collect(Collectors.summingLong(o -> o.getLocationCount()));
 
     Long completed = locationBusinessStateObjPerGeoLevelMap.keySet().stream()
