@@ -217,6 +217,10 @@ public interface EventTrackerRepository extends JpaRepository<EventTracker, UUID
       + "   or (et.identifier IS NULL and  lr.parent_identifier = :parentLocationIdentifier) ",nativeQuery = true)
   List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromStructureData(UUID parentLocationIdentifier, UUID planIdentifier);
 
+  @Query(value = "SELECT * from event_business_state_and_event_tracker ebst\n"
+      + "WHERE (ebst.plan_identifier = :planIdentifier and ebst.parent = :parentLocationIdentifier)\n"
+      + "      OR (ebst.plan_identifier IS NULL and ebst.businessStatus = 'Not Visited') ",nativeQuery = true)
+  List<OnchocerciasisSurveyCddSummaryAggregationProjection> getOnchoSurveyFromStructureDataFromEventTracker(UUID parentLocationIdentifier, UUID planIdentifier);
 
 
   @Query(value = "SELECT CAST(lp.identifier as varchar) as locationIdentifier "

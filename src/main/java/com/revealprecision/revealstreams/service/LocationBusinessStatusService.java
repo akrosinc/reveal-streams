@@ -176,4 +176,25 @@ public class LocationBusinessStatusService {
             locationBusinessStateCount -> locationBusinessStateCount, (a, b) -> b));
 
   }
+
+  public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelFromEventTracker(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier) {
+
+    log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
+        planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
+
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevelFromEventTracker(
+        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        locationHierarchyIdentifier);
+
+    locationBusinessStateObjPerGeoLevel.forEach(
+        locationBusinessStateCount -> log.debug("{} - locationBusinessStateObjPerGeoLevel({})",
+            parentLocationIdentifier, locationBusinessStateCount.getTaskBusinessStatus()));
+
+    return locationBusinessStateObjPerGeoLevel.stream().collect(
+        Collectors.toMap(LocationBusinessStateCount::getTaskBusinessStatus,
+            locationBusinessStateCount -> locationBusinessStateCount, (a, b) -> b));
+
+  }
 }

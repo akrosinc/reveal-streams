@@ -77,6 +77,21 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       UUID locationHierarchyIdentifier);
 
+
+  @Query(
+      value =
+          "SELECT CAST(ebsaet.parent as varchar) as parentLocationIdentifier, CAST(ebsaet.plan_identifier as varchar) as planIdentifier,\n"
+              + "       ebsaet.businessStatus as taskBusinessStatus, count(*)\n"
+              + "from event_business_state_and_event_tracker ebsaet\n"
+              + "left join plan p on p.identifier = ebsaet.plan_identifier\n"
+              + "WHERE ebsaet.parent = :parentLocationIdentifier \n"
+              + "  and ebsaet.plan_identifier = :planIdentifier \n"
+              + "    and p.hierarchy_identifier = :locationHierarchyIdentifier \n"
+              + "group by ebsaet.parent,ebsaet.businessStatus,ebsaet.plan_identifier", nativeQuery = true)
+  Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelFromEventTracker(UUID planIdentifier,
+      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier);
+
   @Query(value = "SELECT count(*) from task_business_state_tracker tbst\n"
       + "where tbst.parent_location_identifier = :parentLocationIdentifier and tbst.plan_identifier = :planIdentifier", nativeQuery = true)
   long getTotalLocationsByParentAndPlan(UUID planIdentifier,
