@@ -89,7 +89,7 @@ public interface TaskBusinessStateTrackerRepository extends
               + "    and p.hierarchy_identifier = :locationHierarchyIdentifier \n"
               + "group by ebsaet.parent,ebsaet.businessStatus,ebsaet.plan_identifier", nativeQuery = true)
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelFromEventTracker(UUID planIdentifier,
-      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID parentLocationIdentifier,
       UUID locationHierarchyIdentifier);
 
   @Query(value = "SELECT count(*) from task_business_state_tracker tbst\n"
