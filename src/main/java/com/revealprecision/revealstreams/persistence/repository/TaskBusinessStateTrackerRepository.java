@@ -81,7 +81,7 @@ public interface TaskBusinessStateTrackerRepository extends
   @Query(
       value =
           "SELECT CAST(ebsaet.parent as varchar) as parentLocationIdentifier, CAST(ebsaet.plan_identifier as varchar) as planIdentifier,\n"
-              + "       ebsaet.businessStatus as taskBusinessStatus, count(*)\n"
+              + "       ebsaet.businessStatus as taskBusinessStatus, count(*) as locationCount\n"
               + "from event_business_state_and_event_tracker ebsaet\n"
               + "left join plan p on p.identifier = ebsaet.plan_identifier\n"
               + "WHERE ebsaet.parent = :parentLocationIdentifier \n"
