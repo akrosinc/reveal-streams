@@ -148,7 +148,7 @@ public class DashboardService {
       PlanLocationDetails loc, String reportLevel, List<String> filters,
       String parentIdentifierString, MdaLiteReportType type) {
 
-    log.info("parentLocation {} reportLevel {} reportType {}",parentLocation.getName(),reportLevel,reportTypeEnum);
+    log.info("loc {} reportLevel {} reportType {}",loc.getLocation().getName(),reportLevel,reportTypeEnum);
 
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
