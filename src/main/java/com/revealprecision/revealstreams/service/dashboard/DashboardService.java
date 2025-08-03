@@ -27,10 +27,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class DashboardService {
 
   private final LocationService locationService;
@@ -145,6 +147,8 @@ public class DashboardService {
       Plan plan,
       PlanLocationDetails loc, String reportLevel, List<String> filters,
       String parentIdentifierString, MdaLiteReportType type) {
+
+    log.info("parentLocation {} reportLevel {} reportType {}",parentLocation.getName(),reportLevel,reportTypeEnum);
 
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
