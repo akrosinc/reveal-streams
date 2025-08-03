@@ -65,6 +65,7 @@ public class SurveyDashboardService {
 
   public static final String TOTAL_INDIVIDUALS = "total # HDSS Individuals";
   public static final String TOTAL_INDEX_CASES = "total # Index cases";
+  public static final String TOTAL_INDIVIDUALS_TESTED = "total # individuals tested";
   public static final String TOTAL_CASES = "total # cases (inclusive of index cases)";
   public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection %";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
@@ -155,6 +156,8 @@ public class SurveyDashboardService {
       IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
           childLocation.getIdentifier());
 
+      int individualsTested = hdssCompoundsRepository.getNumberOfTestedIndividualsByLocation(childLocation.getIdentifier());
+
       List<IndividualTaskBusinessStateByLocationProjection> businessStateByLocationProjections
           = hdssCompoundsRepository.getTaskBusinessStateCountsByLocation(plan.getIdentifier(),
           childLocation.getIdentifier());
@@ -182,6 +185,9 @@ public class SurveyDashboardService {
               : numberOfIndividualsByLocation.getIndividualCount()).build());
 
       columns.put(TOTAL_INDEX_CASES, ColumnData.builder().value(totalIndexCases).build());
+
+      columns.put(TOTAL_INDIVIDUALS_TESTED, ColumnData.builder().value(individualsTested).build());
+
 
       columns.put(TOTAL_CASES, ColumnData.builder().value(totalCases).build());
 

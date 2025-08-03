@@ -39,4 +39,27 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "  and lp.identifier = :locationIdentifier\n"
       + "group by a.title, t.business_status", nativeQuery = true)
   List<IndividualTaskBusinessStateByLocationProjection> getTaskBusinessStateCountsByLocation(UUID planIdentifier,UUID locationIdentifier);
+
+
+  @Query(value = "SELECT count(*)\n"
+      + "From (\n"
+      + "         SELECT DISTINCT \n"
+      + "            e.observations -> 'rdt' ->> 0        as rdt,\n"
+      + "            e.observations -> 'individual' ->> 0 AS individual,\n"
+      + "            hc.*,\n"
+      + "            l.name\n"
+      + "         FROM event_tracker e\n"
+      + "                  left join hdss.hdss_compounds hc\n"
+      + "                            on hc.individual_id = e.observations -> 'individual' ->> 0\n"
+      + "                  left join (\n"
+      + "             SELECT lr.location_identifier, parent.parent_id\n"
+      + "             from location_relationship lr,\n"
+      + "                  unnest(lr.ancestry) with ordinality parent(parent_id, pos)\n"
+      + "         ) p on p.location_identifier = hc.structure_id\n"
+      + "                  left join location l on l.identifier = parent_id\n"
+      + "         WHERE e.observations -> 'individual' -> 0 IS NOT NULL\n"
+      + "           and e.observations -> 'rdt' -> 0 is not null\n"
+      + "           and l.identifier = :locationIdentifier \n"
+      + "     ) c",nativeQuery = true)
+  int getNumberOfTestedIndividualsByLocation(UUID locationIdentifier);
 }
