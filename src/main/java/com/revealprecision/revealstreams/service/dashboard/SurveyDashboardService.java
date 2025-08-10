@@ -629,6 +629,7 @@ public class SurveyDashboardService {
           return rowData;
         })
         .collect(Collectors.toList());
+    log.info("Rows {}",collect.size());
     return collect;
   }
 
@@ -717,7 +718,7 @@ public class SurveyDashboardService {
 //      , Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap
   ) {
 
-    log.info("We are here ");
+    log.info("We are here {} {}",hdssEventDataProjection.getChildName(),hdssEventDataProjection.getTotalCases());
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     columns.put(LOCATION,
@@ -792,6 +793,7 @@ public class SurveyDashboardService {
         new ColumnData().setValue(
             rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
 
+    log.info("Columns {}",columns);
     return columns;
   }
 
