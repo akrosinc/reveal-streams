@@ -611,6 +611,11 @@ public class SurveyDashboardService {
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getLocationIdentifier())));
 
+    columns.put(COMPOUND,
+        new ColumnData().setDataType("string").setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getCompound())));
+
     columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
         individualsPerCompoundByLocationProjectionMap != null && hdssEventDataProjection != null
             && hdssEventDataProjection.getCompound() != null &&
@@ -618,11 +623,6 @@ public class SurveyDashboardService {
                 hdssEventDataProjection.getCompound()) ?
             individualsPerCompoundByLocationProjectionMap.get(
                 hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
-
-    columns.put(COMPOUND,
-        new ColumnData().setDataType("string").setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getCompound())));
 
     columns.put(TOTAL_INDEX_CASES,
         new ColumnData().setValue(
@@ -639,19 +639,15 @@ public class SurveyDashboardService {
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getTotalCases())));
 
-    int indexCases;
-    int rcdCases;
-    int totalCases;
-    int totalIndividuals;
+    int indexCases = 0;
+    int rcdCases =0;
+    int totalCases=0;
+    int totalIndividuals=0;
 
     if (hdssEventDataProjection != null) {
       indexCases = hdssEventDataProjection.getPassivePositive();
       rcdCases = hdssEventDataProjection.getRcdPositive();
       totalCases = hdssEventDataProjection.getTotalCases();
-    } else {
-      indexCases = 0;
-      rcdCases = 1;
-      totalCases = 1;
     }
 
     if (individualsPerCompoundByLocationProjectionMap != null &&
@@ -660,21 +656,27 @@ public class SurveyDashboardService {
             hdssEventDataProjection.getCompound())) {
       totalIndividuals = individualsPerCompoundByLocationProjectionMap.get(
           hdssEventDataProjection.getCompound()).getIndividualCount();
-    } else {
-      totalIndividuals = 1;
     }
+    double passiveIndexCaseDetectionRation =
+        rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
 
-    double passiveIndexCaseDetectionRation = (double) indexCases / (double) rcdCases * 100;
+    String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
+        indexCases, rcdCases);
 
     columns.put(PASSIVE_CASE_PERCENTAGE,
         new ColumnData().setValue(
-            passiveIndexCaseDetectionRation));
+                passiveIndexCaseDetectionRation)
+            .setMeta(passiveIndexCaseDetectionRatioMeta));
 
-    double rcdBasedMalariaPrevalence = (double) totalCases / (double) totalIndividuals * 100;
+    double rcdBasedMalariaPrevalence =
+        totalIndividuals > 0 ? (double) totalCases / (double) totalIndividuals * 100 : 0;
+
+    String rcdBasedMalariaPrevalenceMeta = String.format(
+        "total cases (%s) / total individuals (%s)", totalCases, totalIndividuals);
 
     columns.put(RACD_BASED_MALARIA_PREVALENCE,
         new ColumnData().setValue(
-            rcdBasedMalariaPrevalence));
+            rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
 
     return columns;
   }
