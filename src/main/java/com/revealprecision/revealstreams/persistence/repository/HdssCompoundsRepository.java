@@ -5,6 +5,7 @@ import com.revealprecision.revealstreams.persistence.domain.HdssCompounds;
 import com.revealprecision.revealstreams.persistence.projection.HdssEventDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
+import com.revealprecision.revealstreams.persistence.projection.IndividualsPerCompoundByLocationProjection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +23,20 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "where lp.identifier = :locationIdentifier\n"
       + "group by lp.identifier,lp.name;",nativeQuery = true)
   IndividualsByLocationProjection getNumberOfIndividualsByLocation(UUID locationIdentifier);
+
+
+  @Query(value = "SELECT  hc.compound_id as compound ,count(*) as individualCount\n"
+      + "from hdss.hdss_compounds hc\n"
+      + "         left join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
+      + "                    from location_relationship lr,\n"
+      + "                         unnest(lr.ancestry) with ordinality arr(ancestor, pos)\n"
+      + ") as lr on lr.child_location = hc.structure_id\n"
+      + "         left join location lp on lr.ancestor = lp.identifier\n"
+      + "         left join geographic_level gl on gl.identifier = lp.geographic_level_identifier\n"
+      + "where lp.identifier = :locationIdentifier \n"
+      + "group by hc.compound_id",nativeQuery = true)
+
+  List<IndividualsPerCompoundByLocationProjection> getNumberOfIndividualsPerCompoundByLocation(UUID locationIdentifier);
 
 
   @Query(value = "SELECT a.title as title, t.business_status as businessStatus, count(*) as businessStatusCount\n"

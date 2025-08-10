@@ -18,6 +18,7 @@ import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTra
 import com.revealprecision.revealstreams.persistence.projection.HdssEventDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
+import com.revealprecision.revealstreams.persistence.projection.IndividualsPerCompoundByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
 import com.revealprecision.revealstreams.persistence.repository.HdssCompoundsRepository;
@@ -44,6 +45,8 @@ public class SurveyDashboardService {
 
 
   public static final String LOCATION = "LOCATION";
+  public static final String TOTAL_TESTED = "TotalTested";
+  public static final String COMPOUND = "Compound";
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
@@ -71,7 +74,7 @@ public class SurveyDashboardService {
   public static final String TOTAL_INDEX_CASES = "total # Index cases";
   public static final String TOTAL_INDIVIDUALS_TESTED = "total # individuals tested";
   public static final String TOTAL_CASES = "total # cases (inclusive of index cases)";
-  public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection %";
+  public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection ratio%";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
 
   public static final String INDEX_CASE_MEMBER = "Index Case Member";
@@ -574,8 +577,17 @@ public class SurveyDashboardService {
     List<HdssEventDataProjection> eventDataForLocationAndPlan = hdssCompoundsRepository.getEventDataForLocationAndPlan(
         parentLocation.getIdentifier(), plan.getIdentifier());
 
+    List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
+        = hdssCompoundsRepository.getNumberOfIndividualsPerCompoundByLocation(
+        parentLocation.getIdentifier());
+
+    Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
+        .collect(Collectors.toMap(
+            IndividualsPerCompoundByLocationProjection::getCompound, num -> num, (a, b) -> b));
+
     List<RowData> collect = eventDataForLocationAndPlan.stream()
-        .map(this::getOperationalData)
+        .map(eventDataForLocationAndPlanItem -> getOperationalData(eventDataForLocationAndPlanItem,
+            individualsPerCompoundByLocationProjectionMap))
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
           rowData.setLocationIdentifier(
@@ -590,7 +602,8 @@ public class SurveyDashboardService {
 
 
   private Map<String, ColumnData> getOperationalData(
-      HdssEventDataProjection hdssEventDataProjection) {
+      HdssEventDataProjection hdssEventDataProjection,
+      Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     columns.put(LOCATION,
@@ -598,46 +611,98 @@ public class SurveyDashboardService {
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getLocationIdentifier())));
 
-    columns.put("Compound",
+    columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
+        individualsPerCompoundByLocationProjectionMap != null && hdssEventDataProjection != null
+            && hdssEventDataProjection.getCompound() != null &&
+            individualsPerCompoundByLocationProjectionMap.containsKey(
+                hdssEventDataProjection.getCompound()) ?
+            individualsPerCompoundByLocationProjectionMap.get(
+                hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
+
+    columns.put(COMPOUND,
         new ColumnData().setDataType("string").setValue(
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getCompound())));
 
-    columns.put("TotalTested",
+    columns.put(TOTAL_INDEX_CASES,
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getPassivePositive())));
+
+    columns.put(TOTAL_INDIVIDUALS_TESTED,
         new ColumnData().setValue(
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getTotalTested())));
 
-    columns.put("TotalCases",
+    columns.put(TOTAL_CASES,
         new ColumnData().setValue(
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getTotalCases())));
+
+    int indexCases;
+    int rcdCases;
+    int totalCases;
+    int totalIndividuals;
+
+    if (hdssEventDataProjection != null) {
+      indexCases = hdssEventDataProjection.getPassivePositive();
+      rcdCases = hdssEventDataProjection.getRcdPositive();
+      totalCases = hdssEventDataProjection.getTotalCases();
+    } else {
+      indexCases = 0;
+      rcdCases = 1;
+      totalCases = 1;
+    }
+
+    if (individualsPerCompoundByLocationProjectionMap != null &&
+        hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
+        individualsPerCompoundByLocationProjectionMap.containsKey(
+            hdssEventDataProjection.getCompound())) {
+      totalIndividuals = individualsPerCompoundByLocationProjectionMap.get(
+          hdssEventDataProjection.getCompound()).getIndividualCount();
+    } else {
+      totalIndividuals = 1;
+    }
+
+    double passiveIndexCaseDetectionRation = (double) indexCases / (double) rcdCases * 100;
+
+    columns.put(PASSIVE_CASE_PERCENTAGE,
+        new ColumnData().setValue(
+            passiveIndexCaseDetectionRation));
+
+    double rcdBasedMalariaPrevalence = (double) totalCases / (double) totalIndividuals * 100;
+
+    columns.put(RACD_BASED_MALARIA_PREVALENCE,
+        new ColumnData().setValue(
+            rcdBasedMalariaPrevalence));
 
     return columns;
   }
 
   private List<LocationResponse> setGeoJsonProperties(Map<UUID, RowData> rowDataMap,
       List<LocationResponse> locationResponses) {
-    return locationResponses.stream().filter(loc -> rowDataMap.containsKey(loc.getIdentifier())).peek(loc -> {
-        loc.getProperties()
-            .setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
-        loc.getProperties().setId(loc.getIdentifier().toString());
-        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
-            != null) {
-          loc.getProperties().setFoundCoverage(
-              rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
-                  .getValue());
-        }
-        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
-            .get(STRUCTURE_STATUS) != null) {
-          String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
-              .get(STRUCTURE_STATUS).getValue();
-          loc.getProperties().setBusinessStatus(
-              businessStatus == null ? "No State" : businessStatus);
-          loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
-        }
+    return locationResponses.stream().filter(loc -> rowDataMap.containsKey(loc.getIdentifier()))
+        .peek(loc -> {
+          loc.getProperties()
+              .setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
+          loc.getProperties().setId(loc.getIdentifier().toString());
+          if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
+              != null) {
+            loc.getProperties().setFoundCoverage(
+                rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
+                    .getValue());
+          }
+          if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+              .get(STRUCTURE_STATUS) != null) {
+            String businessStatus = (String) rowDataMap.get(loc.getIdentifier())
+                .getColumnDataMap()
+                .get(STRUCTURE_STATUS).getValue();
+            loc.getProperties().setBusinessStatus(
+                businessStatus == null ? "No State" : businessStatus);
+            loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
+          }
 
-    }).collect(Collectors.toList());
+        }).collect(Collectors.toList());
   }
 }
 
