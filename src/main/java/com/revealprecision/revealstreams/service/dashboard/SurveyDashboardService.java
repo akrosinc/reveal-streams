@@ -551,6 +551,8 @@ public class SurveyDashboardService {
         .map(loc -> LocationResponseFactory.fromPlanLocationDetails(loc, parentIdentifier))
         .collect(Collectors.toList());
 
+    log.info("Row Map Data: {}", rowDataMap);
+
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses);
     if ("uw".equals(instanceProperties.getClient())) {
       response.setDefaultDisplayColumn(
@@ -617,6 +619,8 @@ public class SurveyDashboardService {
   private List<LocationResponse> setGeoJsonProperties(Map<UUID, RowData> rowDataMap,
       List<LocationResponse> locationResponses) {
     return locationResponses.stream().peek(loc -> {
+      log.info("locationIdentifier: {} {} {}", loc.getIdentifier(), loc.getProperties().getName(),
+          loc.getProperties().getGeographicLevel());
       loc.getProperties().setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
       loc.getProperties().setId(loc.getIdentifier().toString());
       if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
