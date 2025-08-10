@@ -19,6 +19,7 @@ import com.revealprecision.revealstreams.persistence.projection.HdssEventDataPro
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsPerCompoundByLocationProjection;
+import com.revealprecision.revealstreams.persistence.projection.IndividualsPerCompoundByLocationProjectionObj;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
 import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
 import com.revealprecision.revealstreams.persistence.repository.HdssCompoundsRepository;
@@ -612,9 +613,16 @@ public class SurveyDashboardService {
         = hdssCompoundsRepository.getListOfNumberOfIndividualsByLocation(
         parentLocation.getIdentifier());
 
-    Map<String, IndividualsPerCompoundByLocationProjection> individualsByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
+    Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
+        .map(item -> IndividualsPerCompoundByLocationProjectionObj
+            .builder()
+            .individualCount(item.getIndividualCount())
+            .locationIdentifier(item.getLocationIdentifier())
+            .build())
         .collect(Collectors.toMap(
-            IndividualsPerCompoundByLocationProjection::getLocationIdentifier, num -> num, (a, b) -> b));
+            IndividualsPerCompoundByLocationProjectionObj::getLocationIdentifier, num -> num, (a, b) -> b));
+
+    log.info("IndividualsPerCompoundByLocationProjectionObj {} ",individualsByLocationProjectionMap);
 
     List<RowData> collect = eventDataForLocationAndPlan.stream()
         .map(eventDataForLocationAndPlanItem -> getOperationalDataBelowHighestLevel(eventDataForLocationAndPlanItem
@@ -715,7 +723,7 @@ public class SurveyDashboardService {
 
   private Map<String, ColumnData> getOperationalDataBelowHighestLevel(
       HdssEventDataProjection hdssEventDataProjection
-      , Map<String, IndividualsPerCompoundByLocationProjection> individualsByLocationProjectionMap
+      , Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap
   ) {
 
     log.info("We are here {} {}",hdssEventDataProjection.getChildName(),hdssEventDataProjection.getTotalCases());
