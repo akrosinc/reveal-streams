@@ -39,7 +39,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
   List<IndividualsPerCompoundByLocationProjection> getNumberOfIndividualsPerCompoundByLocation(UUID locationIdentifier);
 
   @Query(value = "SELECT c.parentName,\n"
-      + "       c.childIdentifier as locationIdentifier,\n"
+      + "       cast(c.childIdentifier as varchar)  as locationIdentifier,\n"
       + "       c.childName ,\n"
       + "       count(*) as individualCount\n"
       + "From (\n"
