@@ -698,7 +698,7 @@ public class SurveyDashboardService {
           hdssEventDataProjection.getCompound()).getIndividualCount();
     }
     double passiveIndexCaseDetectionRation =
-        rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
+        rcdCases > 0 ? ((double) indexCases / (double) rcdCases) * 100 : 0;
 
     String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
         indexCases, rcdCases);
@@ -709,7 +709,7 @@ public class SurveyDashboardService {
             .setMeta(passiveIndexCaseDetectionRatioMeta));
 
     double rcdBasedMalariaPrevalence =
-        totalIndividuals > 0 ? (double) totalCases / (double) totalIndividuals * 100 : 0;
+        totalIndividuals > 0 ? ((double) totalCases / (double) totalIndividuals) * 100 : 0;
 
     String rcdBasedMalariaPrevalenceMeta = String.format(
         "total cases (%s) / total individuals (%s)", totalCases, totalIndividuals);
@@ -781,7 +781,7 @@ public class SurveyDashboardService {
           hdssEventDataProjection.getLocationIdentifier()).getIndividualCount();
     }
     double passiveIndexCaseDetectionRation =
-        rcdCases > 0 ? (double) indexCases / (double) rcdCases * 100 : 0 ;
+        rcdCases > 0 ? ((double) indexCases / (double) rcdCases) * 100 : 0 ;
 
     String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
         indexCases, rcdCases);
@@ -792,7 +792,7 @@ public class SurveyDashboardService {
             .setMeta(passiveIndexCaseDetectionRatioMeta));
 
     double rcdBasedMalariaPrevalence =
-        totalIndividuals > 0 ? (double) totalCases / (double) totalIndividuals * 100 : 0;
+        totalIndividuals > 0 ? ((double) totalCases / (double) totalIndividuals) * 100 : 0;
 
     String rcdBasedMalariaPrevalenceMeta = String.format(
         "total cases (%s) / total individuals (%s)", totalCases, totalIndividuals);
