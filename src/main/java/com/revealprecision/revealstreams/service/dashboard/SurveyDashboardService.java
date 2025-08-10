@@ -733,11 +733,11 @@ public class SurveyDashboardService {
 
     columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
         individualsByLocationProjectionMap != null && hdssEventDataProjection != null
-            && hdssEventDataProjection.getCompound() != null &&
+            && hdssEventDataProjection.getLocationIdentifier() != null &&
             individualsByLocationProjectionMap.containsKey(
-                hdssEventDataProjection.getCompound()) ?
+                hdssEventDataProjection.getLocationIdentifier()) ?
             individualsByLocationProjectionMap.get(
-                hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
+                hdssEventDataProjection.getLocationIdentifier()).getIndividualCount() : 0));
 
     columns.put(TOTAL_INDEX_CASES,
         new ColumnData().setValue(
@@ -768,9 +768,9 @@ public class SurveyDashboardService {
     if (individualsByLocationProjectionMap != null &&
         hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
         individualsByLocationProjectionMap.containsKey(
-            hdssEventDataProjection.getCompound())) {
+            hdssEventDataProjection.getLocationIdentifier())) {
       totalIndividuals = individualsByLocationProjectionMap.get(
-          hdssEventDataProjection.getCompound()).getIndividualCount();
+          hdssEventDataProjection.getLocationIdentifier()).getIndividualCount();
     }
     double passiveIndexCaseDetectionRation =
         rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
