@@ -8,12 +8,14 @@ import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
+import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
+import com.revealprecision.revealstreams.persistence.projection.HdssEventDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.LocationBusinessStateCount;
@@ -32,6 +34,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -156,7 +159,8 @@ public class SurveyDashboardService {
       IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
           childLocation.getIdentifier());
 
-      int individualsTested = hdssCompoundsRepository.getNumberOfTestedIndividualsByLocation(childLocation.getIdentifier());
+      int individualsTested = hdssCompoundsRepository.getNumberOfTestedIndividualsByLocation(
+          childLocation.getIdentifier());
 
       List<IndividualTaskBusinessStateByLocationProjection> businessStateByLocationProjections
           = hdssCompoundsRepository.getTaskBusinessStateCountsByLocation(plan.getIdentifier(),
@@ -187,7 +191,6 @@ public class SurveyDashboardService {
       columns.put(TOTAL_INDEX_CASES, ColumnData.builder().value(totalIndexCases).build());
 
       columns.put(TOTAL_INDIVIDUALS_TESTED, ColumnData.builder().value(individualsTested).build());
-
 
       columns.put(TOTAL_CASES, ColumnData.builder().value(totalCases).build());
 
@@ -553,7 +556,8 @@ public class SurveyDashboardService {
           dashboardProperties.getUwSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
     } else {
       response.setDefaultDisplayColumn(
-          dashboardProperties.getNihGhaSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
+          dashboardProperties.getNihGhaSurveyDefaultDisplayColumns()
+              .getOrDefault(reportLevel, null));
     }
 
     response.setFeatures(locationResponses);
@@ -561,6 +565,52 @@ public class SurveyDashboardService {
     return response;
   }
 
+  public List<RowData> getNihGhaStructureData(Plan plan, @Nullable Location childLocation,
+      MdaLiteReportType type, Location parentLocation) {
+
+    List<HdssEventDataProjection> eventDataForLocationAndPlan = hdssCompoundsRepository.getEventDataForLocationAndPlan(
+        parentLocation.getIdentifier(), plan.getIdentifier());
+
+    List<RowData> collect = eventDataForLocationAndPlan.stream()
+        .map(this::getOperationalData)
+        .map(stringColumnDataMap -> {
+          RowData rowData = new RowData();
+          rowData.setLocationIdentifier(
+              parentLocation.getIdentifier());
+          rowData.setColumnDataMap(stringColumnDataMap);
+          rowData.setLocationName((String) stringColumnDataMap.get("Compound").getValue());
+          return rowData;
+        })
+        .collect(Collectors.toList());
+    return collect;
+  }
+
+  private Map<String, ColumnData> getOperationalData(
+      HdssEventDataProjection hdssEventDataProjection) {
+    Map<String, ColumnData> columns = new LinkedHashMap<>();
+
+//    columns.put("LOCATION",
+//        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+//            (hdssEventDataProjection == null ? 0
+//                : hdssEventDataProjection.getLocationIdentifier())));
+
+    columns.put("Compound",
+        new ColumnData().setDataType("string").setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getCompound())));
+
+    columns.put("TotalTested",
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getTotalTested())));
+
+    columns.put("TotalCases",
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getTotalCases())));
+
+    return columns;
+  }
 
   private List<LocationResponse> setGeoJsonProperties(Map<UUID, RowData> rowDataMap,
       List<LocationResponse> locationResponses) {

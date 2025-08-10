@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.service.dashboard;
 
 import static com.revealprecision.revealstreams.enums.ActionTitleEnum.MDA_ONCHOCERCIASIS_SURVEY;
 import static com.revealprecision.revealstreams.enums.ReportTypeEnum.ONCHOCERCIASIS_SURVEY;
+import static com.revealprecision.revealstreams.enums.ReportTypeEnum.SURVEY;
 
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
@@ -16,6 +17,7 @@ import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Action;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.props.InstanceProperties;
 import com.revealprecision.revealstreams.service.LocationService;
 import com.revealprecision.revealstreams.service.PlanService;
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ public class DashboardService {
   private final SurveyDashboardService surveyDashboardService;
   private final LsmDashboardService lsmDashboardService;
   private final OnchocerciasisDashboardService onchocerciasisDashboardService;
+  private final InstanceProperties instanceProperties;
 
   public static final String WITHIN_STRUCTURE_LEVEL = "Within Structure";
   public static final String STRUCTURE_LEVEL = "Structure";
@@ -99,7 +102,13 @@ public class DashboardService {
         rowDataMap = rowData.stream()
             .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
       }
-    } else {
+    } else if (finalReportTypeEnum!= null && finalReportTypeEnum.equals(SURVEY) && reportLevel.equals(STRUCTURE_LEVEL) &&
+        "nih-gha".equals(instanceProperties.getClient())) {
+      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
+          reportLevel, filters,
+          parentIdentifierString, type);
+    }
+    else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
                   getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
                       parentIdentifierString, type))
@@ -186,12 +195,15 @@ public class DashboardService {
             return irsDashboardService.getIRSFullData(plan, loc.getLocation());
         }
       case SURVEY:
-
         switch (reportLevel) {
           case WITHIN_STRUCTURE_LEVEL:
-          case STRUCTURE_LEVEL:
-            return surveyDashboardService.getIRSFullCoverageStructureLevelData(plan,
-                loc.getLocation());
+          case STRUCTURE_LEVEL: {
+            if ("nih-gha".equals(instanceProperties.getClient())){
+              return surveyDashboardService.getNihGhaStructureData(
+                  plan,
+                  null, type, parentLocation);
+            }
+          }
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case ALL_OTHER_LEVELS:
             return surveyDashboardService.getIRSFullData(plan, loc.getLocation());

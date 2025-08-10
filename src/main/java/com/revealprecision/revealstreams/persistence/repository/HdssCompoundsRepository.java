@@ -2,6 +2,7 @@ package com.revealprecision.revealstreams.persistence.repository;
 
 import com.cosium.spring.data.jpa.entity.graph.repository.EntityGraphJpaRepository;
 import com.revealprecision.revealstreams.persistence.domain.HdssCompounds;
+import com.revealprecision.revealstreams.persistence.projection.HdssEventDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
 import java.util.List;
@@ -62,4 +63,46 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "           and l.identifier = :locationIdentifier \n"
       + "     ) c",nativeQuery = true)
   int getNumberOfTestedIndividualsByLocation(UUID locationIdentifier);
+
+  @Query(value = "SELECT c.compound_id as compound,\n"
+      + "       sum(c.pas_tested)   as passiveTested,\n"
+      + "       sum(c.rcd_tested) as rcdTested,\n"
+      + "       sum(c.pas_positive) as passivePositive,\n"
+      + "       sum(c.rcd_positive) as rcdPositive,\n"
+      + "       sum(c.pas_tested + c.rcd_tested) as totalTested,\n"
+      + "       sum(c.rcd_positive + c.pas_positive) as totalCases\n"
+      + " From ( "
+      + "         SELECT DISTINCT CASE\n"
+      + "                             WHEN e.observations -> 'rdt' ->> 0 = 'Positive' AND e.event_type = 'passive_case_detection' THEN 1\n"
+      + "                             ELSE 0 END                                                      as pas_positive,\n"
+      + "                         CASE\n"
+      + "                             WHEN e.observations -> 'rdt' ->> 0 = 'Positive' AND e.event_type = 'rcd' THEN 1\n"
+      + "                             ELSE 0 END                                                      as rcd_positive,\n"
+      + "                         CASE\n"
+      + "                             WHEN e.observations -> 'rdt' ->> 0 = 'Positive' AND e.event_type = 'passive_case_detection'\n"
+      + "                                 OR e.observations -> 'rdt' ->> 0 = 'Negative' AND e.event_type = 'passive_case_detection' THEN 1\n"
+      + "                             ELSE 0 END                                                      as pas_tested,\n"
+      + "                         CASE\n"
+      + "                             WHEN e.observations -> 'rdt' ->> 0 = 'Positive' AND e.event_type = 'rcd'\n"
+      + "                                 OR e.observations -> 'rdt' ->> 0 = 'Negative' AND e.event_type = 'rcd' THEN 1\n"
+      + "                             ELSE 0 END                                                      as rcd_tested,\n"
+      + "                         hc.compound_id,\n"
+      + "                         l.name,\n"
+      + "                         hc.individual_id\n"
+      + "         FROM event_tracker e\n"
+      + "                  left join hdss.hdss_compounds hc\n"
+      + "                            on hc.individual_id = e.observations -> 'individual' ->> 0\n"
+      + "                  left join (\n"
+      + "             SELECT lr.location_identifier, parent.parent_id\n"
+      + "             from location_relationship lr,\n"
+      + "                  unnest(lr.ancestry) with ordinality parent(parent_id, pos)\n"
+      + "         ) p on p.location_identifier = hc.structure_id\n"
+      + "                  left join location l on l.identifier = parent_id\n"
+      + "         WHERE\n"
+      + "               l.identifier = :locationIdentifier \n"
+      + "           and e.plan_identifier = :planIdentifier\n"
+      + "     ) c\n"
+      + "group by c.compound_id;",nativeQuery = true)
+  List<HdssEventDataProjection> getEventDataForLocationAndPlan(UUID locationIdentifier, UUID planIdentifier);
+
 }
