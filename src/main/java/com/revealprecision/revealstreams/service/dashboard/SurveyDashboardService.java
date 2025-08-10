@@ -43,6 +43,7 @@ import org.springframework.stereotype.Service;
 public class SurveyDashboardService {
 
 
+  public static final String LOCATION = "LOCATION";
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
@@ -576,7 +577,7 @@ public class SurveyDashboardService {
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
           rowData.setLocationIdentifier(
-              parentLocation.getIdentifier());
+              UUID.fromString((String) stringColumnDataMap.get(LOCATION).getValue()));
           rowData.setColumnDataMap(stringColumnDataMap);
           rowData.setLocationName((String) stringColumnDataMap.get("Compound").getValue());
           return rowData;
@@ -585,14 +586,15 @@ public class SurveyDashboardService {
     return collect;
   }
 
+
   private Map<String, ColumnData> getOperationalData(
       HdssEventDataProjection hdssEventDataProjection) {
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
-//    columns.put("LOCATION",
-//        new ColumnData().setIsHidden(true).setDataType("string").setValue(
-//            (hdssEventDataProjection == null ? 0
-//                : hdssEventDataProjection.getLocationIdentifier())));
+    columns.put(LOCATION,
+        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getLocationIdentifier())));
 
     columns.put("Compound",
         new ColumnData().setDataType("string").setValue(

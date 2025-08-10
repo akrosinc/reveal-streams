@@ -107,6 +107,11 @@ public class DashboardService {
       List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
           reportLevel, filters,
           parentIdentifierString, type);
+
+      if (rowData !=null){
+        rowDataMap = rowData.stream()
+            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+      }
     }
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
