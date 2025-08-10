@@ -38,6 +38,19 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
 
   List<IndividualsPerCompoundByLocationProjection> getNumberOfIndividualsPerCompoundByLocation(UUID locationIdentifier);
 
+  @Query(value = "SELECT  cast(lp.identifier as varchar) as locationIdentifier ,count(*) as individualCount\n"
+      + "from hdss.hdss_compounds hc\n"
+      + "         left join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
+      + "                    from location_relationship lr,\n"
+      + "                         unnest(lr.ancestry) with ordinality arr(ancestor, pos)\n"
+      + ") as lr on lr.child_location = hc.structure_id\n"
+      + "         left join location lp on lr.ancestor = lp.identifier\n"
+      + "         left join geographic_level gl on gl.identifier = lp.geographic_level_identifier\n"
+      + "where lp.identifier = :locationIdentifier \n"
+      + "group by lp.identifier",nativeQuery = true)
+
+  List<IndividualsPerCompoundByLocationProjection> getListOfNumberOfIndividualsByLocation(UUID locationIdentifier);
+
 
   @Query(value = "SELECT a.title as title, t.business_status as businessStatus, count(*) as businessStatusCount\n"
       + "from task t\n"

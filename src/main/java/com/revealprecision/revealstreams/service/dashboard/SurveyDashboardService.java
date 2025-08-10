@@ -608,17 +608,17 @@ public class SurveyDashboardService {
 
     log.info("Size: {}",eventDataForLocationAndPlan.size());
 
-//    List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
-//        = hdssCompoundsRepository.getNumberOfIndividualsPerCompoundByLocation(
-//        parentLocation.getIdentifier());
+    List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
+        = hdssCompoundsRepository.getListOfNumberOfIndividualsByLocation(
+        parentLocation.getIdentifier());
 
-//    Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
-//        .collect(Collectors.toMap(
-//            IndividualsPerCompoundByLocationProjection::getCompound, num -> num, (a, b) -> b));
+    Map<String, IndividualsPerCompoundByLocationProjection> individualsByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
+        .collect(Collectors.toMap(
+            IndividualsPerCompoundByLocationProjection::getLocationIdentifier, num -> num, (a, b) -> b));
 
     List<RowData> collect = eventDataForLocationAndPlan.stream()
         .map(eventDataForLocationAndPlanItem -> getOperationalDataBelowHighestLevel(eventDataForLocationAndPlanItem
-//            ,individualsPerCompoundByLocationProjectionMap
+            ,individualsByLocationProjectionMap
         ))
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
@@ -715,7 +715,7 @@ public class SurveyDashboardService {
 
   private Map<String, ColumnData> getOperationalDataBelowHighestLevel(
       HdssEventDataProjection hdssEventDataProjection
-//      , Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap
+      , Map<String, IndividualsPerCompoundByLocationProjection> individualsByLocationProjectionMap
   ) {
 
     log.info("We are here {} {}",hdssEventDataProjection.getChildName(),hdssEventDataProjection.getTotalCases());
@@ -731,13 +731,13 @@ public class SurveyDashboardService {
             (hdssEventDataProjection == null ? 0
                 : hdssEventDataProjection.getChildName())));
 
-//    columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
-//        individualsPerCompoundByLocationProjectionMap != null && hdssEventDataProjection != null
-//            && hdssEventDataProjection.getCompound() != null &&
-//            individualsPerCompoundByLocationProjectionMap.containsKey(
-//                hdssEventDataProjection.getCompound()) ?
-//            individualsPerCompoundByLocationProjectionMap.get(
-//                hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
+    columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
+        individualsByLocationProjectionMap != null && hdssEventDataProjection != null
+            && hdssEventDataProjection.getCompound() != null &&
+            individualsByLocationProjectionMap.containsKey(
+                hdssEventDataProjection.getCompound()) ?
+            individualsByLocationProjectionMap.get(
+                hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
 
     columns.put(TOTAL_INDEX_CASES,
         new ColumnData().setValue(
@@ -765,13 +765,13 @@ public class SurveyDashboardService {
       totalCases = hdssEventDataProjection.getTotalCases();
     }
 
-//    if (individualsPerCompoundByLocationProjectionMap != null &&
-//        hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
-//        individualsPerCompoundByLocationProjectionMap.containsKey(
-//            hdssEventDataProjection.getCompound())) {
-//      totalIndividuals = individualsPerCompoundByLocationProjectionMap.get(
-//          hdssEventDataProjection.getCompound()).getIndividualCount();
-//    }
+    if (individualsByLocationProjectionMap != null &&
+        hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
+        individualsByLocationProjectionMap.containsKey(
+            hdssEventDataProjection.getCompound())) {
+      totalIndividuals = individualsByLocationProjectionMap.get(
+          hdssEventDataProjection.getCompound()).getIndividualCount();
+    }
     double passiveIndexCaseDetectionRation =
         rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
 

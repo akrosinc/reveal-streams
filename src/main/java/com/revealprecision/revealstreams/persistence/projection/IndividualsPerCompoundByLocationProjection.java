@@ -4,5 +4,7 @@ public interface IndividualsPerCompoundByLocationProjection {
 
   String getCompound();
 
+  String getLocationIdentifier();
+
   int getIndividualCount();
 }
