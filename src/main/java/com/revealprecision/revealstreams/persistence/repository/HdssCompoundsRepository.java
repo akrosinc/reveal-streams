@@ -64,7 +64,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) c",nativeQuery = true)
   int getNumberOfTestedIndividualsByLocation(UUID locationIdentifier);
 
-  @Query(value = "SELECT c.locationIdentifier as locationIdentifier,c.compound_id as compound,\n"
+  @Query(value = "SELECT cast(c.locationIdentifier as varchar) as locationIdentifier,c.compound_id as compound,\n"
       + "       sum(c.pas_tested)   as passiveTested,\n"
       + "       sum(c.rcd_tested) as rcdTested,\n"
       + "       sum(c.pas_positive) as passivePositive,\n"
@@ -102,7 +102,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "               l.identifier = :locationIdentifier \n"
       + "           and e.plan_identifier = :planIdentifier\n"
       + "     ) c\n"
-      + "group by c.compound_id,c.locationIdentifier ;",nativeQuery = true)
+      + "group by c.compound_id,cast(c.locationIdentifier as varchar) ;",nativeQuery = true)
   List<HdssEventDataProjection> getEventDataForLocationAndPlan(UUID locationIdentifier, UUID planIdentifier);
 
 }
