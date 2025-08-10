@@ -606,6 +606,8 @@ public class SurveyDashboardService {
     List<HdssEventDataProjection> eventDataForLocationAndPlan = hdssCompoundsRepository.getEventDataForLocationAndPlanBelowHighest(
         parentLocation.getIdentifier(), plan.getIdentifier());
 
+    log.info("Size: {}",eventDataForLocationAndPlan.size());
+
 //    List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
 //        = hdssCompoundsRepository.getNumberOfIndividualsPerCompoundByLocation(
 //        parentLocation.getIdentifier());
@@ -714,6 +716,8 @@ public class SurveyDashboardService {
       HdssEventDataProjection hdssEventDataProjection
 //      , Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap
   ) {
+
+    log.info("We are here ");
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     columns.put(LOCATION,
