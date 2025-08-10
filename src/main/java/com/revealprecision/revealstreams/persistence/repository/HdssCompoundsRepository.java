@@ -38,16 +38,29 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
 
   List<IndividualsPerCompoundByLocationProjection> getNumberOfIndividualsPerCompoundByLocation(UUID locationIdentifier);
 
-  @Query(value = "SELECT  cast(lp.identifier as varchar) as locationIdentifier ,count(*) as individualCount\n"
-      + "from hdss.hdss_compounds hc\n"
-      + "         left join (SELECT lr.location_identifier as child_location, arr.ancestor\n"
-      + "                    from location_relationship lr,\n"
-      + "                         unnest(lr.ancestry) with ordinality arr(ancestor, pos)\n"
-      + ") as lr on lr.child_location = hc.structure_id\n"
-      + "         left join location lp on lr.ancestor = lp.identifier\n"
-      + "         left join geographic_level gl on gl.identifier = lp.geographic_level_identifier\n"
-      + "where lp.identifier = :locationIdentifier \n"
-      + "group by lp.identifier",nativeQuery = true)
+  @Query(value = "SELECT c.parentName,\n"
+      + "       c.childIdentifier ,\n"
+      + "       c.childName ,\n"
+      + "       count(*)\n"
+      + "From (\n"
+      + "         SELECT DISTINCT l.name as parentName,\n"
+      + "                         cl.identifier as childIdentifier,\n"
+      + "                         cl.name as childName ,\n"
+      + "                         hc.individual_id\n"
+      + "         from location l\n"
+      + "                  left join location_relationship lr on lr.parent_identifier = l.identifier\n"
+      + "                  left join (\n"
+      + "             SELECT lr.location_identifier, parent.parent_id\n"
+      + "             from location_relationship lr,\n"
+      + "                  unnest(lr.ancestry) with ordinality parent(parent_id, pos)\n"
+      + "         ) p on p.parent_id = lr.location_identifier\n"
+      + "                  left join location cl on cl.identifier = lr.location_identifier\n"
+      + "\n"
+      + "                  left join hdss.hdss_compounds hc on hc.structure_id = p.location_identifier\n"
+      + "         WHERE l.identifier = :locationIdentifier\n"
+      + "\n"
+      + "     ) c\n"
+      + "group by c.parentName,c.childIdentifier,c.childName",nativeQuery = true)
 
   List<IndividualsPerCompoundByLocationProjection> getListOfNumberOfIndividualsByLocation(UUID locationIdentifier);
 
@@ -179,7 +192,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "                  left join event_tracker e\n"
       + "                             on hc.individual_id = e.observations -> 'individual' ->> 0\n"
       + "         WHERE l.identifier = :locationIdentifier\n"
-      + "           and e.plan_identifier = :planIdentifier\n"
+      + "           and (e.plan_identifier = :planIdentifier  OR e.identifier IS NULL)\n"
       + "\n"
       + "     ) c\n"
       + "group by c.parentName,c.childIdentifier,c.childName",nativeQuery = true)
