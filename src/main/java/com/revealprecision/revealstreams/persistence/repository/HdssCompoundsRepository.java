@@ -121,7 +121,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
   List<HdssEventDataProjection> getEventDataForLocationAndPlan(UUID locationIdentifier, UUID planIdentifier);
 
   @Query(value = "SELECT c.parentName,\n"
-      + "       c.childIdentifier as locationIdentifier,\n"
+      + "       cast(c.childIdentifier as varchar) as locationIdentifier,\n"
       + "       c.childName as childName,\n"
       + "       sum(c.pas_tested)                    as passiveTested,\n"
       + "       sum(c.rcd_tested)                    as rcdTested,\n"
