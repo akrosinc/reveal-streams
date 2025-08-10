@@ -618,25 +618,24 @@ public class SurveyDashboardService {
 
   private List<LocationResponse> setGeoJsonProperties(Map<UUID, RowData> rowDataMap,
       List<LocationResponse> locationResponses) {
-    return locationResponses.stream().peek(loc -> {
-      log.info("locationIdentifier: {} {} {}", loc.getIdentifier(), loc.getProperties().getName(),
-          loc.getProperties().getGeographicLevel());
-      loc.getProperties().setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
-      loc.getProperties().setId(loc.getIdentifier().toString());
-      if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
-          != null) {
-        loc.getProperties().setFoundCoverage(
-            rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
-                .getValue());
-      }
-      if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
-          .get(STRUCTURE_STATUS) != null) {
-        String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
-            .get(STRUCTURE_STATUS).getValue();
-        loc.getProperties().setBusinessStatus(
-            businessStatus == null ? "No State" : businessStatus);
-        loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
-      }
+    return locationResponses.stream().filter(loc -> rowDataMap.containsKey(loc.getIdentifier())).peek(loc -> {
+        loc.getProperties()
+            .setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
+        loc.getProperties().setId(loc.getIdentifier().toString());
+        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
+            != null) {
+          loc.getProperties().setFoundCoverage(
+              rowDataMap.get(loc.getIdentifier()).getColumnDataMap().get(VISITATION_COVERAGE)
+                  .getValue());
+        }
+        if (rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+            .get(STRUCTURE_STATUS) != null) {
+          String businessStatus = (String) rowDataMap.get(loc.getIdentifier()).getColumnDataMap()
+              .get(STRUCTURE_STATUS).getValue();
+          loc.getProperties().setBusinessStatus(
+              businessStatus == null ? "No State" : businessStatus);
+          loc.getProperties().setStatusColor(getBusinessStatusColor(businessStatus));
+        }
 
     }).collect(Collectors.toList());
   }
