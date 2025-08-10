@@ -774,7 +774,7 @@ public class SurveyDashboardService {
     }
 
     if (individualsByLocationProjectionMap != null &&
-        hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
+        hdssEventDataProjection != null && hdssEventDataProjection.getLocationIdentifier() != null &&
         individualsByLocationProjectionMap.containsKey(
             hdssEventDataProjection.getLocationIdentifier())) {
       totalIndividuals = individualsByLocationProjectionMap.get(
