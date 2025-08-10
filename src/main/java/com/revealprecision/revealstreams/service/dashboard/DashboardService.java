@@ -114,7 +114,14 @@ public class DashboardService {
       }
     } else if (parentIdentifier!=null && finalReportTypeEnum!= null && finalReportTypeEnum.equals(SURVEY) &&
         "nih-gha".equals(instanceProperties.getClient())){
+      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
+          reportLevel, filters,
+          parentIdentifierString, type);
 
+      if (rowData !=null){
+        rowDataMap = rowData.stream()
+            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+      }
     }
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
@@ -165,7 +172,7 @@ public class DashboardService {
       PlanLocationDetails loc, String reportLevel, List<String> filters,
       String parentIdentifierString, MdaLiteReportType type) {
 
-//    log.info("loc {} reportLevel {} reportType {}",loc.getLocation().getName(),reportLevel,reportTypeEnum);
+    log.info("loc {} reportLevel {} reportType {}",loc.getLocation().getName(),reportLevel,reportTypeEnum);
 
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
