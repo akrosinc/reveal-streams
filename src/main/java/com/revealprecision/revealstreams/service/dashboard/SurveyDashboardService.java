@@ -47,6 +47,7 @@ public class SurveyDashboardService {
   public static final String LOCATION = "LOCATION";
   public static final String TOTAL_TESTED = "TotalTested";
   public static final String COMPOUND = "Compound";
+  public static final String LOCATION_NAME = "LocationName";
   private final PlanLocationsService planLocationsService;
   private final DashboardProperties dashboardProperties;
   private final LocationBusinessStatusService locationBusinessStatusService;
@@ -599,7 +600,35 @@ public class SurveyDashboardService {
         .collect(Collectors.toList());
     return collect;
   }
+  public List<RowData> getNihGhaBelowHighestLevelData(Plan plan, @Nullable Location childLocation,
+      MdaLiteReportType type, Location parentLocation) {
 
+    List<HdssEventDataProjection> eventDataForLocationAndPlan = hdssCompoundsRepository.getEventDataForLocationAndPlanBelowHighest(
+        parentLocation.getIdentifier(), plan.getIdentifier());
+
+//    List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
+//        = hdssCompoundsRepository.getNumberOfIndividualsPerCompoundByLocation(
+//        parentLocation.getIdentifier());
+
+//    Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap = numberOfIndividualsPerCompoundByLocation.stream()
+//        .collect(Collectors.toMap(
+//            IndividualsPerCompoundByLocationProjection::getCompound, num -> num, (a, b) -> b));
+
+    List<RowData> collect = eventDataForLocationAndPlan.stream()
+        .map(eventDataForLocationAndPlanItem -> getOperationalDataBelowHighestLevel(eventDataForLocationAndPlanItem
+//            ,individualsPerCompoundByLocationProjectionMap
+        ))
+        .map(stringColumnDataMap -> {
+          RowData rowData = new RowData();
+          rowData.setLocationIdentifier(
+              UUID.fromString((String) stringColumnDataMap.get(LOCATION).getValue()));
+          rowData.setColumnDataMap(stringColumnDataMap);
+          rowData.setLocationName((String) stringColumnDataMap.get(LOCATION_NAME).getValue());
+          return rowData;
+        })
+        .collect(Collectors.toList());
+    return collect;
+  }
 
   private Map<String, ColumnData> getOperationalData(
       HdssEventDataProjection hdssEventDataProjection,
@@ -657,6 +686,87 @@ public class SurveyDashboardService {
       totalIndividuals = individualsPerCompoundByLocationProjectionMap.get(
           hdssEventDataProjection.getCompound()).getIndividualCount();
     }
+    double passiveIndexCaseDetectionRation =
+        rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
+
+    String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
+        indexCases, rcdCases);
+
+    columns.put(PASSIVE_CASE_PERCENTAGE,
+        new ColumnData().setValue(
+                passiveIndexCaseDetectionRation)
+            .setMeta(passiveIndexCaseDetectionRatioMeta));
+
+    double rcdBasedMalariaPrevalence =
+        totalIndividuals > 0 ? (double) totalCases / (double) totalIndividuals * 100 : 0;
+
+    String rcdBasedMalariaPrevalenceMeta = String.format(
+        "total cases (%s) / total individuals (%s)", totalCases, totalIndividuals);
+
+    columns.put(RACD_BASED_MALARIA_PREVALENCE,
+        new ColumnData().setValue(
+            rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
+
+    return columns;
+  }
+
+  private Map<String, ColumnData> getOperationalDataBelowHighestLevel(
+      HdssEventDataProjection hdssEventDataProjection
+//      , Map<String, IndividualsPerCompoundByLocationProjection> individualsPerCompoundByLocationProjectionMap
+  ) {
+    Map<String, ColumnData> columns = new LinkedHashMap<>();
+
+    columns.put(LOCATION,
+        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getLocationIdentifier())));
+
+    columns.put(LOCATION_NAME,
+        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getChildName())));
+
+//    columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
+//        individualsPerCompoundByLocationProjectionMap != null && hdssEventDataProjection != null
+//            && hdssEventDataProjection.getCompound() != null &&
+//            individualsPerCompoundByLocationProjectionMap.containsKey(
+//                hdssEventDataProjection.getCompound()) ?
+//            individualsPerCompoundByLocationProjectionMap.get(
+//                hdssEventDataProjection.getCompound()).getIndividualCount() : 0));
+
+    columns.put(TOTAL_INDEX_CASES,
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getPassivePositive())));
+
+    columns.put(TOTAL_INDIVIDUALS_TESTED,
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getTotalTested())));
+
+    columns.put(TOTAL_CASES,
+        new ColumnData().setValue(
+            (hdssEventDataProjection == null ? 0
+                : hdssEventDataProjection.getTotalCases())));
+
+    int indexCases = 0;
+    int rcdCases =0;
+    int totalCases=0;
+    int totalIndividuals=0;
+
+    if (hdssEventDataProjection != null) {
+      indexCases = hdssEventDataProjection.getPassivePositive();
+      rcdCases = hdssEventDataProjection.getRcdPositive();
+      totalCases = hdssEventDataProjection.getTotalCases();
+    }
+
+//    if (individualsPerCompoundByLocationProjectionMap != null &&
+//        hdssEventDataProjection != null && hdssEventDataProjection.getCompound() != null &&
+//        individualsPerCompoundByLocationProjectionMap.containsKey(
+//            hdssEventDataProjection.getCompound())) {
+//      totalIndividuals = individualsPerCompoundByLocationProjectionMap.get(
+//          hdssEventDataProjection.getCompound()).getIndividualCount();
+//    }
     double passiveIndexCaseDetectionRation =
         rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
 

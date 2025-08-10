@@ -10,4 +10,7 @@ public interface HdssEventDataProjection {
   int getRcdPositive();
   int getTotalTested();
   int getTotalCases();
+
+  String getChildName();
+
 }

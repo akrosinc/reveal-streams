@@ -112,6 +112,9 @@ public class DashboardService {
         rowDataMap = rowData.stream()
             .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
       }
+    } else if (parentIdentifier!=null && finalReportTypeEnum!= null && finalReportTypeEnum.equals(SURVEY) &&
+        "nih-gha".equals(instanceProperties.getClient())){
+
     }
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
@@ -209,9 +212,18 @@ public class DashboardService {
                   null, type, parentLocation);
             }
           }
+
           case DIRECTLY_ABOVE_STRUCTURE_LEVEL:
           case ALL_OTHER_LEVELS:
+          {
+            if ("nih-gha".equals(instanceProperties.getClient()) && parentIdentifierString !=null){
+              return surveyDashboardService.getNihGhaBelowHighestLevelData(
+                  plan,
+                  null, type, parentLocation);
+            }
             return surveyDashboardService.getIRSFullData(plan, loc.getLocation());
+          }
+
         }
       case IRS_LITE_COVERAGE:
         switch (reportLevel) {
