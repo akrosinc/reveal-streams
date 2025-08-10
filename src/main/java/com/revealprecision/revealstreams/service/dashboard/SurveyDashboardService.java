@@ -781,7 +781,7 @@ public class SurveyDashboardService {
           hdssEventDataProjection.getLocationIdentifier()).getIndividualCount();
     }
     double passiveIndexCaseDetectionRation =
-        rcdCases > 0 ? (double) indexCases / (double) rcdCases : 0;
+        rcdCases > 0 ? (double) indexCases / (double) rcdCases * 100 : 0 ;
 
     String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
         indexCases, rcdCases);
