@@ -18,4 +18,8 @@ import lombok.Setter;
 public class AdditionalReportInfo implements Serializable {
   private ReportTypeEnum reportTypeEnum;
   private Map<String, String> dashboardFilter;
+  private boolean columnClickable = false;
+  private boolean showMap = true;
+  private boolean showGraphs = false;
+
 }

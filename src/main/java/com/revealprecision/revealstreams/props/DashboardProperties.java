@@ -78,6 +78,10 @@ public class DashboardProperties {
       ALL_OTHER_LEVELS,
       SURVEY_COVERAGE,DIRECTLY_ABOVE_STRUCTURE_LEVEL, SURVEY_COVERAGE);
 
+  private final Map<String, String> amdrDefaultColumns = Map.of(
+      ALL_OTHER_LEVELS,
+      "wewew");
+
   private final Map<String, String> mdaLiteDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,
 
@@ -121,6 +125,18 @@ public class DashboardProperties {
 
   private final Map<ReportTypeEnum, Map<String, String>> dashboardFilterAssociations = Map.of(
       ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters, ReportTypeEnum.ONCHOCERCIASIS_SURVEY,onchocerciasisFilters);
+
+  private final Map<String, Boolean> columnClickableReports = Map.of(
+      ReportTypeEnum.AMDR.name(),true
+  );
+
+  private final Map<String, Boolean> showMap = Map.of(
+      ReportTypeEnum.AMDR.name(),false
+  );
+
+  private final Map<String, Boolean> showGraph = Map.of(
+      ReportTypeEnum.AMDR.name(),true
+  );
 
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(
       PlanInterventionTypeEnum.IRS,

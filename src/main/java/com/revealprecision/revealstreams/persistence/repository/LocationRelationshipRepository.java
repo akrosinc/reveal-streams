@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.persistence.repository;
 
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.projection.LocationChildrenCountProjection;
 import java.util.List;
 import java.util.UUID;
@@ -93,4 +94,6 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
           + "group by lr.parent_identifier", nativeQuery = true)
   List<LocationChildrenCountProjection> getLocationAssignedChildrenCount(
       UUID locationHierarchyIdentifier, UUID planIdentifier);
+
+  List<LocationRelationship> findLocationRelationshipsByParentLocation_IdentifierAndLocationHierarchy(UUID locationParent, LocationHierarchy locationHierarchy);
 }

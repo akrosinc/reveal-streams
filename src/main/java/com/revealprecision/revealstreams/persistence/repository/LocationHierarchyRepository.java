@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LocationHierarchyRepository extends JpaRepository<LocationHierarchy, UUID> {
 
+  LocationHierarchy findLocationHierarchyByName(String name);
 }

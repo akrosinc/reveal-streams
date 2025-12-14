@@ -27,7 +27,7 @@ out/
 !**/src/test/**/out/
 
 ### Sensitive Data ###
-src/main/resources/application.properties
+src/main/resources/*.properties
 
 ### Unuseful Data ###
 src/main/resources/batch/

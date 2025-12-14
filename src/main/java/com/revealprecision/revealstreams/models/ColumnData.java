@@ -23,4 +23,5 @@ public class ColumnData implements Serializable {
   private Boolean isHidden;
   private String meta;
   private String dataType = "double";
+  private String description;
 }

@@ -62,7 +62,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) c\n"
       + "group by c.parentName,c.childIdentifier,c.childName",nativeQuery = true)
 
-  List<IndividualsPerCompoundByLocationProjection> getListOfNumberOfIndividualsByLocation(UUID locationIdentifier);
+  List<IndividualsPerCompoundByLocationProjection>  getListOfNumberOfIndividualsByLocation(UUID locationIdentifier);
 
 
   @Query(value = "SELECT a.title as title, t.business_status as businessStatus, count(*) as businessStatusCount\n"

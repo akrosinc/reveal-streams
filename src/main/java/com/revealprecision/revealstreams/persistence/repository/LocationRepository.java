@@ -3,7 +3,9 @@ package com.revealprecision.revealstreams.persistence.repository;
 
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
+import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,12 @@ import org.springframework.stereotype.Repository;
 public interface LocationRepository extends JpaRepository<Location, UUID> {
 
   List<Location> getLocationsByPeople_Identifier(UUID personIdentifier);
+
+  List<Location> findByIdentifierIn(Set<UUID> ids);
+
+  @Query(value = "SELECT cast(l.identifier as varchar) as identifier, l.name as locationName from location l where l.identifier in :ids", nativeQuery = true)
+  List<LocationNameProjection> findLocationNamesByIdentifierIn(Set<UUID> ids);
+
 
   @Query(value = "SELECT CAST(t.parentIdentifier as VARCHAR) as parentIdentifier, t.parentName as parentName, sum(locationCount) as locationCount from ("
       + "                  SELECT l.identifier as locationIdentifier, "
@@ -37,4 +45,6 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
       + "group by t.parentIdentifier, t.parentName LIMIT 1", nativeQuery = true)
   LocationMultipartCountProjection getMultipartLocationCountByLocationParent(UUID locationParentIdentifier, UUID hierarchyIdentifier, String geographicLevelName);
 
+
+  List<Location> getLocationsByGeographicLevel_Name(String location);
 }

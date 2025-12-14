@@ -2,6 +2,7 @@ package com.revealprecision.revealstreams.service.dashboard;
 
 
 import static com.revealprecision.revealstreams.enums.ActionTitleEnum.MDA_ONCHOCERCIASIS_SURVEY;
+import static com.revealprecision.revealstreams.enums.ReportTypeEnum.AMDR;
 import static com.revealprecision.revealstreams.enums.ReportTypeEnum.ONCHOCERCIASIS_SURVEY;
 import static com.revealprecision.revealstreams.enums.ReportTypeEnum.SURVEY;
 
@@ -47,6 +48,7 @@ public class DashboardService {
   private final LsmDashboardService lsmDashboardService;
   private final OnchocerciasisDashboardService onchocerciasisDashboardService;
   private final InstanceProperties instanceProperties;
+  private final AmdrService amdrService;
 
   public static final String WITHIN_STRUCTURE_LEVEL = "Within Structure";
   public static final String STRUCTURE_LEVEL = "Structure";
@@ -58,7 +60,7 @@ public class DashboardService {
   public static final String CDD_LEVEL = "CDD Level";
 
   public FeatureSetResponse getDataForReport(String reportType, UUID planIdentifier,
-      String parentIdentifierString, List<String> filters, MdaLiteReportType type) {
+      String parentIdentifierString, List<String> filters, MdaLiteReportType type,String clickedColumn) {
 
     ReportTypeEnum reportTypeEnum = LookupUtil.lookup(ReportTypeEnum.class, reportType);
     Plan plan = planService.findPlanByIdentifier(planIdentifier);
@@ -96,7 +98,7 @@ public class DashboardService {
     if (finalReportTypeEnum!= null && finalReportTypeEnum.equals(ONCHOCERCIASIS_SURVEY) && reportLevel.equals(STRUCTURE_LEVEL)) {
       List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
           reportLevel, filters,
-          parentIdentifierString, type);
+          parentIdentifierString, type,locationDetails, clickedColumn);
 
       if (rowData !=null){
         rowDataMap = rowData.stream()
@@ -106,7 +108,7 @@ public class DashboardService {
         "nih-gha".equals(instanceProperties.getClient())) {
       List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
           reportLevel, filters,
-          parentIdentifierString, type);
+          parentIdentifierString, type,locationDetails, clickedColumn);
 
       if (rowData !=null){
         rowDataMap = rowData.stream()
@@ -116,8 +118,16 @@ public class DashboardService {
         "nih-gha".equals(instanceProperties.getClient())){
       List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
           reportLevel, filters,
-          parentIdentifierString, type);
+          parentIdentifierString, type,locationDetails, clickedColumn);
 
+      if (rowData !=null){
+        rowDataMap = rowData.stream()
+            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+      }
+    } else if (finalReportTypeEnum!=null && finalReportTypeEnum.equals(AMDR)){
+      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
+          reportLevel, filters,
+          parentIdentifierString, type,locationDetails, clickedColumn);
       if (rowData !=null){
         rowDataMap = rowData.stream()
             .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
@@ -126,7 +136,7 @@ public class DashboardService {
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
                   getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
-                      parentIdentifierString, type))
+                      parentIdentifierString, type,locationDetails, clickedColumn))
               .stream()).filter(Objects::nonNull)
           .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
 
@@ -135,7 +145,7 @@ public class DashboardService {
 
     return getFeatureSetResponse(parentIdentifier, locationDetails,
         rowDataMap, reportLevel,
-        reportTypeEnum, filters, type);
+        reportTypeEnum, filters, type, clickedColumn);
   }
 
   private ReportTypeEnum getReportTypeEnum(Plan plan, ReportTypeEnum reportTypeEnum) {
@@ -155,7 +165,7 @@ public class DashboardService {
     }
   }
 
-  private void checkSupportedReports(String reportType, UUID planIdentifier,
+  public void checkSupportedReports(String reportType, UUID planIdentifier,
       ReportTypeEnum reportTypeEnum,
       Plan plan) {
     List<String> applicableReportTypes = ApplicableReportsEnum.valueOf(
@@ -170,9 +180,7 @@ public class DashboardService {
   private List<RowData> getRowData(Location parentLocation, ReportTypeEnum reportTypeEnum,
       Plan plan,
       PlanLocationDetails loc, String reportLevel, List<String> filters,
-      String parentIdentifierString, MdaLiteReportType type) {
-
-//    log.info("loc {} reportLevel {} reportType {}",loc.getLocation().getName(),reportLevel,reportTypeEnum);
+      String parentIdentifierString, MdaLiteReportType type,List<PlanLocationDetails> locationDetails, String clickedColumn) {
 
     switch (reportTypeEnum) {
       case MDA_FULL_COVERAGE:
@@ -311,7 +319,7 @@ public class DashboardService {
   public FeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails,
       Map<UUID, RowData> rowDataMap, String reportLevel, ReportTypeEnum reportTypeEnum,
-      List<String> filters, MdaLiteReportType type) {
+      List<String> filters, MdaLiteReportType type, String clickedColumn) {
     switch (reportTypeEnum) {
 
       case MDA_FULL_COVERAGE:
@@ -361,7 +369,7 @@ public class DashboardService {
     }
   }
 
-  private List<PlanLocationDetails> getPlanLocationDetails(UUID planIdentifier,
+  public List<PlanLocationDetails> getPlanLocationDetails(UUID planIdentifier,
       UUID parentIdentifier, Plan plan, Location parentLocation) {
     List<PlanLocationDetails> locationDetails = new ArrayList<>();
     if (parentLocation == null ||
