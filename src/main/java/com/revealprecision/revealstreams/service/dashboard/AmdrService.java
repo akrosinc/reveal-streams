@@ -8,17 +8,34 @@ import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessS
 import com.revealprecision.revealstreams.dto.AmdrFeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
+import com.revealprecision.revealstreams.dto.amdr.AmdrLandPageResponse;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
+import com.revealprecision.revealstreams.models.amdr.AmdrChartData;
 import com.revealprecision.revealstreams.models.amdr.AmdrCounters;
 import com.revealprecision.revealstreams.models.amdr.AmdrDataLocation;
+import com.revealprecision.revealstreams.models.amdr.AmdrLandingPageData;
+import com.revealprecision.revealstreams.models.amdr.AmdrTotalsLandingPageData;
+import com.revealprecision.revealstreams.models.amdr.AmdrTotalsPercentageLandingPageData;
+import com.revealprecision.revealstreams.models.amdr.BarTrace;
+import com.revealprecision.revealstreams.models.amdr.ColorMarker;
+import com.revealprecision.revealstreams.models.amdr.Layout;
+import com.revealprecision.revealstreams.models.amdr.Line;
+import com.revealprecision.revealstreams.models.amdr.LineMarker;
+import com.revealprecision.revealstreams.models.amdr.LineTrace;
+import com.revealprecision.revealstreams.models.amdr.Title;
+import com.revealprecision.revealstreams.models.amdr.Trace;
+import com.revealprecision.revealstreams.models.amdr.Xaxis;
+import com.revealprecision.revealstreams.models.amdr.Yaxis;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrHeaderNames;
 import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
+import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrTotalsLandingPageProjection;
+import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageProjection;
 import com.revealprecision.revealstreams.persistence.repository.LocationHierarchyRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRelationshipRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
@@ -69,6 +86,322 @@ public class AmdrService {
   private final AmdrHeaderNamesRepository amdrHeaderNamesRepository;
   private final LocationRepository locationRepository;
 
+
+  public AmdrLandPageResponse getLandingPageData() {
+    List<LandingPageProjection> landingPageData = amdrRepository.getLandingPageData();
+
+    AmdrTotalsLandingPageProjection landingPageProjection = amdrRepository.getTotalIndicators();
+
+    List<AmdrLandingPageData> sortedList = landingPageData.stream()
+        .map(AmdrLandingPageData::new)  // map projection to POJO
+        .sorted(Comparator.comparing(AmdrLandingPageData::getYearMonth)) // sort by YearMonth
+        .collect(Collectors.toList());  // collect into a List
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    List<String> yearMonthStrings = sortedList.stream()
+        .map(AmdrLandingPageData::getYearMonth)
+        .map(yearMonth -> yearMonth.format(formatter))
+        .collect(Collectors.toList());
+
+    List<String> dates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
+        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 1))
+        .map(LocalDate::toString).collect(
+            Collectors.toList());
+
+    List<String> shiftedDates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
+        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 3))
+        .map(LocalDate::toString).collect(
+            Collectors.toList());
+
+    int width = 24 * 60 * 60 * 1000 * 2;
+
+    BarTrace parasitologyRcd = new BarTrace();
+    parasitologyRcd.setType("bar");
+    parasitologyRcd.setName("rcd");
+    parasitologyRcd.setWidth(width);
+    parasitologyRcd.setX(dates);
+    parasitologyRcd.setMarker(new ColorMarker("lightblue"));
+    parasitologyRcd.setHovertemplate(""
+        + "rcd: %{customdata[0]}"
+        + "<br>total incoming cases:  %{customdata[1]}"
+        + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace parasitologyPassive = new BarTrace();
+    parasitologyPassive.setType("bar");
+    parasitologyPassive.setName("passive");
+    parasitologyPassive.setWidth(width);
+    parasitologyPassive.setX(dates);
+    parasitologyPassive.setMarker(new ColorMarker("blue"));
+    parasitologyPassive.setHovertemplate(""
+            + "passive: %{customdata[0]}"
+            + "<br>total incoming cases:  %{customdata[1]}"
+            + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace importsRcd = new BarTrace();
+    importsRcd.setType("bar");
+    importsRcd.setName("rcd");
+    importsRcd.setWidth(width);
+    importsRcd.setX(dates);
+    importsRcd.setMarker(new ColorMarker("lightblue"));
+    importsRcd.setHovertemplate(""
+        + "rcd: %{customdata[0]}"
+        + "<br>total incoming cases:  %{customdata[1]}"
+        + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace importsPassive = new BarTrace();
+    importsPassive.setType("bar");
+    importsPassive.setName("passive");
+    importsPassive.setWidth(width);
+    importsPassive.setX(dates);
+    importsPassive.setMarker(new ColorMarker("blue"));
+    importsPassive.setHovertemplate(""
+        + "passive: %{customdata[0]}"
+        + "<br>total incoming cases:  %{customdata[1]}"
+        + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace parasitology = new BarTrace();
+    parasitology.setType("bar");
+    parasitology.setName("parasitology");
+    parasitology.setWidth(width);
+    parasitology.setX(shiftedDates);
+    parasitology.setMarker(new ColorMarker("orange"));
+    parasitology.setHovertemplate(
+            ""
+            + "parasitology: %{customdata[0]}"
+            + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace imports = new BarTrace();
+    imports.setType("bar");
+    imports.setName("imports");
+    imports.setWidth(width);
+    imports.setX(shiftedDates);
+    imports.setMarker(new ColorMarker("red"));
+    imports.setHovertemplate(            ""
+        + "imports: %{customdata[0]}"
+        + "<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace parasitologyParasitology = new BarTrace();
+    parasitologyParasitology.setType("bar");
+    parasitologyParasitology.setName("parasitology");
+    parasitologyParasitology.setWidth(width);
+    parasitologyParasitology.setX(dates);
+    parasitologyParasitology.setMarker(new ColorMarker("orange"));
+    parasitologyParasitology.setHovertemplate(
+        "parasitology: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+
+    BarTrace parasitologyImport = new BarTrace();
+    parasitologyImport.setType("bar");
+    parasitologyImport.setName("import");
+    parasitologyImport.setWidth(width);
+    parasitologyImport.setX(shiftedDates);
+    parasitologyImport.setMarker(new ColorMarker("red"));
+    parasitologyImport.setHovertemplate(
+        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+
+    LineTrace parasitologyScatter = new LineTrace();
+    parasitologyScatter.setType("scatter");
+    parasitologyScatter.setName("balance after parasitology");
+    parasitologyScatter.setLine(new Line("green", 1));
+    parasitologyScatter.setMode("lines+markers");
+    parasitologyScatter.setX(shiftedDates);
+    parasitologyScatter.setMarker(new LineMarker(3));
+    parasitologyScatter.setHovertemplate(
+        "parasitology: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+
+    LineTrace importScatter = new LineTrace();
+    importScatter.setType("scatter");
+    importScatter.setName("balance after import");
+    importScatter.setLine(new Line("red", 1));
+    importScatter.setMode("lines+markers");
+    importScatter.setX(shiftedDates);
+    importScatter.setMarker(new LineMarker(3));
+    importScatter.setHovertemplate("imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+
+    LineTrace paraImportScatter = new LineTrace();
+    paraImportScatter.setType("scatter");
+    paraImportScatter.setName("balance after import");
+    paraImportScatter.setLine(new Line("green", 1));
+    paraImportScatter.setMode("lines+markers");
+    paraImportScatter.setX(shiftedDates);
+    paraImportScatter.setMarker(new LineMarker(3));
+    paraImportScatter.setHovertemplate("imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+
+    Integer parasitologyBase = 0;
+    Integer importBase = 0;
+    Integer paraToImportBase = 0;
+    for (AmdrLandingPageData landingPage : sortedList) {
+
+
+      Integer rcdCases = landingPage.getRcdCases();
+      Integer passiveCases = landingPage.getPassiveCases();
+      Integer parasitologyReports = landingPage.getParasitologyReports();
+      Integer importedSequences = landingPage.getImportedSequences();
+
+      parasitologyRcd.getY().add(rcdCases);
+      parasitologyRcd.getBase().add(parasitologyBase);
+      List<Integer> parasitologyRcdcustom = new ArrayList<>();
+      parasitologyRcdcustom.add(rcdCases);
+      parasitologyRcdcustom.add(rcdCases + passiveCases);
+      parasitologyRcd.getCustomdata().add(parasitologyRcdcustom);
+
+      importsRcd.getY().add(rcdCases);
+      importsRcd.getBase().add(importBase);
+      List<Integer> importsRcdcustom = new ArrayList<>();
+      importsRcdcustom.add(rcdCases);
+      importsRcdcustom.add(rcdCases + passiveCases);
+      importsRcd.getCustomdata().add(importsRcdcustom);
+
+      parasitologyBase += rcdCases;
+      importBase += rcdCases;
+
+      parasitologyPassive.getY().add(passiveCases);
+      parasitologyPassive.getBase().add(parasitologyBase);
+      List<Integer> parasitologyPassivecustom = new ArrayList<>();
+      parasitologyPassivecustom.add(passiveCases);
+      parasitologyPassivecustom.add(rcdCases + passiveCases);
+      parasitologyPassive.getCustomdata().add(parasitologyPassivecustom);
+
+      importsPassive.getY().add(passiveCases);
+      importsPassive.getBase().add(importBase);
+      List<Integer> importsPassivecustom = new ArrayList<>();
+      importsPassivecustom.add(passiveCases);
+      importsPassivecustom.add(rcdCases + passiveCases);
+      importsPassive.getCustomdata().add(importsPassivecustom);
+
+      parasitologyBase += passiveCases;
+      importBase += passiveCases;
+
+      int parasitologyYVal = parasitologyReports * -1;
+      parasitology.getY().add(parasitologyYVal);
+      parasitology.getBase().add(parasitologyBase);
+      List<Integer> parasitologycustom = new ArrayList<>();
+      parasitologycustom.add(parasitologyReports);
+      parasitology.getCustomdata().add(parasitologycustom);
+
+      int importsYVal = importedSequences * -1;
+      imports.getY().add(importsYVal);
+      imports.getBase().add(importBase);
+      List<Integer> importscustom = new ArrayList<>();
+      importscustom.add(importedSequences);
+      imports.getCustomdata().add(importscustom);
+
+      parasitologyParasitology.getY().add(parasitologyReports);
+      parasitologyParasitology.getBase().add(paraToImportBase);
+      List<Integer> parasitologyParasitologycustom = new ArrayList<>();
+      parasitologyParasitologycustom.add(parasitologyReports);
+      parasitologyParasitology.getCustomdata().add(parasitologyParasitologycustom);
+
+      paraToImportBase += parasitologyReports;
+
+      int paraImportsYVal = importedSequences * -1;
+      parasitologyImport.getY().add(paraImportsYVal);
+      parasitologyImport.getBase().add(paraToImportBase);
+      List<Integer> parasitologyImportcustom = new ArrayList<>();
+      parasitologyImportcustom.add(importedSequences);
+      parasitologyImport.getCustomdata().add(parasitologyImportcustom);
+
+      parasitologyBase += parasitologyYVal;
+      importBase += importsYVal;
+      paraToImportBase += importsYVal;
+
+      parasitologyScatter.getY().add(parasitologyBase);
+      List<Integer> parasitologyScattercustom = new ArrayList<>();
+      parasitologyScattercustom.add(parasitologyReports);
+      parasitologyScatter.getCustomdata().add(parasitologyScattercustom);
+
+      importScatter.getY().add(importBase);
+      List<Integer> importScattercustom = new ArrayList<>();
+      importScattercustom.add(importedSequences);
+      importScatter.getCustomdata().add(importScattercustom);
+
+      paraImportScatter.getY().add(paraToImportBase);
+      List<Integer> paraImportScattercustom = new ArrayList<>();
+      paraImportScattercustom.add(importedSequences);
+      paraImportScatter.getCustomdata().add(paraImportScattercustom);
+
+    }
+    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,
+        parasitologyScatter);
+    List<Trace> importTraces = List.of(importsRcd, importsPassive, imports, importScatter);
+    List<Trace> paraImportTraces = List.of(parasitologyParasitology, parasitologyImport,
+        paraImportScatter);
+
+    Xaxis xaxis = new Xaxis();
+    xaxis.setTickVals(dates);
+    xaxis.setTickText(yearMonthStrings);
+    xaxis.setFixedRange(true);
+
+    Yaxis yaxis = new Yaxis();
+    yaxis.setTitle("Cases");
+
+    Layout parasitologylayout = new Layout();
+    parasitologylayout.setBarGap(5);
+    parasitologylayout.setBarMode("overlay");
+    parasitologylayout.setXaxis(xaxis);
+    parasitologylayout.setYaxis(yaxis);
+    Title parasitologyTitle = new Title();
+    parasitologyTitle.setText("Total Cases (by month) vs Parasitology Reports");
+    parasitologylayout.setTitle(parasitologyTitle);
+
+    Layout importLayout = new Layout();
+    importLayout.setBarGap(5);
+    importLayout.setBarMode("overlay");
+    importLayout.setXaxis(xaxis);
+    importLayout.setYaxis(yaxis);
+    Title importTitle = new Title();
+    importTitle.setText("Total Cases (by month) vs Sequence Imports");
+    importLayout.setTitle(importTitle);
+
+    Layout paraImportLayout = new Layout();
+    paraImportLayout.setBarGap(5);
+    paraImportLayout.setBarMode("overlay");
+    paraImportLayout.setXaxis(xaxis);
+    paraImportLayout.setYaxis(yaxis);
+    Title paraImportTitle = new Title();
+    paraImportTitle.setText("Parasitology Reports (by month) vs Sequence Imports");
+    paraImportLayout.setTitle(paraImportTitle);
+
+    AmdrChartData parasitologyData = new AmdrChartData();
+    parasitologyData.setData(parasitologyTraces);
+    parasitologyData.setLayout(parasitologylayout);
+
+    AmdrChartData importData = new AmdrChartData();
+    importData.setData(importTraces);
+    importData.setLayout(importLayout);
+
+    AmdrChartData parasitologyImportData = new AmdrChartData();
+    parasitologyImportData.setData(paraImportTraces);
+    parasitologyImportData.setLayout(paraImportLayout);
+
+    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(landingPageProjection);
+
+    double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
+        / (double) amdrTotalsLandingPageData.getCases();
+    double parasitologyToCasesPercentage = (double) amdrTotalsLandingPageData.getParasitologyReports()
+        / (double) amdrTotalsLandingPageData.getCases();
+    double importToParasitologyPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
+        / (double) amdrTotalsLandingPageData.getParasitologyReports();
+
+    AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
+    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(importToParasitologyPercentage);
+    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(parasitologyToCasesPercentage);
+    amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
+
+    AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
+    amdrLandPageResponse.setParasitologyData(parasitologyData);
+    amdrLandPageResponse.setImportData(importData);
+    amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
+    amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
+    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(amdrTotalsPercentageLandingPageData);
+
+    return amdrLandPageResponse;
+  }
+
+  private void initList(List<?> list) {
+    if (list == null) {
+      list = new ArrayList<>();
+    }
+  }
 
   public AmdrFeatureSetResponse getDataForReport(
       String parentIdentifierString, String clickedColumn) {
@@ -705,16 +1038,16 @@ public class AmdrService {
       }
     }
 
-
     List<String> yearNames = new ArrayList<>();
     List<Integer> yearValues = new ArrayList<>();
 
     yearMap.forEach((key, value) -> {
       if (!yearNames.contains(key)) {
         yearNames.add(key.getMonth().equals(Month.JANUARY) ?
-            key.getMonth().getDisplayName(TextStyle.SHORT,Locale.ENGLISH).concat(" ").concat(String.valueOf(key.getYear()))
-      :
-            key.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)));
+            key.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH).concat(" ")
+                .concat(String.valueOf(key.getYear()))
+            :
+                key.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)));
         yearValues.add(value);
       }
     });

@@ -3,6 +3,7 @@ package com.revealprecision.revealstreams.api;
 
 import com.revealprecision.revealstreams.dto.AmdrFeatureSetResponse;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
+import com.revealprecision.revealstreams.dto.amdr.AmdrLandPageResponse;
 import com.revealprecision.revealstreams.enums.ApplicableReportsEnum;
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
@@ -69,6 +70,11 @@ public class ReportDashboardController {
     return ResponseEntity.status(HttpStatus.OK)
         .body(amdrService.getDataForReport(parentIdentifier
             ,clickedColumn));
+  }
+
+  @GetMapping("/amdr/landingPageData")
+  public AmdrLandPageResponse getAmdrLandingPageDataForReports() {
+    return amdrService.getLandingPageData();
   }
 
   @GetMapping("/reportAdditionalInfo")
