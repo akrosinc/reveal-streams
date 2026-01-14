@@ -23,6 +23,8 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
 
   List<AmdrData> findByLocationIdIn(List<UUID> locationIds);
 
+  @Query(value = "SELECT max(ad.collection_year) from amdr.amdr_data ad", nativeQuery = true)
+  long getLatestYear();
 
 
   @Query(value = "WITH monthly AS (\n"

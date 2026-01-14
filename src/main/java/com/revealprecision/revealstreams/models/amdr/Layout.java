@@ -21,4 +21,6 @@ public class Layout implements Serializable {
   private int barGap;
 
   private Title title;
+
+  private Legend legend;
 }

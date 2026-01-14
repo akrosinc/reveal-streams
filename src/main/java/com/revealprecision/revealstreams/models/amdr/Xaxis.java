@@ -19,4 +19,7 @@ public class Xaxis implements Serializable {
   private List<String> tickText;
   @JsonProperty("fixedrange")
   private boolean fixedRange;
+  @JsonProperty("tickfont")
+  private Font tickFont;
+
 }

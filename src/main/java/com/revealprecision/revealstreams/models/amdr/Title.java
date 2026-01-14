@@ -12,4 +12,5 @@ public class Title implements Serializable {
 
   private String text;
   private Double x;
+  private Font font;
 }

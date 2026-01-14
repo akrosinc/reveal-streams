@@ -74,7 +74,7 @@ public class ReportDashboardController {
 
   @GetMapping("/amdr/landingPageData")
   public AmdrLandPageResponse getAmdrLandingPageDataForReports() {
-    return amdrService.getLandingPageData();
+    return amdrService.getLandingPageData2();
   }
 
   @GetMapping("/reportAdditionalInfo")
