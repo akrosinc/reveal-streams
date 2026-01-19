@@ -894,17 +894,18 @@ public class AmdrService {
                             / (double) amdrData1.getOverallObject().getOverallTotalRecs() * 100 :
                         (double) 0;
 
+                    String format = String.format(
+                        "%.2f", perc);
                     String meta =
                         "total recs: " + denom +
                             " \r\n - gene: " + val + " => "
-                            + String.format(
-                            "%.2f", perc) + "%";
+                            + format + "%";
 
                     collect.put(amdrCols.getKey(), ColumnData.builder()
-                        .value(perc)
+                        .value(format)
                         .meta(meta)
                             .dataType("string")
-                        .isPercentage(false)
+                        .isPercentage(true)
                         .description(amdrHeaderNameMap.get(amdrCols.getKey()))
                         .build());
 
@@ -929,6 +930,8 @@ public class AmdrService {
                                 && upperKeyEntry.getValue().getTotalRecs() > 0 ?
                                 upperKeyEntry.getValue().getTotalRecs() : 1) * 100;
 
+                        String totalVal = String.format(
+                            "%.2f", total);
                         String meta =
                             "total recs: " + upperKeyEntry.getValue().getTotalRecs() +
                                 " \r\n - mono: " + upperKeyEntry.getValue().getMono() + " => "
@@ -938,15 +941,14 @@ public class AmdrService {
                                 + String.format(
                                 "%.2f", mixed) + "%"
                                 + "\r\n - total: " + upperKeyEntry.getValue().getTotal() + " => "
-                                + String.format(
-                                "%.2f", total) + "%";
+                                + totalVal + "%";
 
                         return new SimpleEntry<>(
                             upperKeyEntry.getKey(), ColumnData.builder()
-                            .value(total)
+                            .value(totalVal)
                             .meta(meta)
                             .dataType("string")
-                            .isPercentage(false)
+                            .isPercentage(true)
                             .description(amdrHeaderNameMap.get(upperKeyEntry.getKey()))
                             .build());
                       }).collect(Collectors.toMap(Entry::getKey, Entry::getValue)));
