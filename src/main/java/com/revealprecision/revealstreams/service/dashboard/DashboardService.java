@@ -124,15 +124,6 @@ public class DashboardService {
             .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
       }
     }
-//    else if (finalReportTypeEnum!=null && finalReportTypeEnum.equals(AMDR)){
-//      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
-//          reportLevel, filters,
-//          parentIdentifierString, type,locationDetails, clickedColumn);
-//      if (rowData !=null){
-//        rowDataMap = rowData.stream()
-//            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
-//      }
-//    }
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
                   getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,
