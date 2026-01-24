@@ -2,7 +2,6 @@ package com.revealprecision.revealstreams.service.dashboard;
 
 
 import static com.revealprecision.revealstreams.enums.ActionTitleEnum.MDA_ONCHOCERCIASIS_SURVEY;
-import static com.revealprecision.revealstreams.enums.ReportTypeEnum.AMDR;
 import static com.revealprecision.revealstreams.enums.ReportTypeEnum.ONCHOCERCIASIS_SURVEY;
 import static com.revealprecision.revealstreams.enums.ReportTypeEnum.SURVEY;
 
@@ -124,15 +123,16 @@ public class DashboardService {
         rowDataMap = rowData.stream()
             .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
       }
-    } else if (finalReportTypeEnum!=null && finalReportTypeEnum.equals(AMDR)){
-      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
-          reportLevel, filters,
-          parentIdentifierString, type,locationDetails, clickedColumn);
-      if (rowData !=null){
-        rowDataMap = rowData.stream()
-            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
-      }
     }
+//    else if (finalReportTypeEnum!=null && finalReportTypeEnum.equals(AMDR)){
+//      List<RowData> rowData = getRowData(parentLocation, finalReportTypeEnum, plan, null,
+//          reportLevel, filters,
+//          parentIdentifierString, type,locationDetails, clickedColumn);
+//      if (rowData !=null){
+//        rowDataMap = rowData.stream()
+//            .collect(Collectors.toMap(RowData::getLocationIdentifier, row -> row, (a, b) -> b));
+//      }
+//    }
     else {
       rowDataMap = locationDetails.stream().flatMap(loc -> Objects.requireNonNull(
                   getRowData(loc.getParentLocation(), finalReportTypeEnum, plan, loc, reportLevel, filters,

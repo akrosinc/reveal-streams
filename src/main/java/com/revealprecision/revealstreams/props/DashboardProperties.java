@@ -127,7 +127,7 @@ public class DashboardProperties {
       ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters, ReportTypeEnum.ONCHOCERCIASIS_SURVEY,onchocerciasisFilters);
 
   private final Map<String, Boolean> columnClickableReports = Map.of(
-      ReportTypeEnum.AMDR.name(),true
+      "AMDR",true
   );
 
   private final Map<String, Boolean> showMap = Map.of(
@@ -135,7 +135,7 @@ public class DashboardProperties {
   );
 
   private final Map<String, Boolean> showGraph = Map.of(
-      ReportTypeEnum.AMDR.name(),true
+      "AMDR",true
   );
 
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(

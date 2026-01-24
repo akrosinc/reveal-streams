@@ -80,12 +80,20 @@ public class ReportDashboardController {
   @GetMapping("/reportAdditionalInfo")
   public ResponseEntity<AdditionalReportInfo> getDataForReports(
       @RequestParam(name = "reportType") String reportType) {
-    Map<String, String> dashboardFilter = dashboardProperties.getDashboardFilterAssociations()
-        .get(ReportTypeEnum.valueOf(reportType));
+    Map<String, String> dashboardFilter = null;
+
+    try {
+      ReportTypeEnum type = ReportTypeEnum.valueOf(reportType);
+      dashboardFilter =
+          dashboardProperties.getDashboardFilterAssociations().get(type);
+    } catch (IllegalArgumentException | NullPointerException ignored) {
+      // no match → leave dashboardFilter as null
+    }
+
     return ResponseEntity.status(HttpStatus.OK)
         .body(AdditionalReportInfo.builder()
             .dashboardFilter(dashboardFilter)
-            .reportTypeEnum(ReportTypeEnum.valueOf(reportType))
+            .reportTypeEnum(reportType)
             .columnClickable(
                 dashboardProperties.getColumnClickableReports().getOrDefault(reportType, false))
             .showMap(dashboardProperties.getShowMap().getOrDefault(reportType,false))

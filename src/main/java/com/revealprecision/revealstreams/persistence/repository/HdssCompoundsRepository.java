@@ -239,7 +239,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel'= :geographicLevel\n"
+      + "WHERE pl.location_property ->> 'geographicLevel'= :geographicLevel and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,p.parName, p.parGeo", nativeQuery = true)
   List<GdrsCountsProjection> getRCDCounts(String geographicLevel);
@@ -283,7 +283,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel' is null\n"
+      + "WHERE pl.location_property ->> 'geographicLevel' is null and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,p.parName, p.parGeo", nativeQuery = true)
   List<GdrsCountsProjection> getHighestLevelRCDCounts();
@@ -292,8 +292,8 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
   @Query(value = "SELECT p.rdt,\n"
       + "       CAST(p.parIdentifier as VARCHAR) as parIdentifier,\n"
       + "       p.parName,\n"
-      + "       p.parGeo,\n"
-      + "       count(*)\n"
+      + "       p.parGeo\n"
+      + "        ,count(*)\n"
       + "FROM (\n"
       + "         SELECT g.type,\n"
       + "                g.barcode,\n"
@@ -339,7 +339,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "         left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel'IS NULL\n"
+      + "WHERE pl.location_property ->> 'geographicLevel'IS NULL and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,\n"
       + "         p.parName,\n"
@@ -396,7 +396,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "         left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel' = :geographicLevel\n"
+      + "WHERE pl.location_property ->> 'geographicLevel' = :geographicLevel and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,\n"
       + "         p.parName,\n"
@@ -440,7 +440,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "         left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel' IS NULL\n"
+      + "WHERE pl.location_property ->> 'geographicLevel' IS NULL and p.parIdentifier IS NOT NULL\n"
       + "group by p.parIdentifier,p.parName, p.parGeo;",nativeQuery = true)
   List<GdrsCountsProjection> getHighestLevelIndexCounts();
 
@@ -481,7 +481,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "     ) as p\n"
       + "         left join location_relationship pplr on p.parIdentifier = pplr.location_identifier\n"
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
-      + "WHERE pl.location_property ->> 'geographicLevel' = :geographicLevel\n"
+      + "WHERE pl.location_property ->> 'geographicLevel' = :geographicLevel and p.parIdentifier IS NOT NULL\n"
       + "group by p.parIdentifier,p.parName, p.parGeo;",nativeQuery = true)
   List<GdrsCountsProjection> getIndexCounts(String geographicLevel);
 

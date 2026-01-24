@@ -830,7 +830,7 @@ public class AmdrService {
     List<List<PlanLocationDetails>> lists = splitList(locationDetails
         , 500);
 
-    long maxYear = amdrRepository.getLatestYear();
+    Long maxYear = amdrRepository.getLatestYear();
 
     if (clickedColumn != null) {
 

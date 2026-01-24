@@ -1,7 +1,6 @@
 package com.revealprecision.revealstreams.models;
 
 
-import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import java.io.Serializable;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -16,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class AdditionalReportInfo implements Serializable {
-  private ReportTypeEnum reportTypeEnum;
+  private String reportTypeEnum;
   private Map<String, String> dashboardFilter;
   private boolean columnClickable = false;
   private boolean showMap = true;
