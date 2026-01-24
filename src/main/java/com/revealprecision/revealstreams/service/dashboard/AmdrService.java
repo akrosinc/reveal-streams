@@ -557,12 +557,12 @@ public class AmdrService {
 
     LineTrace paraImportScatter = new LineTrace();
     paraImportScatter.setType("scatter");
-    paraImportScatter.setName("Total cases minus Genomic Sequence Imports");
+    paraImportScatter.setName("Parasitology reports minus Genomic Sequence Imports");
     paraImportScatter.setLine(new Line("darkred", 1));
     paraImportScatter.setMode("lines+markers");
     paraImportScatter.setX(dates3);
     paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate("Total cases minus Genomic Sequence Imports: %{y}<extra></extra>");
+    paraImportScatter.setHovertemplate("Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
 
     Integer parasitologyBase = 0;
     Integer importBase = 0;
@@ -756,6 +756,7 @@ public class AmdrService {
       list = new ArrayList<>();
     }
   }
+
 
   public AmdrFeatureSetResponse getDataForReport(
       String parentIdentifierString, String clickedColumn) {

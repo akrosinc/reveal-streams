@@ -131,7 +131,7 @@ public class DashboardProperties {
   );
 
   private final Map<String, Boolean> showMap = Map.of(
-      ReportTypeEnum.AMDR.name(),false
+      ReportTypeEnum.SURVEY.name(),true
   );
 
   private final Map<String, Boolean> showGraph = Map.of(

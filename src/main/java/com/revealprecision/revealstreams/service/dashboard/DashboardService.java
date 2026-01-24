@@ -235,8 +235,16 @@ public class DashboardService {
               return surveyDashboardService.getNihGhaBelowHighestLevelData(
                   plan,
                   null, type, parentLocation);
+            } else {
+              if ("nih-gha".equals(instanceProperties.getClient())) {
+                return surveyDashboardService.getNihGhaHighestLevelData(plan,
+                    loc.getLocation(), type, parentLocation);
+              } else {
+                return surveyDashboardService.getIRSFullData(plan,
+                loc.getLocation());
+              }
             }
-            return surveyDashboardService.getIRSFullData(plan, loc.getLocation());
+
           }
 
         }

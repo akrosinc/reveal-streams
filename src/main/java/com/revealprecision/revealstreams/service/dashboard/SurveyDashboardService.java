@@ -15,6 +15,7 @@ import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.domain.TaskBusinessStateTracker;
+import com.revealprecision.revealstreams.persistence.projection.GdrsCountsProjection;
 import com.revealprecision.revealstreams.persistence.projection.HdssEventDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualTaskBusinessStateByLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.IndividualsByLocationProjection;
@@ -29,11 +30,15 @@ import com.revealprecision.revealstreams.props.InstanceProperties;
 import com.revealprecision.revealstreams.service.LocationBusinessStatusService;
 import com.revealprecision.revealstreams.service.PlanLocationsService;
 import com.revealprecision.revealstreams.util.DashboardUtils;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -72,11 +77,12 @@ public class SurveyDashboardService {
   public static final String ENROLLED_NOT_COMPLETE = "Enrolled Not Complete";
   public static final String CLUSTER_COUNT = "Cluster Count";
 
-  public static final String TOTAL_INDIVIDUALS = "total # HDSS Individuals";
-  public static final String TOTAL_INDEX_CASES = "total # Index cases";
-  public static final String TOTAL_INDIVIDUALS_TESTED = "total # individuals tested";
-  public static final String TOTAL_CASES = "total # cases (inclusive of index cases)";
-  public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection ratio%";
+  public static final String TOTAL_INDIVIDUALS = "Total # HDSS Individuals";
+  public static final String TOTAL_INDEX_CASES = "Total # Passive HF index cases";
+  public static final String TOTAL_INDIVIDUALS_TESTED = "Total # Individuals tested for RACD";
+  public static final String TOTAL_RCD_CASES = "Total # RACD cases";
+  public static final String TOTAL_CASES = "Total # Cases (Passive HF Index + RCD)";
+  public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection ratio";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
 
   public static final String INDEX_CASE_MEMBER = "Index Case Member";
@@ -601,13 +607,54 @@ public class SurveyDashboardService {
         .collect(Collectors.toList());
     return collect;
   }
+
   public List<RowData> getNihGhaBelowHighestLevelData(Plan plan, @Nullable Location childLocation,
       MdaLiteReportType type, Location parentLocation) {
 
-    List<HdssEventDataProjection> eventDataForLocationAndPlan = hdssCompoundsRepository.getEventDataForLocationAndPlanBelowHighest(
-        parentLocation.getIdentifier(), plan.getIdentifier());
+    List<GdrsCountsProjection> arr = new ArrayList<>();
 
-    log.info("Size: {}",eventDataForLocationAndPlan.size());
+    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getRCDCounts(parentLocation.getGeographicLevel().getName());
+
+    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getPassiveCounts(parentLocation.getGeographicLevel().getName());
+
+    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getIndexCounts(parentLocation.getGeographicLevel().getName());
+
+    arr.addAll(rcdCounts);
+    arr.addAll(passiveCounts);
+    arr.addAll(indexCounts);
+
+    Set<GDRSLocation> locations = arr.stream().map(
+            gdrsCountsProjection -> new GDRSLocation(gdrsCountsProjection.getParIdentifier(),
+                gdrsCountsProjection.getParName()))
+        .collect(Collectors.toSet());
+
+    Map<String, Integer> totalRCDTested = rcdCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalRCDPositive = rcdCounts.stream()
+        .filter(rcdCount -> rcdCount.getRdt().equals("positive"))
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalPassiveTested = passiveCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalPassivePositive = passiveCounts.stream()
+        .filter(rcdCount -> rcdCount.getRdt().equals("positive"))
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalIndex = indexCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
 
     List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
         = hdssCompoundsRepository.getListOfNumberOfIndividualsByLocation(
@@ -620,13 +667,18 @@ public class SurveyDashboardService {
             .locationIdentifier(item.getLocationIdentifier())
             .build())
         .collect(Collectors.toMap(
-            IndividualsPerCompoundByLocationProjectionObj::getLocationIdentifier, num -> num, (a, b) -> b));
+            IndividualsPerCompoundByLocationProjectionObj::getLocationIdentifier, num -> num,
+            (a, b) -> b));
 
-    log.info("IndividualsPerCompoundByLocationProjectionObj {} ",individualsByLocationProjectionMap);
+    log.info("IndividualsPerCompoundByLocationProjectionObj {} ",
+        individualsByLocationProjectionMap);
 
-    List<RowData> collect = eventDataForLocationAndPlan.stream()
-        .map(eventDataForLocationAndPlanItem -> getOperationalDataBelowHighestLevel(eventDataForLocationAndPlanItem
-            ,individualsByLocationProjectionMap
+    GRDSCountsBelow grdsCountsBelow = new GRDSCountsBelow(totalRCDTested,totalRCDPositive,totalPassiveTested,totalPassivePositive,totalIndex,individualsByLocationProjectionMap);
+
+    List<RowData> collect = locations.stream()
+        .map(location -> getOperationalDataBelowHighestLevel(
+            location
+            , grdsCountsBelow
         ))
         .map(stringColumnDataMap -> {
           RowData rowData = new RowData();
@@ -637,7 +689,112 @@ public class SurveyDashboardService {
           return rowData;
         })
         .collect(Collectors.toList());
-    log.info("Rows {}",collect.size());
+    log.info("Rows {}", collect.size());
+    return collect;
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class GDRSLocation {
+
+    private String locationId;
+    private String locationName;
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class GRDSCounts {
+
+    private Map<String, Integer> totalRCDTested;
+    private Map<String, Integer> totalRCDPositive;
+    private Map<String, Integer> totalPassiveTested;
+    private Map<String, Integer> totalPassivePositive;
+    private Map<String, Integer> totalIndex;
+    private IndividualsByLocationProjection numberOfIndividualsByLocation;
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class GRDSCountsBelow {
+
+    private Map<String, Integer> totalRCDTested;
+    private Map<String, Integer> totalRCDPositive;
+    private Map<String, Integer> totalPassiveTested;
+    private Map<String, Integer> totalPassivePositive;
+    private Map<String, Integer> totalIndex;
+        private Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap;
+//    private IndividualsByLocationProjection numberOfIndividualsByLocation;
+  }
+
+  public List<RowData> getNihGhaHighestLevelData(Plan plan, @Nullable Location childLocation,
+      MdaLiteReportType type, Location parentLocation) {
+
+    List<GdrsCountsProjection> arr = new ArrayList<>();
+
+    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getHighestLevelRCDCounts();
+
+    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getHighestLevelPassiveCounts();
+
+    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getHighestLevelIndexCounts();
+
+    arr.addAll(rcdCounts);
+    arr.addAll(passiveCounts);
+    arr.addAll(indexCounts);
+
+    Set<GDRSLocation> locations = arr.stream().map(
+            gdrsCountsProjection -> new GDRSLocation(gdrsCountsProjection.getParIdentifier(),
+                gdrsCountsProjection.getParName()))
+        .collect(Collectors.toSet());
+
+    Map<String, Integer> totalRCDTested = rcdCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalRCDPositive = rcdCounts.stream()
+        .filter(rcdCount -> rcdCount.getRdt().equals("positive"))
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalPassiveTested = passiveCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalPassivePositive = passiveCounts.stream()
+        .filter(rcdCount -> rcdCount.getRdt().equals("positive"))
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+    Map<String, Integer> totalIndex = indexCounts.stream()
+        .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
+            Collectors.summingInt(GdrsCountsProjection::getCount)
+        ));
+
+
+    IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
+        childLocation.getIdentifier());
+
+    GRDSCounts grdsCounts = new GRDSCounts(totalRCDTested, totalRCDPositive, totalPassiveTested,
+        totalPassivePositive, totalIndex, numberOfIndividualsByLocation);
+
+    List<RowData> collect = locations.stream()
+        .map(location -> getOperationalDataHighestLevel(
+            location
+            , grdsCounts
+        ))
+        .map(stringColumnDataMap -> {
+          RowData rowData = new RowData();
+          rowData.setLocationIdentifier(
+              UUID.fromString((String) stringColumnDataMap.get(LOCATION).getValue()));
+          rowData.setColumnDataMap(stringColumnDataMap);
+          rowData.setLocationName((String) stringColumnDataMap.get(LOCATION_NAME).getValue());
+          return rowData;
+        })
+        .collect(Collectors.toList());
+    log.info("Rows {}", collect.size());
     return collect;
   }
 
@@ -680,9 +837,9 @@ public class SurveyDashboardService {
                 : hdssEventDataProjection.getTotalCases())));
 
     int indexCases = 0;
-    int rcdCases =0;
-    int totalCases=0;
-    int totalIndividuals=0;
+    int rcdCases = 0;
+    int totalCases = 0;
+    int totalIndividuals = 0;
 
     if (hdssEventDataProjection != null) {
       indexCases = hdssEventDataProjection.getPassivePositive();
@@ -722,69 +879,76 @@ public class SurveyDashboardService {
   }
 
   private Map<String, ColumnData> getOperationalDataBelowHighestLevel(
-      HdssEventDataProjection hdssEventDataProjection
-      , Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap
+      GDRSLocation location
+      ,
+      GRDSCountsBelow grdsCountsBelow
   ) {
 
-    log.info("We are here {} {}",hdssEventDataProjection.getChildName(),hdssEventDataProjection.getTotalCases());
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
     columns.put(LOCATION,
         new ColumnData().setIsHidden(true).setDataType("string").setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getLocationIdentifier())));
+            location.getLocationId()));
 
     columns.put(LOCATION_NAME,
         new ColumnData().setIsHidden(true).setDataType("string").setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getChildName())));
+            location.getLocationName()));
+
+    int totalIndividuals = 0;
+
+    if (grdsCountsBelow.getIndividualsByLocationProjectionMap()!=null && grdsCountsBelow.getIndividualsByLocationProjectionMap().containsKey(location.getLocationId())){
+      totalIndividuals = grdsCountsBelow.individualsByLocationProjectionMap.get(location.getLocationId()).getIndividualCount();
+    }
 
     columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
-        individualsByLocationProjectionMap != null && hdssEventDataProjection != null
-            && hdssEventDataProjection.getLocationIdentifier() != null &&
-            individualsByLocationProjectionMap.containsKey(
-                hdssEventDataProjection.getLocationIdentifier()) ?
-            individualsByLocationProjectionMap.get(
-                hdssEventDataProjection.getLocationIdentifier()).getIndividualCount() : 0));
+        totalIndividuals));
+
+    Integer totalIndexObj = grdsCountsBelow.getTotalIndex().get(location.getLocationId());
+    Integer totalRCDObj = grdsCountsBelow.getTotalRCDPositive().get(location.getLocationId());
+    Integer totalPassiveObj = grdsCountsBelow.getTotalPassivePositive().get(location.getLocationId());
+
+    Integer rcdTestedObj = grdsCountsBelow.getTotalRCDTested().get(location.getLocationId());
+    Integer passiveTestedObj = grdsCountsBelow.getTotalPassiveTested().get(location.getLocationId());
+
+
+    int totalCases = 0;
+    int totalPassive = 0;
+    int totalPositive = 0;
+    int totalRCD = 0;
+    int totalIndex = 0;
+    int totalRcdTested = 0;
+    int totalPassiveTested = 0;
+    if (totalIndexObj!=null) totalIndex = totalIndexObj;
+    if (totalPassiveObj!=null) totalPassive = totalPassiveObj;
+    if (totalRCDObj!=null) totalRCD = totalRCDObj;
+    if (rcdTestedObj != null) totalRcdTested = rcdTestedObj;
+    if (passiveTestedObj!=null) totalPassiveTested = passiveTestedObj;
+
+    totalCases = totalRCD + totalPassive + totalIndex;
 
     columns.put(TOTAL_INDEX_CASES,
-        new ColumnData().setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getPassivePositive())));
+        new ColumnData().setValue(totalIndex));
+
+    int totalTested =
+        totalRcdTested + totalPassiveTested;
 
     columns.put(TOTAL_INDIVIDUALS_TESTED,
         new ColumnData().setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getTotalTested())));
+            totalTested));
+
+    columns.put(TOTAL_RCD_CASES,
+        new ColumnData().setValue(
+            totalRCD));
 
     columns.put(TOTAL_CASES,
         new ColumnData().setValue(
-            (hdssEventDataProjection == null ? 0
-                : hdssEventDataProjection.getTotalCases())));
+            totalCases));
 
-    int indexCases = 0;
-    int rcdCases =0;
-    int totalCases=0;
-    int totalIndividuals=0;
-
-    if (hdssEventDataProjection != null) {
-      indexCases = hdssEventDataProjection.getPassivePositive();
-      rcdCases = hdssEventDataProjection.getRcdPositive();
-      totalCases = hdssEventDataProjection.getTotalCases();
-    }
-
-    if (individualsByLocationProjectionMap != null &&
-        hdssEventDataProjection != null && hdssEventDataProjection.getLocationIdentifier() != null &&
-        individualsByLocationProjectionMap.containsKey(
-            hdssEventDataProjection.getLocationIdentifier())) {
-      totalIndividuals = individualsByLocationProjectionMap.get(
-          hdssEventDataProjection.getLocationIdentifier()).getIndividualCount();
-    }
     double passiveIndexCaseDetectionRation =
-        rcdCases > 0 ? ((double) indexCases / (double) rcdCases) * 100 : 0 ;
+        totalRCD > 0 ? ((double) totalIndex / (double) totalRCD) : 0;
 
     String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
-        indexCases, rcdCases);
+        totalIndex, totalRCD);
 
     columns.put(PASSIVE_CASE_PERCENTAGE,
         new ColumnData().setValue(
@@ -801,7 +965,100 @@ public class SurveyDashboardService {
         new ColumnData().setValue(
             rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
 
-    log.info("Columns {}",columns);
+    log.info("Columns {}", columns);
+    return columns;
+
+  }
+
+  private Map<String, ColumnData> getOperationalDataHighestLevel(
+      GDRSLocation location
+      ,
+      GRDSCounts grdsCounts
+  ) {
+
+    Map<String, ColumnData> columns = new LinkedHashMap<>();
+
+    columns.put(LOCATION,
+        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+            location.getLocationId()));
+
+    columns.put(LOCATION_NAME,
+        new ColumnData().setIsHidden(true).setDataType("string").setValue(
+            location.getLocationName()));
+
+    columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
+        grdsCounts.getNumberOfIndividualsByLocation() != null
+            ?  grdsCounts.getNumberOfIndividualsByLocation().getIndividualCount(): 0));
+
+
+    int totalIndex = 0;
+    int totalRCD = 0;
+    int totalPassive = 0;
+    int totalPassiveTested = 0;
+    int totalRcdTested = 0;
+
+    Integer totalIndexObj = grdsCounts.getTotalIndex().get(location.getLocationId());
+    Integer rcdTestedObj = grdsCounts.getTotalRCDTested().get(location.getLocationId());
+    Integer passiveTestedObj = grdsCounts.getTotalPassiveTested().get(location.getLocationId());
+    Integer totalRCDPositiveObj = grdsCounts.getTotalRCDPositive().get(location.getLocationId());
+    Integer totalPassiveObj = grdsCounts.getTotalPassivePositive().get(location.getLocationId());
+
+    if (totalIndexObj != null) totalIndex = totalIndexObj;
+    if (totalPassiveObj != null) totalPassive = totalPassiveObj;
+    if (totalRCDPositiveObj != null) totalRCD = totalRCDPositiveObj;
+    if (rcdTestedObj!=null) totalRcdTested = rcdTestedObj;
+    if (passiveTestedObj!=null) totalPassiveTested = passiveTestedObj;
+
+    int totalTested =
+        totalPassiveTested+
+            totalRcdTested;
+
+    int totalCases =
+        totalRCD+
+            totalPassive+totalIndex;
+
+    columns.put(TOTAL_INDEX_CASES,
+        new ColumnData().setValue(totalIndex));
+
+    columns.put(TOTAL_INDIVIDUALS_TESTED,
+        new ColumnData().setValue(
+            totalTested));
+
+    columns.put(TOTAL_RCD_CASES,
+        new ColumnData().setValue(
+            totalRCD));
+
+    columns.put(TOTAL_CASES,
+        new ColumnData().setValue(
+            totalCases));
+
+    double passiveIndexCaseDetectionRation =
+        totalRCD > 0 ? ((double) totalIndex / (double) totalRCD) : 0;
+
+    String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
+        totalIndex, totalRCD);
+
+    columns.put(PASSIVE_CASE_PERCENTAGE,
+        new ColumnData().setValue(
+                passiveIndexCaseDetectionRation)
+            .setMeta(passiveIndexCaseDetectionRatioMeta));
+
+    int totalIndividuals=0;
+    if ( grdsCounts.getNumberOfIndividualsByLocation()!= null) {
+      totalIndividuals = grdsCounts.getNumberOfIndividualsByLocation().getIndividualCount();
+    }
+
+    double rcdBasedMalariaPrevalence =
+        totalIndividuals > 0 ? ((double) totalCases / (double) totalIndividuals) * 100 : 0;
+
+    String rcdBasedMalariaPrevalenceMeta = String.format(
+        "total cases (%s) / total individuals (%s)", totalCases, totalIndividuals);
+
+    columns.put(RACD_BASED_MALARIA_PREVALENCE,
+        new ColumnData().setValue(
+            rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
+
+    log.info("Columns {}", columns);
     return columns;
   }
 
