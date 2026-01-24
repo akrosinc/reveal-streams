@@ -1056,7 +1056,7 @@ public class SurveyDashboardService {
 
     columns.put(RACD_BASED_MALARIA_PREVALENCE,
         new ColumnData().setValue(
-            rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
+            rcdBasedMalariaPrevalence).setIsPercentage(true).setMeta(rcdBasedMalariaPrevalenceMeta));
 
     log.info("Columns {}", columns);
     return columns;
