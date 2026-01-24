@@ -74,7 +74,7 @@ public class ReportDashboardController {
 
   @GetMapping("/amdr/landingPageData")
   public AmdrLandPageResponse getAmdrLandingPageDataForReports() {
-    return amdrService.getLandingPageData2();
+    return amdrService.getLandingPageData3();
   }
 
   @GetMapping("/reportAdditionalInfo")
@@ -98,6 +98,7 @@ public class ReportDashboardController {
                 dashboardProperties.getColumnClickableReports().getOrDefault(reportType, false))
             .showMap(dashboardProperties.getShowMap().getOrDefault(reportType,false))
             .showGraphs(dashboardProperties.getShowGraph().getOrDefault(reportType,false))
+            .show3dGraphs(dashboardProperties.getShow3dGraph().getOrDefault(reportType,false))
             .build()
         );
   }

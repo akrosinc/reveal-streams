@@ -2,6 +2,7 @@ package com.revealprecision.revealstreams.persistence.repository.amdr;
 
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
 import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrTotalsLandingPageProjection;
+import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageCountsProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageProjection;
 import java.util.List;
 import java.util.UUID;
@@ -183,4 +184,112 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
       + "         ) t",nativeQuery = true)
   AmdrTotalsLandingPageProjection getTotalIndicators();
 
+
+  @Query(value = "SELECT t.year,\n"
+      + "       cast(t.month as int) as month,\n"
+      + "       count(*) as cnt\n"
+      + "\n"
+      + "FROM (\n"
+      + "         SELECT DISTINCT 'rcd'                                                   as type,\n"
+      + "                         date_part('month',\n"
+      + "                                   e.capture_datetime)                           AS month,\n"
+      + "                         date_part('year',\n"
+      + "                                   e.created_datetime)                           AS year,\n"
+      + "                         e.additional_information -> 'details' ->> 'location_id' as locationIdentifier,\n"
+      + "                         arr.val ->> 'rcd_barcode'                               as barcode,\n"
+      + "                         arr.val ->> 'rdt'                                       as rdt,\n"
+      + "                         arr.val ->> 'individual'                                as individual\n"
+      + "         From event e,\n"
+      + "              LATERAL extract_obs_fields_dynamic(\n"
+      + "                      e.additional_information,\n"
+      + "                      CAST(ARRAY ['rdt','rcd_barcode','individual'] as text[])) with ordinality arr(val, pos)\n"
+      + "\n"
+      + "         where e.event_type = 'rcd'\n"
+      + "           and arr.val ->> 'rdt' = 'positive'\n"
+      + "     ) t\n"
+      + "group by t.year, t.month;",nativeQuery = true)
+  List<LandingPageCountsProjection>  getRCDCountsByYearMonth();
+
+
+  @Query(value = "SELECT t.year,\n"
+      + "       cast(t.month as int) as month,\n"
+      + "       count(*) as cnt\n"
+      + "FROM (\n"
+      + "         SELECT t.type,\n"
+      + "                t.individual,\n"
+      + "                t.locationIdentifier,\n"
+      + "                t.rdt,\n"
+      + "                t.barcode,\n"
+      + "                date_part('month',\n"
+      + "                          barcode_match.capture_datetime) AS month,\n"
+      + "                date_part('year',\n"
+      + "                          barcode_match.capture_datetime) AS year\n"
+      + "         from (\n"
+      + "                  SELECT DISTINCT 'passive'                                     as type,\n"
+      + "                                  CASE\n"
+      + "                                      WHEN t.locIdentifier IS NULL\n"
+      + "                                          THEN CAST(t.eventLocationIdentifier as varchar)\n"
+      + "                                      ELSE CAST(t.locIdentifier as varchar) END as locationIdentifier,\n"
+      + "                                  t.barcode,\n"
+      + "                                  t.rdt,\n"
+      + "                                  t.individual\n"
+      + "\n"
+      + "                  FROM (\n"
+      + "                           SELECT e.locIdentifier,\n"
+      + "                                  e.barcode,\n"
+      + "                                  e.rdt,\n"
+      + "                                  e.individual,\n"
+      + "                                  e.eventLocationIdentifier\n"
+      + "\n"
+      + "                           from amdr.passive_event e\n"
+      + "                       ) as t\n"
+      + "              ) as t\n"
+      + "                  LEFT JOIN LATERAL (\n"
+      + "             SELECT e2.capture_datetime\n"
+      + "             FROM amdr.passive_event e2\n"
+      + "             WHERE e2.barcode = t.barcode\n"
+      + "             ORDER BY e2.capture_datetime DESC\n"
+      + "             LIMIT 1\n"
+      + "             ) barcode_match ON true\n"
+      + "     ) t\n"
+      + "group by t.year, t.month;",nativeQuery = true)
+  List<LandingPageCountsProjection>  getPassiveCountsByYearMonth();
+
+  @Query(value = "SELECT t.year,\n"
+      + "       cast(t.month as int) as month,\n"
+      + "       count(*) as cnt\n"
+      + "FROM (\n"
+      + "SELECT\n"
+      + "    date_part('month',\n"
+      + "              match.capture_datetime) AS month,\n"
+      + "    date_part('year',\n"
+      + "              match.capture_datetime) AS year,\n"
+      + "       e.barcode\n"
+      + " from (\n"
+      + "                  SELECT DISTINCT e.barcode\n"
+      + "                  FROM amdr.parasitology_event e\n"
+      + "              ) as e\n"
+      + "left join lateral (\n"
+      + "    select e2.capture_datetime from amdr.parasitology_event e2\n"
+      + "    WHERE e2.barcode = e.barcode\n"
+      + "    order by e2.capture_datetime desc\n"
+      + "    limit 1\n"
+      + "    ) match on true\n"
+      + "     ) t\n"
+      + "group by t.year, t.month;",nativeQuery = true)
+  List<LandingPageCountsProjection>  getParasitologyCountsByYearMonth();
+
+  @Query(value = "SELECT t.year,\n"
+      + "       cast(t.month as int) as month,\n"
+      + "       count(*) as cnt\n"
+      + "FROM (\n"
+      + "select ad.sample_internal_id,\n"
+      + "       date_part('month', uploaded_datetime) as month,\n"
+      + "       date_part('year', uploaded_datetime)  as year\n"
+      + "from amdr.amdr_sample_data ad\n"
+      + "         left join amdr.amdr_import ai on ai.identifier = ad.import_id\n"
+      + "WHERE ad.status = 'PROCESSED'\n"
+      + "     ) t\n"
+      + "group by t.year, t.month;",nativeQuery = true)
+  List<LandingPageCountsProjection> getImportCountsByYearMonth();
 }

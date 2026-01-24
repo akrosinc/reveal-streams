@@ -81,7 +81,7 @@ public class SurveyDashboardService {
   public static final String TOTAL_INDEX_CASES = "Total # Passive HF index cases";
   public static final String TOTAL_INDIVIDUALS_TESTED = "Total # Individuals tested for RACD";
   public static final String TOTAL_RCD_CASES = "Total # RACD cases";
-  public static final String TOTAL_CASES = "Total # Cases (Passive HF Index + RCD)";
+  public static final String TOTAL_CASES = "Total # Cases (Passive HF Index + RCD + Passive)";
   public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection ratio";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
 
@@ -924,10 +924,12 @@ public class SurveyDashboardService {
     if (rcdTestedObj != null) totalRcdTested = rcdTestedObj;
     if (passiveTestedObj!=null) totalPassiveTested = passiveTestedObj;
 
-    totalCases = totalRCD + totalPassive + totalIndex;
+    totalCases = totalRCD + totalPassive ;
+
+    String totalCasesMeta = "rcd:  "+totalRCD+" passive: "+totalPassive;
 
     columns.put(TOTAL_INDEX_CASES,
-        new ColumnData().setValue(totalIndex));
+        new ColumnData().setValue(totalPassive));
 
     int totalTested =
         totalRcdTested + totalPassiveTested;
@@ -941,7 +943,7 @@ public class SurveyDashboardService {
             totalRCD));
 
     columns.put(TOTAL_CASES,
-        new ColumnData().setValue(
+        new ColumnData().setMeta(totalCasesMeta).setValue(
             totalCases));
 
     double passiveIndexCaseDetectionRation =
@@ -963,7 +965,7 @@ public class SurveyDashboardService {
 
     columns.put(RACD_BASED_MALARIA_PREVALENCE,
         new ColumnData().setValue(
-            rcdBasedMalariaPrevalence).setMeta(rcdBasedMalariaPrevalenceMeta));
+            rcdBasedMalariaPrevalence).setIsPercentage(true).setMeta(rcdBasedMalariaPrevalenceMeta));
 
     log.info("Columns {}", columns);
     return columns;
@@ -1015,10 +1017,12 @@ public class SurveyDashboardService {
 
     int totalCases =
         totalRCD+
-            totalPassive+totalIndex;
+            totalPassive;
+
+    String totalCasesMeta = "rcd:  "+totalRCD+" passive: "+totalPassive;
 
     columns.put(TOTAL_INDEX_CASES,
-        new ColumnData().setValue(totalIndex));
+        new ColumnData().setValue(totalPassive));
 
     columns.put(TOTAL_INDIVIDUALS_TESTED,
         new ColumnData().setValue(
@@ -1029,7 +1033,7 @@ public class SurveyDashboardService {
             totalRCD));
 
     columns.put(TOTAL_CASES,
-        new ColumnData().setValue(
+        new ColumnData().setMeta(totalCasesMeta).setValue(
             totalCases));
 
     double passiveIndexCaseDetectionRation =
@@ -1041,6 +1045,7 @@ public class SurveyDashboardService {
     columns.put(PASSIVE_CASE_PERCENTAGE,
         new ColumnData().setValue(
                 passiveIndexCaseDetectionRation)
+
             .setMeta(passiveIndexCaseDetectionRatioMeta));
 
     int totalIndividuals=0;

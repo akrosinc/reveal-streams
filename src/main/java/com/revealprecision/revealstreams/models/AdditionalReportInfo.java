@@ -20,5 +20,6 @@ public class AdditionalReportInfo implements Serializable {
   private boolean columnClickable = false;
   private boolean showMap = true;
   private boolean showGraphs = false;
+  private boolean show3dGraphs = false;
 
 }

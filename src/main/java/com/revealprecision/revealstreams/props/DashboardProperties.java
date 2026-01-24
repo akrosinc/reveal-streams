@@ -138,6 +138,10 @@ public class DashboardProperties {
       "AMDR",true
   );
 
+  private final Map<String, Boolean> show3dGraph = Map.of(
+      "AMDR",false
+  );
+
   private final Map<PlanInterventionTypeEnum, List<String>> detailedPerformanceLevelColumns = Map.of(
       PlanInterventionTypeEnum.IRS,
       List.of(IrsPerformanceDashboardService.DAY,
