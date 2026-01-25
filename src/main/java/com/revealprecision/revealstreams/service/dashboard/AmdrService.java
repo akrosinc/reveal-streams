@@ -35,6 +35,7 @@ import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrHeaderNames;
+import com.revealprecision.revealstreams.persistence.domain.amdr.HslColor;
 import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrTotalsLandingPageProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageCountsProjection;
@@ -138,9 +139,9 @@ public class AmdrService {
     parasitologyPassive.setX(dates);
     parasitologyPassive.setMarker(new ColorMarker("blue"));
     parasitologyPassive.setHovertemplate(""
-            + "passive: %{customdata[0]}"
-            + "<br>total incoming cases:  %{customdata[1]}"
-            + "<br>accumulated cases: %{y}<extra></extra>");
+        + "passive: %{customdata[0]}"
+        + "<br>total incoming cases:  %{customdata[1]}"
+        + "<br>accumulated cases: %{y}<extra></extra>");
 
     BarTrace importsRcd = new BarTrace();
     importsRcd.setType("bar");
@@ -171,7 +172,7 @@ public class AmdrService {
     parasitology.setX(shiftedDates);
     parasitology.setMarker(new ColorMarker("orange"));
     parasitology.setHovertemplate(
-            ""
+        ""
             + "parasitology: %{customdata[0]}"
             + "<br>accumulated cases: %{y}<extra></extra>");
 
@@ -181,7 +182,7 @@ public class AmdrService {
     imports.setWidth(width);
     imports.setX(shiftedDates);
     imports.setMarker(new ColorMarker("red"));
-    imports.setHovertemplate(            ""
+    imports.setHovertemplate(""
         + "imports: %{customdata[0]}"
         + "<br>accumulated cases: %{y}<extra></extra>");
 
@@ -220,7 +221,8 @@ public class AmdrService {
     importScatter.setMode("lines+markers");
     importScatter.setX(shiftedDates);
     importScatter.setMarker(new LineMarker(3));
-    importScatter.setHovertemplate("imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+    importScatter.setHovertemplate(
+        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
 
     LineTrace paraImportScatter = new LineTrace();
     paraImportScatter.setType("scatter");
@@ -229,13 +231,13 @@ public class AmdrService {
     paraImportScatter.setMode("lines+markers");
     paraImportScatter.setX(shiftedDates);
     paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate("imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
+    paraImportScatter.setHovertemplate(
+        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
 
     Integer parasitologyBase = 0;
     Integer importBase = 0;
     Integer paraToImportBase = 0;
     for (AmdrLandingPageData landingPage : sortedList) {
-
 
       Integer rcdCases = landingPage.getRcdCases();
       Integer passiveCases = landingPage.getPassiveCases();
@@ -338,7 +340,6 @@ public class AmdrService {
 
     xaxis.setFixedRange(true);
 
-
     Yaxis yaxis = new Yaxis();
     Title xAxisTitle = new Title("Cases", null, new Font(11));
     yaxis.setTitle(xAxisTitle);
@@ -354,7 +355,6 @@ public class AmdrService {
     parasitologyTitle.setFont(new Font(11));
     parasitologylayout.setTitle(parasitologyTitle);
     parasitologylayout.setLegend(new Legend(new Font(10)));
-
 
     Layout importLayout = new Layout();
     importLayout.setBarGap(5);
@@ -390,18 +390,23 @@ public class AmdrService {
     parasitologyImportData.setData(paraImportTraces);
     parasitologyImportData.setLayout(paraImportLayout);
 
-    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(landingPageProjection);
+    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(
+        landingPageProjection);
 
     double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
         / (double) amdrTotalsLandingPageData.getCases();
-    double parasitologyToCasesPercentage = (double) amdrTotalsLandingPageData.getParasitologyReports()
-        / (double) amdrTotalsLandingPageData.getCases();
-    double importToParasitologyPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
-        / (double) amdrTotalsLandingPageData.getParasitologyReports();
+    double parasitologyToCasesPercentage =
+        (double) amdrTotalsLandingPageData.getParasitologyReports()
+            / (double) amdrTotalsLandingPageData.getCases();
+    double importToParasitologyPercentage =
+        (double) amdrTotalsLandingPageData.getImportedSequences()
+            / (double) amdrTotalsLandingPageData.getParasitologyReports();
 
     AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
-    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(importToParasitologyPercentage);
-    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(parasitologyToCasesPercentage);
+    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(
+        importToParasitologyPercentage);
+    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(
+        parasitologyToCasesPercentage);
     amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
 
     AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
@@ -409,7 +414,8 @@ public class AmdrService {
     amdrLandPageResponse.setImportData(importData);
     amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
     amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
-    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(amdrTotalsPercentageLandingPageData);
+    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(
+        amdrTotalsPercentageLandingPageData);
 
     return amdrLandPageResponse;
   }
@@ -428,7 +434,7 @@ public class AmdrService {
     List<String> yearMonthStrings = sortedList.stream()
         .map(AmdrLandingPageData::getYearMonth)
         .map(yearMonth -> yearMonth.format(formatter))
-        .map(mmmyyyy-> mmmyyyy.replaceAll(" ","<BR>"))
+        .map(mmmyyyy -> mmmyyyy.replaceAll(" ", "<BR>"))
         .collect(Collectors.toList());
 
     List<String> dates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
@@ -446,8 +452,6 @@ public class AmdrService {
         .map(LocalDate::toString).collect(
             Collectors.toList());
 
-
-
     int width = 24 * 60 * 60 * 1000 * 2;
 
     BarTrace parasitologyRcd = new BarTrace();
@@ -460,7 +464,7 @@ public class AmdrService {
         + "Reactive cases (in-field): %{customdata[0]}"
         + "<br>Passive HF Cases: %{customdata[2]}"
         + "<br>Total cases:  %{customdata[1]}<extra></extra>"
-     );
+    );
 
     BarTrace parasitologyPassive = new BarTrace();
     parasitologyPassive.setType("bar");
@@ -472,7 +476,7 @@ public class AmdrService {
         + "Reactive cases (in-field): %{customdata[2]}"
         + "<br>Passive HF Cases: %{customdata[0]}"
         + "<br>Total cases:  %{customdata[1]}<extra></extra>"
-        );
+    );
 
     BarTrace importsRcd = new BarTrace();
     importsRcd.setType("bar");
@@ -496,7 +500,7 @@ public class AmdrService {
         + "Reactive cases (in-field): %{customdata[2]}"
         + "<br>Passive HF Cases: %{customdata[0]}"
         + "<br>total incoming cases:  %{customdata[1]}<extra></extra>"
-       );
+    );
 
     BarTrace parasitology = new BarTrace();
     parasitology.setType("bar");
@@ -507,7 +511,7 @@ public class AmdrService {
     parasitology.setHovertemplate(
         ""
             + "Parasitology reports: %{customdata[0]}<extra></extra>"
-           );
+    );
 
     BarTrace imports = new BarTrace();
     imports.setType("bar");
@@ -515,7 +519,7 @@ public class AmdrService {
     imports.setWidth(width);
     imports.setX(dates3);
     imports.setMarker(new ColorMarker("green"));
-    imports.setHovertemplate(            ""
+    imports.setHovertemplate(""
         + "Genomic Sequence Imports: %{customdata[0]}"
         + "<br>accumulated cases: %{y}<extra></extra>");
 
@@ -563,13 +567,13 @@ public class AmdrService {
     paraImportScatter.setMode("lines+markers");
     paraImportScatter.setX(dates3);
     paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate("Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
+    paraImportScatter.setHovertemplate(
+        "Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
 
     Integer parasitologyBase = 0;
     Integer importBase = 0;
     Integer paraToImportBase = 0;
     for (AmdrLandingPageData landingPage : sortedList) {
-
 
       Integer rcdCases = landingPage.getRcdCases();
       Integer passiveCases = landingPage.getPassiveCases();
@@ -663,8 +667,9 @@ public class AmdrService {
       paraImportScatter.getCustomdata().add(paraImportScattercustom);
 
     }
-    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,parasitologyImport,
-        parasitologyScatter,paraImportScatter);
+    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,
+        parasitologyImport,
+        parasitologyScatter, paraImportScatter);
     List<Trace> importTraces = List.of(importsRcd, importsPassive, imports, importScatter);
     List<Trace> paraImportTraces = List.of(parasitologyParasitology, parasitologyImport,
         paraImportScatter);
@@ -675,7 +680,6 @@ public class AmdrService {
     xaxis.setTickFont(new Font(10));
 
     xaxis.setFixedRange(true);
-
 
     Yaxis yaxis = new Yaxis();
     Title xAxisTitle = new Title("Cases", null, new Font(11));
@@ -692,7 +696,6 @@ public class AmdrService {
     parasitologyTitle.setFont(new Font(11));
     parasitologylayout.setTitle(parasitologyTitle);
     parasitologylayout.setLegend(new Legend(new Font(10)));
-
 
     Layout importLayout = new Layout();
     importLayout.setBarGap(5);
@@ -728,18 +731,23 @@ public class AmdrService {
     parasitologyImportData.setData(paraImportTraces);
     parasitologyImportData.setLayout(paraImportLayout);
 
-    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(landingPageProjection);
+    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(
+        landingPageProjection);
 
     double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
         / (double) amdrTotalsLandingPageData.getCases();
-    double parasitologyToCasesPercentage = (double) amdrTotalsLandingPageData.getParasitologyReports()
-        / (double) amdrTotalsLandingPageData.getCases();
-    double importToParasitologyPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
-        / (double) amdrTotalsLandingPageData.getParasitologyReports();
+    double parasitologyToCasesPercentage =
+        (double) amdrTotalsLandingPageData.getParasitologyReports()
+            / (double) amdrTotalsLandingPageData.getCases();
+    double importToParasitologyPercentage =
+        (double) amdrTotalsLandingPageData.getImportedSequences()
+            / (double) amdrTotalsLandingPageData.getParasitologyReports();
 
     AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
-    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(importToParasitologyPercentage);
-    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(parasitologyToCasesPercentage);
+    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(
+        importToParasitologyPercentage);
+    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(
+        parasitologyToCasesPercentage);
     amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
 
     AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
@@ -747,7 +755,8 @@ public class AmdrService {
     amdrLandPageResponse.setImportData(importData);
     amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
     amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
-    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(amdrTotalsPercentageLandingPageData);
+    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(
+        amdrTotalsPercentageLandingPageData);
 
     return amdrLandPageResponse;
   }
@@ -785,17 +794,20 @@ public class AmdrService {
         Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
             rcdCount -> rcdCount, (a, b) -> b));
 
-    Map<YearMonth, LandingPageCountsProjection> passiveMap = passiveCountsByYearMonth.stream().collect(
-        Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
-            rcdCount -> rcdCount, (a, b) -> b));
+    Map<YearMonth, LandingPageCountsProjection> passiveMap = passiveCountsByYearMonth.stream()
+        .collect(
+            Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
+                rcdCount -> rcdCount, (a, b) -> b));
 
-    Map<YearMonth, LandingPageCountsProjection> parasitologyMap = parasitologyCountsByYearMonth.stream().collect(
-        Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
-            rcdCount -> rcdCount, (a, b) -> b));
+    Map<YearMonth, LandingPageCountsProjection> parasitologyMap = parasitologyCountsByYearMonth.stream()
+        .collect(
+            Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
+                rcdCount -> rcdCount, (a, b) -> b));
 
-    Map<YearMonth, LandingPageCountsProjection> importMap = importCountsByYearMonth.stream().collect(
-        Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
-            rcdCount -> rcdCount, (a, b) -> b));
+    Map<YearMonth, LandingPageCountsProjection> importMap = importCountsByYearMonth.stream()
+        .collect(
+            Collectors.toMap(rcdCount -> YearMonth.of(rcdCount.getYear(), rcdCount.getMonth()),
+                rcdCount -> rcdCount, (a, b) -> b));
 
     Set<YearMonth> yearMonths = new HashSet<>();
     yearMonths.addAll(rcdYearMonth);
@@ -839,10 +851,14 @@ public class AmdrService {
         }).sorted(Comparator.comparing(AmdrLandingPageData::getYearMonth)) // sort by YearMonth
         .collect(Collectors.toList());// collect into a List
 
-    int rcdTotal = rcdCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt).sum();
-    int passiveTotal = passiveCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt).sum();
-    int parasitologyTotal = parasitologyCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt).sum();
-    int importTotal = importCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt).sum();
+    int rcdTotal = rcdCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt)
+        .sum();
+    int passiveTotal = passiveCountsByYearMonth.stream()
+        .mapToInt(LandingPageCountsProjection::getCnt).sum();
+    int parasitologyTotal = parasitologyCountsByYearMonth.stream()
+        .mapToInt(LandingPageCountsProjection::getCnt).sum();
+    int importTotal = importCountsByYearMonth.stream().mapToInt(LandingPageCountsProjection::getCnt)
+        .sum();
 
     AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData();
     amdrTotalsLandingPageData.setCases(rcdTotal + passiveTotal);
@@ -851,12 +867,11 @@ public class AmdrService {
     amdrTotalsLandingPageData.setPassiveCases(passiveTotal);
     amdrTotalsLandingPageData.setParasitologyReports(parasitologyTotal);
 
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
     List<String> yearMonthStrings = sortedList.stream()
         .map(AmdrLandingPageData::getYearMonth)
         .map(yearMonth -> yearMonth.format(formatter))
-        .map(mmmyyyy-> mmmyyyy.replaceAll(" ","<BR>"))
+        .map(mmmyyyy -> mmmyyyy.replaceAll(" ", "<BR>"))
         .collect(Collectors.toList());
 
     List<String> dates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
@@ -873,8 +888,6 @@ public class AmdrService {
         .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 9))
         .map(LocalDate::toString).collect(
             Collectors.toList());
-
-
 
     int width = 24 * 60 * 60 * 1000 * 2;
 
@@ -943,7 +956,7 @@ public class AmdrService {
     imports.setWidth(width);
     imports.setX(dates3);
     imports.setMarker(new ColorMarker("green"));
-    imports.setHovertemplate(            ""
+    imports.setHovertemplate(""
         + "Genomic Sequence Imports: %{customdata[0]}"
         + "<br>accumulated cases: %{y}<extra></extra>");
 
@@ -991,18 +1004,21 @@ public class AmdrService {
     paraImportScatter.setMode("lines+markers");
     paraImportScatter.setX(dates3);
     paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate("Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
+    paraImportScatter.setHovertemplate(
+        "Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
 
     Integer parasitologyBase = 0;
     Integer importBase = 0;
     Integer paraToImportBase = 0;
     for (AmdrLandingPageData landingPage : sortedList) {
 
-
-      Integer rcdCases = landingPage.getRcdCases() == null ? 0:landingPage.getRcdCases() ;
-      Integer passiveCases = landingPage.getPassiveCases() == null ? 0:landingPage.getPassiveCases();
-      Integer parasitologyReports = landingPage.getParasitologyReports() == null ? 0:landingPage.getParasitologyReports();
-      Integer importedSequences = landingPage.getImportedSequences() == null ? 0:landingPage.getImportedSequences();
+      Integer rcdCases = landingPage.getRcdCases() == null ? 0 : landingPage.getRcdCases();
+      Integer passiveCases =
+          landingPage.getPassiveCases() == null ? 0 : landingPage.getPassiveCases();
+      Integer parasitologyReports =
+          landingPage.getParasitologyReports() == null ? 0 : landingPage.getParasitologyReports();
+      Integer importedSequences =
+          landingPage.getImportedSequences() == null ? 0 : landingPage.getImportedSequences();
 
       parasitologyRcd.getY().add(rcdCases);
       parasitologyRcd.getBase().add(0);
@@ -1091,8 +1107,9 @@ public class AmdrService {
       paraImportScatter.getCustomdata().add(paraImportScattercustom);
 
     }
-    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,parasitologyImport,
-        parasitologyScatter,paraImportScatter);
+    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,
+        parasitologyImport,
+        parasitologyScatter, paraImportScatter);
     List<Trace> importTraces = List.of(importsRcd, importsPassive, imports, importScatter);
     List<Trace> paraImportTraces = List.of(parasitologyParasitology, parasitologyImport,
         paraImportScatter);
@@ -1103,7 +1120,6 @@ public class AmdrService {
     xaxis.setTickFont(new Font(10));
 
     xaxis.setFixedRange(true);
-
 
     Yaxis yaxis = new Yaxis();
     Title xAxisTitle = new Title("Cases", null, new Font(11));
@@ -1120,7 +1136,6 @@ public class AmdrService {
     parasitologyTitle.setFont(new Font(11));
     parasitologylayout.setTitle(parasitologyTitle);
     parasitologylayout.setLegend(new Legend(new Font(10)));
-
 
     Layout importLayout = new Layout();
     importLayout.setBarGap(5);
@@ -1156,18 +1171,20 @@ public class AmdrService {
     parasitologyImportData.setData(paraImportTraces);
     parasitologyImportData.setLayout(paraImportLayout);
 
-
-
     double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
         / (double) amdrTotalsLandingPageData.getCases();
-    double parasitologyToCasesPercentage = (double) amdrTotalsLandingPageData.getParasitologyReports()
-        / (double) amdrTotalsLandingPageData.getCases();
-    double importToParasitologyPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
-        / (double) amdrTotalsLandingPageData.getParasitologyReports();
+    double parasitologyToCasesPercentage =
+        (double) amdrTotalsLandingPageData.getParasitologyReports()
+            / (double) amdrTotalsLandingPageData.getCases();
+    double importToParasitologyPercentage =
+        (double) amdrTotalsLandingPageData.getImportedSequences()
+            / (double) amdrTotalsLandingPageData.getParasitologyReports();
 
     AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
-    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(importToParasitologyPercentage);
-    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(parasitologyToCasesPercentage);
+    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(
+        importToParasitologyPercentage);
+    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(
+        parasitologyToCasesPercentage);
     amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
 
     AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
@@ -1175,11 +1192,11 @@ public class AmdrService {
     amdrLandPageResponse.setImportData(importData);
     amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
     amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
-    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(amdrTotalsPercentageLandingPageData);
+    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(
+        amdrTotalsPercentageLandingPageData);
 
     return amdrLandPageResponse;
   }
-
 
 
   public AmdrFeatureSetResponse getDataForReport(
@@ -1189,6 +1206,9 @@ public class AmdrService {
 
     Map<String, String> amdrHeaderNameMap = amdrHeaderNames.stream()
         .collect(Collectors.toMap(AmdrHeaderNames::getKey, AmdrHeaderNames::getName, (a, b) -> b));
+
+    Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
+        .collect(Collectors.toMap(AmdrHeaderNames::getKey, AmdrHeaderNames::getColor, (a, b) -> b));
 
     Location parentLocation = null;
     UUID parentIdentifier = null;
@@ -1233,7 +1253,7 @@ public class AmdrService {
 
     Map<UUID, RowData> rowDataMap = new HashMap<>();
 
-    List<RowData> rowData = getRows(parentLocation, collect, clickedColumn, amdrHeaderNameMap);
+    List<RowData> rowData = getRows(parentLocation, collect, clickedColumn, amdrHeaderNameMap, amdrHeaderColorMap);
 
     if (rowData != null) {
       rowDataMap = rowData.stream()
@@ -1249,7 +1269,7 @@ public class AmdrService {
 
   public List<RowData> getRows(
       Location parentLocation, List<PlanLocationDetails> locationDetails, String clickedColumn,
-      Map<String, String> amdrHeaderNameMap) {
+      Map<String, String> amdrHeaderNameMap, Map<String, HslColor> amdrHeaderColorMap) {
 
     List<List<PlanLocationDetails>> lists = splitList(locationDetails
         , 500);
@@ -1319,19 +1339,24 @@ public class AmdrService {
                             / (double) amdrData1.getOverallObject().getOverallTotalRecs() * 100 :
                         (double) 0;
 
-                    String format = String.format(
-                        "%.2f", perc);
+
+                    DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                    symbols.setDecimalSeparator('.');
+                    DecimalFormat df = new DecimalFormat("0.00", symbols);
+                    String totalVal = df.format(perc);
+
                     String meta =
                         "total recs: " + denom +
                             " \r\n - gene: " + val + " => "
-                            + format + "%";
+                            + totalVal + "%";
 
                     collect.put(amdrCols.getKey(), ColumnData.builder()
-                        .value(format)
+                        .value(totalVal)
                         .meta(meta)
-                            .dataType("string")
+                        .dataType("string")
                         .isPercentage(true)
                         .description(amdrHeaderNameMap.get(amdrCols.getKey()))
+                            .hslColor(amdrHeaderColorMap.get(amdrCols.getKey()))
                         .build());
 
                     checked.set(true);
@@ -1355,8 +1380,11 @@ public class AmdrService {
                                 && upperKeyEntry.getValue().getTotalRecs() > 0 ?
                                 upperKeyEntry.getValue().getTotalRecs() : 1) * 100;
 
-                        String totalVal = String.format(
-                            "%.2f", total);
+                        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                        symbols.setDecimalSeparator('.');
+                        DecimalFormat df = new DecimalFormat("0.00", symbols);
+                        String totalVal = df.format(total);
+
                         String meta =
                             "total recs: " + upperKeyEntry.getValue().getTotalRecs() +
                                 " \r\n - mono: " + upperKeyEntry.getValue().getMono() + " => "
@@ -1374,6 +1402,7 @@ public class AmdrService {
                             .meta(meta)
                             .dataType("string")
                             .isPercentage(true)
+                            .hslColor(amdrHeaderColorMap.get(upperKeyEntry.getKey()))
                             .description(amdrHeaderNameMap.get(upperKeyEntry.getKey()))
                             .build());
                       }).collect(Collectors.toMap(Entry::getKey, Entry::getValue)));
@@ -1451,7 +1480,6 @@ public class AmdrService {
                       / (double) amdrData.getOverallObject().getOverallTotalRecs() * 100 :
                   (double) 0;
 
-
               DecimalFormatSymbols symbols = new DecimalFormatSymbols();
               symbols.setDecimalSeparator('.');
 
@@ -1464,12 +1492,15 @@ public class AmdrService {
 
 //              String value = format.concat(" aValue");
 
-              ColumnData percentageCol = ColumnData.builder().value(format).meta(meta).dataType("string")
+              ColumnData percentageCol = ColumnData.builder().value(format).meta(meta)
+                  .dataType("string")
                   .isPercentage(true)
-                  .description(amdrHeaderNameMap.get(amdrData.getType())).build();
+                  .description(amdrHeaderNameMap.get(amdrData.getType()))
+                  .hslColor(amdrHeaderColorMap.get(amdrData.getType()))
+                  .build();
 
               return new SimpleEntry<>(amdrData.getType(),
-                 percentageCol
+                  percentageCol
               );
             })
             .collect(

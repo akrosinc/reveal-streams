@@ -1,5 +1,6 @@
 package com.revealprecision.revealstreams.persistence.domain.amdr;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -9,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Table(schema = "amdr")
@@ -23,5 +25,9 @@ public class AmdrHeaderNames {
   private String key;
 
   private String name;
+
+  @Type(type = "jsonb")
+  @Column(columnDefinition = "jsonb")
+  private HslColor color;
 
 }

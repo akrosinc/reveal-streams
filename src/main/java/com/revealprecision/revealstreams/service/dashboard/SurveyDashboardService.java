@@ -81,7 +81,7 @@ public class SurveyDashboardService {
   public static final String TOTAL_INDEX_CASES = "Total # Passive HF index cases";
   public static final String TOTAL_INDIVIDUALS_TESTED = "Total # Individuals tested for RACD";
   public static final String TOTAL_RCD_CASES = "Total # RACD cases";
-  public static final String TOTAL_CASES = "Total # Cases (Passive HF Index + RCD + Passive)";
+  public static final String TOTAL_CASES = "Total # Cases (Passive HF Index + RCD)";
   public static final String PASSIVE_CASE_PERCENTAGE = "Passive index case detection ratio";
   public static final String RACD_BASED_MALARIA_PREVALENCE = "RACD-based malaria prevalence %";
 
@@ -947,10 +947,10 @@ public class SurveyDashboardService {
             totalCases));
 
     double passiveIndexCaseDetectionRation =
-        totalRCD > 0 ? ((double) totalIndex / (double) totalRCD) : 0;
+        totalRCD > 0 ? ((double) totalPassive / (double) totalRCD) : 0;
 
     String passiveIndexCaseDetectionRatioMeta = String.format("index cases (%s) / rcd cases (%s)",
-        totalIndex, totalRCD);
+        totalPassive, totalRCD);
 
     columns.put(PASSIVE_CASE_PERCENTAGE,
         new ColumnData().setValue(
