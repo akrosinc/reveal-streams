@@ -16,11 +16,16 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
   List<AmdrData> findByTypeAndLocationIdIn(String type,List<UUID> locationIds);
 
   List<AmdrData> findByTypeAndLocationIdInAndCollectionYear(String type,List<UUID> locationIds, String collectionYear);
+  List<AmdrData> findByTypeAndLocationIdInAndCollectionYearIn(String type,List<UUID> locationIds, List<String> collectionYear);
+
   AmdrData findByTypeAndLocationId(String type,UUID locationId);
 
   AmdrData findByTypeAndLocationIdAndCollectionYear(String type,UUID locationId, String collectionYear);
+  List<AmdrData> findByTypeAndLocationIdAndCollectionYearIn(String type,UUID locationId, List<String> collectionYear);
 
   List<AmdrData> findByLocationIdInAndCollectionYear(List<UUID> locationIds, String collectionYear);
+  List<AmdrData> findByLocationIdInAndCollectionYearIn(List<UUID> locationIds, List<String> collectionYear);
+
 
   List<AmdrData> findByLocationIdIn(List<UUID> locationIds);
 

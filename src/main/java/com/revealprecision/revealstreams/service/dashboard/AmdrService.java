@@ -60,7 +60,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -69,7 +68,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
@@ -1253,7 +1252,8 @@ public class AmdrService {
 
     Map<UUID, RowData> rowDataMap = new HashMap<>();
 
-    List<RowData> rowData = getRows(parentLocation, collect, clickedColumn, amdrHeaderNameMap, amdrHeaderColorMap);
+    List<RowData> rowData = getRows(parentLocation, collect, clickedColumn, amdrHeaderNameMap,
+        amdrHeaderColorMap);
 
     if (rowData != null) {
       rowDataMap = rowData.stream()
@@ -1266,6 +1266,25 @@ public class AmdrService {
         rowDataMap, ALL_OTHER_LEVELS, clickedColumn);
   }
 
+  @AllArgsConstructor
+  @NoArgsConstructor
+  @Data
+  public static class Accumulator {
+
+    private Integer num = 0;
+    private Integer denom = 0;
+  }
+
+  @AllArgsConstructor
+  @NoArgsConstructor
+  @Data
+  public static class TriAccumulator {
+
+    private Double mono = 0d;
+    private Double mixed = 0d;
+    private Double total = 0d;
+    private Double totalRecs = 0d;
+  }
 
   public List<RowData> getRows(
       Location parentLocation, List<PlanLocationDetails> locationDetails, String clickedColumn,
@@ -1280,11 +1299,11 @@ public class AmdrService {
 
       List<AmdrData> collect1 = lists.stream()
           .flatMap(listOfLocationIds ->
-              amdrRepository.findByTypeAndLocationIdInAndCollectionYear(clickedColumn,
+              amdrRepository.findByTypeAndLocationIdInAndCollectionYearIn(clickedColumn,
                       listOfLocationIds.stream()
                           .map(locationDetail -> locationDetail.getLocation().getIdentifier())
                           .collect(Collectors.toList()),
-                      String.valueOf(maxYear))
+                      List.of(String.valueOf(maxYear), "2025"))
                   .stream()
           ).collect(Collectors.toList());
 
@@ -1314,125 +1333,200 @@ public class AmdrService {
           ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
           .collect(Collectors.toList());
 
-      List<RowData> name = amdrDataLocationList.stream()
-          .map(amdrData -> {
-            Map<String, ColumnData> main
-                = new LinkedHashMap<>();
 
-            Map<String, ColumnData> map = amdrData.getData().entrySet().stream()
-                .flatMap(amdrCols -> {
+      Map<UUID, List<AmdrDataLocation>> amdrDataLocationListMap = amdrDataLocationList.stream()
+          .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
 
-                  AtomicBoolean checked = new AtomicBoolean(false);
+      Map<UUID, Map<String, Accumulator>> mainAccumulator = new HashMap<>();
+      Map<UUID, Entry<String, Map<String, TriAccumulator>>> triAccumulator = new HashMap<>();
 
-                  Map<String, ColumnData> collect = new LinkedHashMap<>();
+      for (Entry<UUID, List<AmdrDataLocation>> amdrDataLocationListEntry : amdrDataLocationListMap.entrySet()) {
+        boolean checked = true;
+        for (AmdrDataLocation amdrDataLocation : amdrDataLocationListEntry.getValue()) {
 
-                  if (!checked.get()) {
-                    AmdrData amdrData1 = amdrRepository.findByTypeAndLocationIdAndCollectionYear(
-                        amdrCols.getKey(), amdrData.getLocationId(),
-                        String.valueOf(maxYear));
+          for (Entry<String, Map<String, AmdrCounters>> amdrCounterMapEntry : amdrDataLocation.getData()
+              .entrySet()) {
+            String key = amdrCounterMapEntry.getKey();
 
-                    int val = amdrData1.getOverallObject().getOverallValue();
-                    int denom = amdrData1.getOverallObject().getOverallTotalRecs();
+            if (checked) {
 
-                    double perc = amdrData1.getOverallObject().getOverallTotalRecs() > 0 ?
-                        (double) amdrData1.getOverallObject().getOverallValue()
-                            / (double) amdrData1.getOverallObject().getOverallTotalRecs() * 100 :
-                        (double) 0;
+              List<AmdrData> amdrDataList = amdrRepository.findByTypeAndLocationIdAndCollectionYearIn(
+                  key, amdrDataLocationListEntry.getKey(),
+                  List.of(String.valueOf(maxYear), "2025"));
+
+              for (AmdrData amdrData1 : amdrDataList) {
+                int val = amdrData1.getOverallObject().getOverallValue();
+                int denom = amdrData1.getOverallObject().getOverallTotalRecs();
+
+                Map<String, Accumulator> stringAccumulatorMap = null;
+                if (mainAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
+                  stringAccumulatorMap = mainAccumulator.get(
+                      amdrDataLocationListEntry.getKey());
+                } else {
+                  stringAccumulatorMap = new HashMap<>();
+                }
+                Accumulator accumulator = null;
+                if (stringAccumulatorMap.containsKey(key)) {
+                  accumulator = stringAccumulatorMap.get(key);
+                } else {
+                  accumulator = new Accumulator();
+                }
+
+                accumulator.setNum(accumulator.getNum() + val);
+                accumulator.setDenom(accumulator.getDenom() + denom);
+                stringAccumulatorMap.put(key, accumulator);
+                mainAccumulator.put(amdrDataLocationListEntry.getKey(), stringAccumulatorMap);
+              }
+            }
+
+            for (Entry<String, AmdrCounters> amdrCountersEntry : amdrCounterMapEntry.getValue()
+                .entrySet()) {
+
+              String key1 = amdrCountersEntry.getKey();
+
+              Entry<String, Map<String, TriAccumulator>> triAccumulatorMapByOuterKey = null;
+              if (triAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
+                triAccumulatorMapByOuterKey = triAccumulator.get(
+                    amdrDataLocationListEntry.getKey());
+              } else {
+                Map<String, TriAccumulator> stringTriAccumulatorMap = new HashMap<>();
+                SimpleEntry<String, Map<String, TriAccumulator>> stringMapSimpleEntry = new SimpleEntry<>(
+                    key, stringTriAccumulatorMap);
+                triAccumulatorMapByOuterKey = stringMapSimpleEntry;
+              }
+              TriAccumulator triAccumulator1 = null;
+              if (triAccumulatorMapByOuterKey.getValue().containsKey(key1)) {
+                triAccumulator1 = triAccumulatorMapByOuterKey.getValue().get(key1);
+              } else {
+                triAccumulator1 = new TriAccumulator();
+              }
+
+              triAccumulator1.setMixed(
+                  triAccumulator1.getMixed() + amdrCountersEntry.getValue().getMixed());
+              triAccumulator1.setMono(
+                  triAccumulator1.getMono() + amdrCountersEntry.getValue().getMono());
+              triAccumulator1.setTotal(
+                  triAccumulator1.getTotal() + amdrCountersEntry.getValue().getTotal());
+              triAccumulator1.setTotalRecs(
+                  triAccumulator1.getTotalRecs() + amdrCountersEntry.getValue().getTotalRecs());
+
+              triAccumulatorMapByOuterKey.getValue().put(key1, triAccumulator1);
+
+              triAccumulatorMapByOuterKey = new SimpleEntry<>(key,
+                  triAccumulatorMapByOuterKey.getValue());
+
+              triAccumulator.put(amdrDataLocationListEntry.getKey(), triAccumulatorMapByOuterKey);
+
+            }
+
+          }
+          checked = false;
+        }
+
+      }
+
+      List<RowData> collect = mainAccumulator.entrySet().stream().map(mainAccumulatorEntry -> {
+
+        Map<String, Accumulator> value = mainAccumulatorEntry.getValue();
+
+        Map<String, ColumnData> string = value.entrySet().stream().map(accumulatorEntry -> {
+
+          Accumulator value1 = accumulatorEntry.getValue();
+
+          int val = value1.getNum();
+          int denom = value1.getDenom();
+          double perc = denom > 0 ?
+              (double) val
+                  / (double) denom * 100 :
+              (double) 0;
+          DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+          symbols.setDecimalSeparator('.');
+          DecimalFormat df = new DecimalFormat("0.00", symbols);
+          String totalVal = df.format(perc);
+          String meta =
+              "total recs: " + denom +
+                  " \r\n - gene: " + val + " => "
+                  + totalVal + "%";
+
+          return new SimpleEntry<>(accumulatorEntry.getKey(), ColumnData.builder()
+              .value(totalVal + " " + val)
+              .meta(meta)
+              .dataType("string")
+              .isPercentage(true)
+              .description(amdrHeaderNameMap.get(accumulatorEntry.getKey()))
+              .hslColor(amdrHeaderColorMap.get(accumulatorEntry.getKey()))
+              .build());
+        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+        Entry<String, Map<String, TriAccumulator>> stringMapEntry = triAccumulator.get(
+            mainAccumulatorEntry.getKey());
+
+        Map<String, ColumnData> string1 = stringMapEntry.getValue().entrySet().stream()
+            .map(stringTriAccumulatorEntry -> {
+
+              TriAccumulator value1 = stringTriAccumulatorEntry.getValue();
+
+              double mono = value1.getMono() /
+                  (value1.getTotalRecs() != null
+                      && value1.getTotalRecs() > 0 ?
+                      value1.getTotalRecs() : 1) * 100;
+              double mixed = value1.getMixed() /
+                  (value1.getTotalRecs() != null
+                      && value1.getTotalRecs() > 0 ?
+                      value1.getTotalRecs() : 1) * 100;
+              double total = value1.getTotal() /
+                  (value1.getTotalRecs() != null
+                      && value1.getTotalRecs() > 0 ?
+                      value1.getTotalRecs() : 1) * 100;
+              DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+              symbols.setDecimalSeparator('.');
+              DecimalFormat df = new DecimalFormat("0.00", symbols);
+              String totalVal = df.format(total);
+              String meta =
+                  "total recs: " + value1.getTotalRecs() +
+                      " \r\n - mono: " + value1.getMono() + " => "
+                      + String.format(
+                      "%.2f", mono) + "%"
+                      + "\r\n - mixed: " + value1.getMixed() + " => "
+                      + String.format(
+                      "%.2f", mixed) + "%"
+                      + "\r\n - total: " + value1.getTotal() + " => "
+                      + totalVal + "%";
+              return new SimpleEntry<>(
+                  stringTriAccumulatorEntry.getKey(), ColumnData.builder()
+                  .value(totalVal + " " + total)
+                  .meta(meta)
+                  .dataType("string")
+                  .isPercentage(true)
+                  .hslColor(amdrHeaderColorMap.get(stringTriAccumulatorEntry.getKey()))
+                  .description(amdrHeaderNameMap.get(stringTriAccumulatorEntry.getKey()))
+                  .build());
+
+            }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+        string.putAll(string1);
+
+        return RowData.builder()
+            .childrenNumber(3l)
+            .columnDataMap(string)
+            .locationIdentifier(mainAccumulatorEntry.getKey())
+            .locationName("name")
+            .build();
+
+      }).collect(Collectors.toList());
 
 
-                    DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-                    symbols.setDecimalSeparator('.');
-                    DecimalFormat df = new DecimalFormat("0.00", symbols);
-                    String totalVal = df.format(perc);
-
-                    String meta =
-                        "total recs: " + denom +
-                            " \r\n - gene: " + val + " => "
-                            + totalVal + "%";
-
-                    collect.put(amdrCols.getKey(), ColumnData.builder()
-                        .value(totalVal)
-                        .meta(meta)
-                        .dataType("string")
-                        .isPercentage(true)
-                        .description(amdrHeaderNameMap.get(amdrCols.getKey()))
-                            .hslColor(amdrHeaderColorMap.get(amdrCols.getKey()))
-                        .build());
-
-                    checked.set(true);
-                  }
-
-                  collect.putAll(amdrCols.getValue().entrySet()
-                      .stream().map(upperKeyEntry -> {
-
-                        double mono = upperKeyEntry.getValue().getMono() /
-                            (upperKeyEntry.getValue().getTotalRecs() != null
-                                && upperKeyEntry.getValue().getTotalRecs() > 0 ?
-                                upperKeyEntry.getValue().getTotalRecs() : 1) * 100;
-
-                        double mixed = upperKeyEntry.getValue().getMixed() /
-                            (upperKeyEntry.getValue().getTotalRecs() != null
-                                && upperKeyEntry.getValue().getTotalRecs() > 0 ?
-                                upperKeyEntry.getValue().getTotalRecs() : 1) * 100;
-
-                        double total = upperKeyEntry.getValue().getTotal() /
-                            (upperKeyEntry.getValue().getTotalRecs() != null
-                                && upperKeyEntry.getValue().getTotalRecs() > 0 ?
-                                upperKeyEntry.getValue().getTotalRecs() : 1) * 100;
-
-                        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-                        symbols.setDecimalSeparator('.');
-                        DecimalFormat df = new DecimalFormat("0.00", symbols);
-                        String totalVal = df.format(total);
-
-                        String meta =
-                            "total recs: " + upperKeyEntry.getValue().getTotalRecs() +
-                                " \r\n - mono: " + upperKeyEntry.getValue().getMono() + " => "
-                                + String.format(
-                                "%.2f", mono) + "%"
-                                + "\r\n - mixed: " + upperKeyEntry.getValue().getMixed() + " => "
-                                + String.format(
-                                "%.2f", mixed) + "%"
-                                + "\r\n - total: " + upperKeyEntry.getValue().getTotal() + " => "
-                                + totalVal + "%";
-
-                        return new SimpleEntry<>(
-                            upperKeyEntry.getKey(), ColumnData.builder()
-                            .value(totalVal)
-                            .meta(meta)
-                            .dataType("string")
-                            .isPercentage(true)
-                            .hslColor(amdrHeaderColorMap.get(upperKeyEntry.getKey()))
-                            .description(amdrHeaderNameMap.get(upperKeyEntry.getKey()))
-                            .build());
-                      }).collect(Collectors.toMap(Entry::getKey, Entry::getValue)));
-
-                  return collect.entrySet().stream();
-                }).collect(
-                    Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b,
-                        LinkedHashMap::new));
-
-            main.putAll(map);
-
-            return RowData.builder()
-                .childrenNumber(3l)
-                .columnDataMap(main)
-                .locationIdentifier(amdrData.getLocationId())
-                .locationName("name")
-                .build();
-          }).collect(Collectors.toList());
-
-      return name;
+      return collect;
 
     } else {
       List<AmdrData> amdrDataStream = lists.stream()
           .flatMap(listOfLocationIds -> {
 
-                List<AmdrData> byLocationIdIn = amdrRepository.findByLocationIdInAndCollectionYear(
+                List<AmdrData> byLocationIdIn = amdrRepository.findByLocationIdInAndCollectionYearIn(
                     listOfLocationIds.stream()
                         .map(locationDetail -> locationDetail.getLocation().getIdentifier())
                         .collect(Collectors.toList()),
-                    String.valueOf(maxYear));
+                    List.of(String.valueOf(maxYear), "2025"));
                 return byLocationIdIn
                     .stream();
               }
@@ -1469,47 +1563,61 @@ public class AmdrService {
 
       List<RowData> name = collect1.entrySet().stream().map(amdrLocationEntry -> {
 
-        Map<String, ColumnData> collect2 = amdrLocationEntry.getValue().stream()
-            .map(amdrData -> {
+        Map<String, Accumulator> byType =
+            amdrLocationEntry.getValue().stream()
+                .collect(Collectors.groupingBy(
+                    AmdrDataLocation::getType,
+                    Collector.of(
+                        Accumulator::new,
+                        (acc, d) -> {
+                          acc.setNum(
+                              acc.getNum()
+                                  + d.getOverallObject().getOverallValue()
+                          );
+                          acc.setDenom(
+                              acc.getDenom()
+                                  + d.getOverallObject().getOverallTotalRecs()
+                          );
+                        },
+                        (a1, a2) -> {
+                          a1.setNum(a1.getNum() + a2.getNum());
+                          a1.setDenom(a1.getDenom() + a2.getDenom());
+                          return a1;
+                        }
+                    )
+                ));
 
-              int val = amdrData.getOverallObject().getOverallValue();
-              int denom = amdrData.getOverallObject().getOverallTotalRecs();
-
-              double perc = amdrData.getOverallObject().getOverallTotalRecs() > 0 ?
-                  (double) amdrData.getOverallObject().getOverallValue()
-                      / (double) amdrData.getOverallObject().getOverallTotalRecs() * 100 :
-                  (double) 0;
-
-              DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-              symbols.setDecimalSeparator('.');
-
-              DecimalFormat df = new DecimalFormat("0.00", symbols);
-              String format = df.format(perc);
-              String meta =
-                  "total recs: " + denom +
-                      " \r\n - gene: " + val + " => "
-                      + format + "%";
-
-//              String value = format.concat(" aValue");
-
-              ColumnData percentageCol = ColumnData.builder().value(format).meta(meta)
-                  .dataType("string")
-                  .isPercentage(true)
-                  .description(amdrHeaderNameMap.get(amdrData.getType()))
-                  .hslColor(amdrHeaderColorMap.get(amdrData.getType()))
-                  .build();
-
-              return new SimpleEntry<>(amdrData.getType(),
-                  percentageCol
-              );
-            })
-            .collect(
-                Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b, LinkedHashMap::new));
+        Map<String, ColumnData> string = byType.entrySet().stream().map(entry -> {
+          String type = entry.getKey();
+          Accumulator value = entry.getValue();
+          int val = value.getNum();
+          int denom = value.getDenom();
+          double perc = denom > 0 ?
+              (double) val
+                  / (double) denom * 100 :
+              (double) 0;
+          DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+          symbols.setDecimalSeparator('.');
+          DecimalFormat df = new DecimalFormat("0.00", symbols);
+          String format = df.format(perc);
+          String meta =
+              "total recs: " + denom +
+                  " \r\n - obs: " + val + " => "
+                  + format + "%";
+          ColumnData percentageCol = ColumnData.builder()
+              .value(format + " " + val)
+              .meta(meta)
+              .dataType("string")
+              .isPercentage(true)
+              .description(amdrHeaderNameMap.get(type))
+              .hslColor(amdrHeaderColorMap.get(type))
+              .build();
+          return new SimpleEntry<>(type, percentageCol);
+        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
 
         return RowData.builder()
             .childrenNumber(3l)
-            .columnDataMap(collect2)
-//            .columnDataListMap(collect2)
+            .columnDataMap(string)
             .locationIdentifier(amdrLocationEntry.getKey())
             .locationName("name")
             .build();
