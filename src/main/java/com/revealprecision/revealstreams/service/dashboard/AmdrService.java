@@ -37,9 +37,7 @@ import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrHeaderNames;
 import com.revealprecision.revealstreams.persistence.domain.amdr.HslColor;
 import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
-import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrTotalsLandingPageProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageCountsProjection;
-import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageProjection;
 import com.revealprecision.revealstreams.persistence.repository.LocationHierarchyRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRelationshipRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
@@ -90,681 +88,6 @@ public class AmdrService {
   private final LocationRelationshipRepository locationRelationshipRepository;
   private final AmdrHeaderNamesRepository amdrHeaderNamesRepository;
   private final LocationRepository locationRepository;
-
-
-  public AmdrLandPageResponse getLandingPageData() {
-    List<LandingPageProjection> landingPageData = amdrRepository.getLandingPageData();
-
-    AmdrTotalsLandingPageProjection landingPageProjection = amdrRepository.getTotalIndicators();
-
-    List<AmdrLandingPageData> sortedList = landingPageData.stream()
-        .map(AmdrLandingPageData::new)  // map projection to POJO
-        .sorted(Comparator.comparing(AmdrLandingPageData::getYearMonth)) // sort by YearMonth
-        .collect(Collectors.toList());  // collect into a List
-
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-    List<String> yearMonthStrings = sortedList.stream()
-        .map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> yearMonth.format(formatter))
-        .collect(Collectors.toList());
-
-    List<String> dates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 1))
-        .map(LocalDate::toString).collect(
-            Collectors.toList());
-
-    List<String> shiftedDates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 3))
-        .map(LocalDate::toString).collect(
-            Collectors.toList());
-
-    int width = 24 * 60 * 60 * 1000 * 2;
-
-    BarTrace parasitologyRcd = new BarTrace();
-    parasitologyRcd.setType("bar");
-    parasitologyRcd.setName("rcd");
-    parasitologyRcd.setWidth(width);
-    parasitologyRcd.setX(dates);
-    parasitologyRcd.setMarker(new ColorMarker("lightblue"));
-    parasitologyRcd.setHovertemplate(""
-        + "rcd: %{customdata[0]}"
-        + "<br>total incoming cases:  %{customdata[1]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace parasitologyPassive = new BarTrace();
-    parasitologyPassive.setType("bar");
-    parasitologyPassive.setName("passive");
-    parasitologyPassive.setWidth(width);
-    parasitologyPassive.setX(dates);
-    parasitologyPassive.setMarker(new ColorMarker("blue"));
-    parasitologyPassive.setHovertemplate(""
-        + "passive: %{customdata[0]}"
-        + "<br>total incoming cases:  %{customdata[1]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace importsRcd = new BarTrace();
-    importsRcd.setType("bar");
-    importsRcd.setName("rcd");
-    importsRcd.setWidth(width);
-    importsRcd.setX(dates);
-    importsRcd.setMarker(new ColorMarker("lightblue"));
-    importsRcd.setHovertemplate(""
-        + "rcd: %{customdata[0]}"
-        + "<br>total incoming cases:  %{customdata[1]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace importsPassive = new BarTrace();
-    importsPassive.setType("bar");
-    importsPassive.setName("passive");
-    importsPassive.setWidth(width);
-    importsPassive.setX(dates);
-    importsPassive.setMarker(new ColorMarker("blue"));
-    importsPassive.setHovertemplate(""
-        + "passive: %{customdata[0]}"
-        + "<br>total incoming cases:  %{customdata[1]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace parasitology = new BarTrace();
-    parasitology.setType("bar");
-    parasitology.setName("parasitology");
-    parasitology.setWidth(width);
-    parasitology.setX(shiftedDates);
-    parasitology.setMarker(new ColorMarker("orange"));
-    parasitology.setHovertemplate(
-        ""
-            + "parasitology: %{customdata[0]}"
-            + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace imports = new BarTrace();
-    imports.setType("bar");
-    imports.setName("imports");
-    imports.setWidth(width);
-    imports.setX(shiftedDates);
-    imports.setMarker(new ColorMarker("red"));
-    imports.setHovertemplate(""
-        + "imports: %{customdata[0]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace parasitologyParasitology = new BarTrace();
-    parasitologyParasitology.setType("bar");
-    parasitologyParasitology.setName("parasitology");
-    parasitologyParasitology.setWidth(width);
-    parasitologyParasitology.setX(dates);
-    parasitologyParasitology.setMarker(new ColorMarker("orange"));
-    parasitologyParasitology.setHovertemplate(
-        "parasitology: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace parasitologyImport = new BarTrace();
-    parasitologyImport.setType("bar");
-    parasitologyImport.setName("import");
-    parasitologyImport.setWidth(width);
-    parasitologyImport.setX(shiftedDates);
-    parasitologyImport.setMarker(new ColorMarker("red"));
-    parasitologyImport.setHovertemplate(
-        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
-
-    LineTrace parasitologyScatter = new LineTrace();
-    parasitologyScatter.setType("scatter");
-    parasitologyScatter.setName("balance after parasitology");
-    parasitologyScatter.setLine(new Line("green", 1));
-    parasitologyScatter.setMode("lines+markers");
-    parasitologyScatter.setX(shiftedDates);
-    parasitologyScatter.setMarker(new LineMarker(3));
-    parasitologyScatter.setHovertemplate(
-        "parasitology: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
-
-    LineTrace importScatter = new LineTrace();
-    importScatter.setType("scatter");
-    importScatter.setName("balance after import");
-    importScatter.setLine(new Line("red", 1));
-    importScatter.setMode("lines+markers");
-    importScatter.setX(shiftedDates);
-    importScatter.setMarker(new LineMarker(3));
-    importScatter.setHovertemplate(
-        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
-
-    LineTrace paraImportScatter = new LineTrace();
-    paraImportScatter.setType("scatter");
-    paraImportScatter.setName("balance after import");
-    paraImportScatter.setLine(new Line("green", 1));
-    paraImportScatter.setMode("lines+markers");
-    paraImportScatter.setX(shiftedDates);
-    paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate(
-        "imports: %{customdata[0]}<br>accumulated cases: %{y}<extra></extra>");
-
-    Integer parasitologyBase = 0;
-    Integer importBase = 0;
-    Integer paraToImportBase = 0;
-    for (AmdrLandingPageData landingPage : sortedList) {
-
-      Integer rcdCases = landingPage.getRcdCases();
-      Integer passiveCases = landingPage.getPassiveCases();
-      Integer parasitologyReports = landingPage.getParasitologyReports();
-      Integer importedSequences = landingPage.getImportedSequences();
-
-      parasitologyRcd.getY().add(rcdCases);
-      parasitologyRcd.getBase().add(parasitologyBase);
-      List<Integer> parasitologyRcdcustom = new ArrayList<>();
-      parasitologyRcdcustom.add(rcdCases);
-      parasitologyRcdcustom.add(rcdCases + passiveCases);
-      parasitologyRcd.getCustomdata().add(parasitologyRcdcustom);
-
-      importsRcd.getY().add(rcdCases);
-      importsRcd.getBase().add(importBase);
-      List<Integer> importsRcdcustom = new ArrayList<>();
-      importsRcdcustom.add(rcdCases);
-      importsRcdcustom.add(rcdCases + passiveCases);
-      importsRcd.getCustomdata().add(importsRcdcustom);
-
-      parasitologyBase += rcdCases;
-      importBase += rcdCases;
-
-      parasitologyPassive.getY().add(passiveCases);
-      parasitologyPassive.getBase().add(parasitologyBase);
-      List<Integer> parasitologyPassivecustom = new ArrayList<>();
-      parasitologyPassivecustom.add(passiveCases);
-      parasitologyPassivecustom.add(rcdCases + passiveCases);
-      parasitologyPassive.getCustomdata().add(parasitologyPassivecustom);
-
-      importsPassive.getY().add(passiveCases);
-      importsPassive.getBase().add(importBase);
-      List<Integer> importsPassivecustom = new ArrayList<>();
-      importsPassivecustom.add(passiveCases);
-      importsPassivecustom.add(rcdCases + passiveCases);
-      importsPassive.getCustomdata().add(importsPassivecustom);
-
-      parasitologyBase += passiveCases;
-      importBase += passiveCases;
-
-      int parasitologyYVal = parasitologyReports * -1;
-      parasitology.getY().add(parasitologyYVal);
-      parasitology.getBase().add(parasitologyBase);
-      List<Integer> parasitologycustom = new ArrayList<>();
-      parasitologycustom.add(parasitologyReports);
-      parasitology.getCustomdata().add(parasitologycustom);
-
-      int importsYVal = importedSequences * -1;
-      imports.getY().add(importsYVal);
-      imports.getBase().add(importBase);
-      List<Integer> importscustom = new ArrayList<>();
-      importscustom.add(importedSequences);
-      imports.getCustomdata().add(importscustom);
-
-      parasitologyParasitology.getY().add(parasitologyReports);
-      parasitologyParasitology.getBase().add(paraToImportBase);
-      List<Integer> parasitologyParasitologycustom = new ArrayList<>();
-      parasitologyParasitologycustom.add(parasitologyReports);
-      parasitologyParasitology.getCustomdata().add(parasitologyParasitologycustom);
-
-      paraToImportBase += parasitologyReports;
-
-      int paraImportsYVal = importedSequences * -1;
-      parasitologyImport.getY().add(paraImportsYVal);
-      parasitologyImport.getBase().add(paraToImportBase);
-      List<Integer> parasitologyImportcustom = new ArrayList<>();
-      parasitologyImportcustom.add(importedSequences);
-      parasitologyImport.getCustomdata().add(parasitologyImportcustom);
-
-      parasitologyBase += parasitologyYVal;
-      importBase += importsYVal;
-      paraToImportBase += importsYVal;
-
-      parasitologyScatter.getY().add(parasitologyBase);
-      List<Integer> parasitologyScattercustom = new ArrayList<>();
-      parasitologyScattercustom.add(parasitologyReports);
-      parasitologyScatter.getCustomdata().add(parasitologyScattercustom);
-
-      importScatter.getY().add(importBase);
-      List<Integer> importScattercustom = new ArrayList<>();
-      importScattercustom.add(importedSequences);
-      importScatter.getCustomdata().add(importScattercustom);
-
-      paraImportScatter.getY().add(paraToImportBase);
-      List<Integer> paraImportScattercustom = new ArrayList<>();
-      paraImportScattercustom.add(importedSequences);
-      paraImportScatter.getCustomdata().add(paraImportScattercustom);
-
-    }
-    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,
-        parasitologyScatter);
-    List<Trace> importTraces = List.of(importsRcd, importsPassive, imports, importScatter);
-    List<Trace> paraImportTraces = List.of(parasitologyParasitology, parasitologyImport,
-        paraImportScatter);
-
-    Xaxis xaxis = new Xaxis();
-    xaxis.setTickVals(dates);
-    xaxis.setTickText(yearMonthStrings);
-    xaxis.setTickFont(new Font(10));
-
-    xaxis.setFixedRange(true);
-
-    Yaxis yaxis = new Yaxis();
-    Title xAxisTitle = new Title("Cases", null, new Font(11));
-    yaxis.setTitle(xAxisTitle);
-    yaxis.setTickFont(new Font(10));
-
-    Layout parasitologylayout = new Layout();
-    parasitologylayout.setBarGap(5);
-    parasitologylayout.setBarMode("overlay");
-    parasitologylayout.setXaxis(xaxis);
-    parasitologylayout.setYaxis(yaxis);
-    Title parasitologyTitle = new Title();
-    parasitologyTitle.setText("Total Cases (by month) vs Parasitology Reports");
-    parasitologyTitle.setFont(new Font(11));
-    parasitologylayout.setTitle(parasitologyTitle);
-    parasitologylayout.setLegend(new Legend(new Font(10)));
-
-    Layout importLayout = new Layout();
-    importLayout.setBarGap(5);
-    importLayout.setBarMode("overlay");
-    importLayout.setXaxis(xaxis);
-    importLayout.setYaxis(yaxis);
-    Title importTitle = new Title();
-    importTitle.setText("Total Cases (by month) vs Sequence Imports");
-    importTitle.setFont(new Font(11));
-    importLayout.setTitle(importTitle);
-    importLayout.setLegend(new Legend(new Font(10)));
-
-    Layout paraImportLayout = new Layout();
-    paraImportLayout.setBarGap(5);
-    paraImportLayout.setBarMode("overlay");
-    paraImportLayout.setXaxis(xaxis);
-    paraImportLayout.setYaxis(yaxis);
-    Title paraImportTitle = new Title();
-    paraImportTitle.setText("Parasitology Reports (by month) vs Sequence Imports");
-    paraImportTitle.setFont(new Font(11));
-    paraImportLayout.setTitle(paraImportTitle);
-    paraImportLayout.setLegend(new Legend(new Font(10)));
-
-    AmdrChartData parasitologyData = new AmdrChartData();
-    parasitologyData.setData(parasitologyTraces);
-    parasitologyData.setLayout(parasitologylayout);
-
-    AmdrChartData importData = new AmdrChartData();
-    importData.setData(importTraces);
-    importData.setLayout(importLayout);
-
-    AmdrChartData parasitologyImportData = new AmdrChartData();
-    parasitologyImportData.setData(paraImportTraces);
-    parasitologyImportData.setLayout(paraImportLayout);
-
-    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(
-        landingPageProjection);
-
-    double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
-        / (double) amdrTotalsLandingPageData.getCases();
-    double parasitologyToCasesPercentage =
-        (double) amdrTotalsLandingPageData.getParasitologyReports()
-            / (double) amdrTotalsLandingPageData.getCases();
-    double importToParasitologyPercentage =
-        (double) amdrTotalsLandingPageData.getImportedSequences()
-            / (double) amdrTotalsLandingPageData.getParasitologyReports();
-
-    AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
-    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(
-        importToParasitologyPercentage);
-    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(
-        parasitologyToCasesPercentage);
-    amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
-
-    AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
-    amdrLandPageResponse.setParasitologyData(parasitologyData);
-    amdrLandPageResponse.setImportData(importData);
-    amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
-    amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
-    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(
-        amdrTotalsPercentageLandingPageData);
-
-    return amdrLandPageResponse;
-  }
-
-  public AmdrLandPageResponse getLandingPageData2() {
-    List<LandingPageProjection> landingPageData = amdrRepository.getLandingPageData();
-
-    AmdrTotalsLandingPageProjection landingPageProjection = amdrRepository.getTotalIndicators();
-
-    List<AmdrLandingPageData> sortedList = landingPageData.stream()
-        .map(AmdrLandingPageData::new)  // map projection to POJO
-        .sorted(Comparator.comparing(AmdrLandingPageData::getYearMonth)) // sort by YearMonth
-        .collect(Collectors.toList());  // collect into a List
-
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
-    List<String> yearMonthStrings = sortedList.stream()
-        .map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> yearMonth.format(formatter))
-        .map(mmmyyyy -> mmmyyyy.replaceAll(" ", "<BR>"))
-        .collect(Collectors.toList());
-
-    List<String> dates = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 1))
-        .map(LocalDate::toString).collect(
-            Collectors.toList());
-
-    List<String> dates3 = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 5))
-        .map(LocalDate::toString).collect(
-            Collectors.toList());
-
-    List<String> dates5 = sortedList.stream().map(AmdrLandingPageData::getYearMonth)
-        .map(yearMonth -> LocalDate.of(yearMonth.getYear(), yearMonth.getMonth(), 9))
-        .map(LocalDate::toString).collect(
-            Collectors.toList());
-
-    int width = 24 * 60 * 60 * 1000 * 2;
-
-    BarTrace parasitologyRcd = new BarTrace();
-    parasitologyRcd.setType("bar");
-    parasitologyRcd.setName("Reactive cases (in-field)");
-    parasitologyRcd.setWidth(width);
-    parasitologyRcd.setX(dates);
-    parasitologyRcd.setMarker(new ColorMarker("lightblue"));
-    parasitologyRcd.setHovertemplate(""
-        + "Reactive cases (in-field): %{customdata[0]}"
-        + "<br>Passive HF Cases: %{customdata[2]}"
-        + "<br>Total cases:  %{customdata[1]}<extra></extra>"
-    );
-
-    BarTrace parasitologyPassive = new BarTrace();
-    parasitologyPassive.setType("bar");
-    parasitologyPassive.setName("Passive HF Cases");
-    parasitologyPassive.setWidth(width);
-    parasitologyPassive.setX(dates);
-    parasitologyPassive.setMarker(new ColorMarker("blue"));
-    parasitologyPassive.setHovertemplate(""
-        + "Reactive cases (in-field): %{customdata[2]}"
-        + "<br>Passive HF Cases: %{customdata[0]}"
-        + "<br>Total cases:  %{customdata[1]}<extra></extra>"
-    );
-
-    BarTrace importsRcd = new BarTrace();
-    importsRcd.setType("bar");
-    importsRcd.setName("Reactive cases (in-field)");
-    importsRcd.setWidth(width);
-    importsRcd.setX(dates);
-    importsRcd.setMarker(new ColorMarker("lightblue"));
-    importsRcd.setHovertemplate(""
-        + "Reactive cases (in-field): %{customdata[0]}"
-        + "<br>Passive HF Cases: %{customdata[2]}"
-        + "<br>Total cases:  %{customdata[1]}<extra></extra>"
-    );
-
-    BarTrace importsPassive = new BarTrace();
-    importsPassive.setType("bar");
-    importsPassive.setName("Passive HF Cases");
-    importsPassive.setWidth(width);
-    importsPassive.setX(dates);
-    importsPassive.setMarker(new ColorMarker("blue"));
-    importsPassive.setHovertemplate(""
-        + "Reactive cases (in-field): %{customdata[2]}"
-        + "<br>Passive HF Cases: %{customdata[0]}"
-        + "<br>total incoming cases:  %{customdata[1]}<extra></extra>"
-    );
-
-    BarTrace parasitology = new BarTrace();
-    parasitology.setType("bar");
-    parasitology.setName("Parasitology reports");
-    parasitology.setWidth(width);
-    parasitology.setX(dates3);
-    parasitology.setMarker(new ColorMarker("lightgreen"));
-    parasitology.setHovertemplate(
-        ""
-            + "Parasitology reports: %{customdata[0]}<extra></extra>"
-    );
-
-    BarTrace imports = new BarTrace();
-    imports.setType("bar");
-    imports.setName("Genomic Sequence Imports");
-    imports.setWidth(width);
-    imports.setX(dates3);
-    imports.setMarker(new ColorMarker("green"));
-    imports.setHovertemplate(""
-        + "Genomic Sequence Imports: %{customdata[0]}"
-        + "<br>accumulated cases: %{y}<extra></extra>");
-
-    BarTrace parasitologyParasitology = new BarTrace();
-    parasitologyParasitology.setType("bar");
-    parasitologyParasitology.setName("Parasitology reports");
-    parasitologyParasitology.setWidth(width);
-    parasitologyParasitology.setX(dates);
-    parasitologyParasitology.setMarker(new ColorMarker("lightgreen"));
-    parasitologyParasitology.setHovertemplate(
-        "Parasitology reports: %{customdata[0]}<extra></extra>");
-
-    BarTrace parasitologyImport = new BarTrace();
-    parasitologyImport.setType("bar");
-    parasitologyImport.setName("Genomic Sequence Imports");
-    parasitologyImport.setWidth(width);
-    parasitologyImport.setX(dates5);
-    parasitologyImport.setMarker(new ColorMarker("green"));
-    parasitologyImport.setHovertemplate(
-        "Genomic Sequence Imports: %{customdata[0]}<extra></extra>");
-
-    LineTrace parasitologyScatter = new LineTrace();
-    parasitologyScatter.setType("scatter");
-    parasitologyScatter.setName("Total cases minus Parasitology Reports");
-    parasitologyScatter.setLine(new Line("red", 1));
-    parasitologyScatter.setMode("lines+markers");
-    parasitologyScatter.setX(dates3);
-    parasitologyScatter.setMarker(new LineMarker(3));
-    parasitologyScatter.setHovertemplate(
-        "Total cases minus Parasitology Reports: %{y}<extra></extra>");
-
-    LineTrace importScatter = new LineTrace();
-    importScatter.setType("scatter");
-    importScatter.setName("balance after import");
-    importScatter.setLine(new Line("darkred", 1));
-    importScatter.setMode("lines+markers");
-    importScatter.setX(dates3);
-    importScatter.setMarker(new LineMarker(3));
-    importScatter.setHovertemplate("imports: %{y}<extra></extra>");
-
-    LineTrace paraImportScatter = new LineTrace();
-    paraImportScatter.setType("scatter");
-    paraImportScatter.setName("Parasitology reports minus Genomic Sequence Imports");
-    paraImportScatter.setLine(new Line("darkred", 1));
-    paraImportScatter.setMode("lines+markers");
-    paraImportScatter.setX(dates3);
-    paraImportScatter.setMarker(new LineMarker(3));
-    paraImportScatter.setHovertemplate(
-        "Parasitology reports minus Genomic Sequence Imports: %{y}<extra></extra>");
-
-    Integer parasitologyBase = 0;
-    Integer importBase = 0;
-    Integer paraToImportBase = 0;
-    for (AmdrLandingPageData landingPage : sortedList) {
-
-      Integer rcdCases = landingPage.getRcdCases();
-      Integer passiveCases = landingPage.getPassiveCases();
-      Integer parasitologyReports = landingPage.getParasitologyReports();
-      Integer importedSequences = landingPage.getImportedSequences();
-
-      parasitologyRcd.getY().add(rcdCases);
-      parasitologyRcd.getBase().add(0);
-      List<Integer> parasitologyRcdcustom = new ArrayList<>();
-      parasitologyRcdcustom.add(rcdCases);
-      parasitologyRcdcustom.add(rcdCases + passiveCases);
-      parasitologyRcdcustom.add(passiveCases);
-      parasitologyRcd.getCustomdata().add(parasitologyRcdcustom);
-
-      importsRcd.getY().add(rcdCases);
-      importsRcd.getBase().add(0);
-      List<Integer> importsRcdcustom = new ArrayList<>();
-      importsRcdcustom.add(rcdCases);
-      importsRcdcustom.add(rcdCases + passiveCases);
-      importsRcdcustom.add(passiveCases);
-      importsRcd.getCustomdata().add(importsRcdcustom);
-
-      parasitologyBase += rcdCases;
-      importBase += rcdCases;
-
-      parasitologyPassive.getY().add(passiveCases);
-      parasitologyPassive.getBase().add(rcdCases);
-      List<Integer> parasitologyPassivecustom = new ArrayList<>();
-      parasitologyPassivecustom.add(passiveCases);
-      parasitologyPassivecustom.add(rcdCases + passiveCases);
-      parasitologyPassivecustom.add(rcdCases);
-      parasitologyPassive.getCustomdata().add(parasitologyPassivecustom);
-
-      importsPassive.getY().add(passiveCases);
-      importsPassive.getBase().add(rcdCases);
-      List<Integer> importsPassivecustom = new ArrayList<>();
-      importsPassivecustom.add(passiveCases);
-      importsPassivecustom.add(rcdCases + passiveCases);
-      importsPassivecustom.add(rcdCases);
-      importsPassive.getCustomdata().add(importsPassivecustom);
-
-      parasitologyBase += passiveCases;
-      importBase += passiveCases;
-
-      int parasitologyYVal = parasitologyReports * -1;
-      parasitology.getY().add(parasitologyReports);
-      parasitology.getBase().add(0);
-      List<Integer> parasitologycustom = new ArrayList<>();
-      parasitologycustom.add(parasitologyReports);
-      parasitology.getCustomdata().add(parasitologycustom);
-
-      int importsYVal = importedSequences * -1;
-      imports.getY().add(importedSequences);
-      imports.getBase().add(0);
-      List<Integer> importscustom = new ArrayList<>();
-      importscustom.add(importedSequences);
-      imports.getCustomdata().add(importscustom);
-
-      parasitologyParasitology.getY().add(parasitologyReports);
-      parasitologyParasitology.getBase().add(0);
-      List<Integer> parasitologyParasitologycustom = new ArrayList<>();
-      parasitologyParasitologycustom.add(parasitologyReports);
-      parasitologyParasitology.getCustomdata().add(parasitologyParasitologycustom);
-
-      paraToImportBase += parasitologyReports;
-
-      int paraImportsYVal = importedSequences * -1;
-      parasitologyImport.getY().add(importedSequences);
-      parasitologyImport.getBase().add(0);
-      List<Integer> parasitologyImportcustom = new ArrayList<>();
-      parasitologyImportcustom.add(importedSequences);
-      parasitologyImport.getCustomdata().add(parasitologyImportcustom);
-
-      parasitologyBase += parasitologyYVal;
-      importBase += importsYVal;
-      paraToImportBase += importsYVal;
-
-      parasitologyScatter.getY().add(parasitologyBase);
-      List<Integer> parasitologyScattercustom = new ArrayList<>();
-      parasitologyScattercustom.add(parasitologyReports);
-      parasitologyScatter.getCustomdata().add(parasitologyScattercustom);
-
-      importScatter.getY().add(importBase);
-      List<Integer> importScattercustom = new ArrayList<>();
-      importScattercustom.add(importedSequences);
-      importScatter.getCustomdata().add(importScattercustom);
-
-      paraImportScatter.getY().add(paraToImportBase);
-      List<Integer> paraImportScattercustom = new ArrayList<>();
-      paraImportScattercustom.add(importedSequences);
-      paraImportScatter.getCustomdata().add(paraImportScattercustom);
-
-    }
-    List<Trace> parasitologyTraces = List.of(parasitologyRcd, parasitologyPassive, parasitology,
-        parasitologyImport,
-        parasitologyScatter, paraImportScatter);
-    List<Trace> importTraces = List.of(importsRcd, importsPassive, imports, importScatter);
-    List<Trace> paraImportTraces = List.of(parasitologyParasitology, parasitologyImport,
-        paraImportScatter);
-
-    Xaxis xaxis = new Xaxis();
-    xaxis.setTickVals(dates);
-    xaxis.setTickText(yearMonthStrings);
-    xaxis.setTickFont(new Font(10));
-
-    xaxis.setFixedRange(true);
-
-    Yaxis yaxis = new Yaxis();
-    Title xAxisTitle = new Title("Cases", null, new Font(11));
-    yaxis.setTitle(xAxisTitle);
-    yaxis.setTickFont(new Font(10));
-
-    Layout parasitologylayout = new Layout();
-    parasitologylayout.setBarGap(5);
-    parasitologylayout.setBarMode("overlay");
-    parasitologylayout.setXaxis(xaxis);
-    parasitologylayout.setYaxis(yaxis);
-    Title parasitologyTitle = new Title();
-    parasitologyTitle.setText("Total Cases (by month) vs Parasitology Reports");
-    parasitologyTitle.setFont(new Font(11));
-    parasitologylayout.setTitle(parasitologyTitle);
-    parasitologylayout.setLegend(new Legend(new Font(10)));
-
-    Layout importLayout = new Layout();
-    importLayout.setBarGap(5);
-    importLayout.setBarMode("overlay");
-    importLayout.setXaxis(xaxis);
-    importLayout.setYaxis(yaxis);
-    Title importTitle = new Title();
-    importTitle.setText("Total Cases (by month) vs Sequence Imports");
-    importTitle.setFont(new Font(11));
-    importLayout.setTitle(importTitle);
-    importLayout.setLegend(new Legend(new Font(10)));
-
-    Layout paraImportLayout = new Layout();
-    paraImportLayout.setBarGap(5);
-    paraImportLayout.setBarMode("overlay");
-    paraImportLayout.setXaxis(xaxis);
-    paraImportLayout.setYaxis(yaxis);
-    Title paraImportTitle = new Title();
-    paraImportTitle.setText("Parasitology Reports (by month) vs Sequence Imports");
-    paraImportTitle.setFont(new Font(11));
-    paraImportLayout.setTitle(paraImportTitle);
-    paraImportLayout.setLegend(new Legend(new Font(10)));
-
-    AmdrChartData parasitologyData = new AmdrChartData();
-    parasitologyData.setData(parasitologyTraces);
-    parasitologyData.setLayout(parasitologylayout);
-
-    AmdrChartData importData = new AmdrChartData();
-    importData.setData(importTraces);
-    importData.setLayout(importLayout);
-
-    AmdrChartData parasitologyImportData = new AmdrChartData();
-    parasitologyImportData.setData(paraImportTraces);
-    parasitologyImportData.setLayout(paraImportLayout);
-
-    AmdrTotalsLandingPageData amdrTotalsLandingPageData = new AmdrTotalsLandingPageData(
-        landingPageProjection);
-
-    double importToCasesPercentage = (double) amdrTotalsLandingPageData.getImportedSequences()
-        / (double) amdrTotalsLandingPageData.getCases();
-    double parasitologyToCasesPercentage =
-        (double) amdrTotalsLandingPageData.getParasitologyReports()
-            / (double) amdrTotalsLandingPageData.getCases();
-    double importToParasitologyPercentage =
-        (double) amdrTotalsLandingPageData.getImportedSequences()
-            / (double) amdrTotalsLandingPageData.getParasitologyReports();
-
-    AmdrTotalsPercentageLandingPageData amdrTotalsPercentageLandingPageData = new AmdrTotalsPercentageLandingPageData();
-    amdrTotalsPercentageLandingPageData.setImportToParasitologyPercentage(
-        importToParasitologyPercentage);
-    amdrTotalsPercentageLandingPageData.setParasitologyToCasesPercentage(
-        parasitologyToCasesPercentage);
-    amdrTotalsPercentageLandingPageData.setImportToCasesPercentage(importToCasesPercentage);
-
-    AmdrLandPageResponse amdrLandPageResponse = new AmdrLandPageResponse();
-    amdrLandPageResponse.setParasitologyData(parasitologyData);
-    amdrLandPageResponse.setImportData(importData);
-    amdrLandPageResponse.setParasitologyImportData(parasitologyImportData);
-    amdrLandPageResponse.setAmdrTotalsLandingPageData(amdrTotalsLandingPageData);
-    amdrLandPageResponse.setAmdrTotalsPercentageLandingPageData(
-        amdrTotalsPercentageLandingPageData);
-
-    return amdrLandPageResponse;
-  }
-
-  private void initList(List<?> list) {
-    if (list == null) {
-      list = new ArrayList<>();
-    }
-  }
 
   public AmdrLandPageResponse getLandingPageData3() {
 
@@ -1295,337 +618,338 @@ public class AmdrService {
 
     Long maxYear = amdrRepository.getLatestYear();
 
-    if (clickedColumn != null) {
+    if (maxYear != null) {
+      if (clickedColumn != null) {
 
-      List<AmdrData> collect1 = lists.stream()
-          .flatMap(listOfLocationIds ->
-              amdrRepository.findByTypeAndLocationIdInAndCollectionYearIn(clickedColumn,
+        List<AmdrData> collect1 = lists.stream()
+            .flatMap(listOfLocationIds ->
+                amdrRepository.findByTypeAndLocationIdInAndCollectionYearIn(clickedColumn,
+                        listOfLocationIds.stream()
+                            .map(locationDetail -> locationDetail.getLocation().getIdentifier())
+                            .collect(Collectors.toList()),
+                        List.of(String.valueOf(maxYear), "2025"))
+                    .stream()
+            ).collect(Collectors.toList());
+
+        Set<UUID> collect2 = collect1.stream().map(AmdrData::getLocationId)
+            .collect(Collectors.toSet());
+
+        List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
+            collect2);
+
+        Map<String, String> locationNameMapById = byIdentifierIn.stream()
+            .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
+                LocationNameProjection::getLocationName));
+
+        List<AmdrDataLocation> amdrDataLocationList = collect1.stream()
+            .map(amdrData -> AmdrDataLocation
+                .builder()
+                .data(amdrData.getData())
+                .collectionYear(amdrData.getCollectionYear())
+                .id(amdrData.getId())
+                .datetime(amdrData.getDatetime())
+                .locationId(amdrData.getLocationId())
+                .overallObject(amdrData.getOverallObject())
+                .type(amdrData.getType())
+                .overallValue(amdrData.getOverallValue())
+                .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
+                .build()
+            ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
+            .collect(Collectors.toList());
+
+        Map<UUID, List<AmdrDataLocation>> amdrDataLocationListMap = amdrDataLocationList.stream()
+            .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
+
+        Map<UUID, Map<String, Accumulator>> mainAccumulator = new HashMap<>();
+        Map<UUID, Entry<String, Map<String, TriAccumulator>>> triAccumulator = new HashMap<>();
+
+        for (Entry<UUID, List<AmdrDataLocation>> amdrDataLocationListEntry : amdrDataLocationListMap.entrySet()) {
+          boolean checked = true;
+          for (AmdrDataLocation amdrDataLocation : amdrDataLocationListEntry.getValue()) {
+
+            for (Entry<String, Map<String, AmdrCounters>> amdrCounterMapEntry : amdrDataLocation.getData()
+                .entrySet()) {
+              String key = amdrCounterMapEntry.getKey();
+
+              if (checked) {
+
+                List<AmdrData> amdrDataList = amdrRepository.findByTypeAndLocationIdAndCollectionYearIn(
+                    key, amdrDataLocationListEntry.getKey(),
+                    List.of(String.valueOf(maxYear), "2025"));
+
+                for (AmdrData amdrData1 : amdrDataList) {
+                  int val = amdrData1.getOverallObject().getOverallValue();
+                  int denom = amdrData1.getOverallObject().getOverallTotalRecs();
+
+                  Map<String, Accumulator> stringAccumulatorMap = null;
+                  if (mainAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
+                    stringAccumulatorMap = mainAccumulator.get(
+                        amdrDataLocationListEntry.getKey());
+                  } else {
+                    stringAccumulatorMap = new HashMap<>();
+                  }
+                  Accumulator accumulator = null;
+                  if (stringAccumulatorMap.containsKey(key)) {
+                    accumulator = stringAccumulatorMap.get(key);
+                  } else {
+                    accumulator = new Accumulator();
+                  }
+
+                  accumulator.setNum(accumulator.getNum() + val);
+                  accumulator.setDenom(accumulator.getDenom() + denom);
+                  stringAccumulatorMap.put(key, accumulator);
+                  mainAccumulator.put(amdrDataLocationListEntry.getKey(), stringAccumulatorMap);
+                }
+              }
+
+              for (Entry<String, AmdrCounters> amdrCountersEntry : amdrCounterMapEntry.getValue()
+                  .entrySet()) {
+
+                String key1 = amdrCountersEntry.getKey();
+
+                Entry<String, Map<String, TriAccumulator>> triAccumulatorMapByOuterKey = null;
+                if (triAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
+                  triAccumulatorMapByOuterKey = triAccumulator.get(
+                      amdrDataLocationListEntry.getKey());
+                } else {
+                  Map<String, TriAccumulator> stringTriAccumulatorMap = new HashMap<>();
+                  SimpleEntry<String, Map<String, TriAccumulator>> stringMapSimpleEntry = new SimpleEntry<>(
+                      key, stringTriAccumulatorMap);
+                  triAccumulatorMapByOuterKey = stringMapSimpleEntry;
+                }
+                TriAccumulator triAccumulator1 = null;
+                if (triAccumulatorMapByOuterKey.getValue().containsKey(key1)) {
+                  triAccumulator1 = triAccumulatorMapByOuterKey.getValue().get(key1);
+                } else {
+                  triAccumulator1 = new TriAccumulator();
+                }
+
+                triAccumulator1.setMixed(
+                    triAccumulator1.getMixed() + amdrCountersEntry.getValue().getMixed());
+                triAccumulator1.setMono(
+                    triAccumulator1.getMono() + amdrCountersEntry.getValue().getMono());
+                triAccumulator1.setTotal(
+                    triAccumulator1.getTotal() + amdrCountersEntry.getValue().getTotal());
+                triAccumulator1.setTotalRecs(
+                    triAccumulator1.getTotalRecs() + amdrCountersEntry.getValue().getTotalRecs());
+
+                triAccumulatorMapByOuterKey.getValue().put(key1, triAccumulator1);
+
+                triAccumulatorMapByOuterKey = new SimpleEntry<>(key,
+                    triAccumulatorMapByOuterKey.getValue());
+
+                triAccumulator.put(amdrDataLocationListEntry.getKey(), triAccumulatorMapByOuterKey);
+
+              }
+
+            }
+            checked = false;
+          }
+
+        }
+
+        List<RowData> collect = mainAccumulator.entrySet().stream().map(mainAccumulatorEntry -> {
+
+          Map<String, Accumulator> value = mainAccumulatorEntry.getValue();
+
+          Map<String, ColumnData> string = value.entrySet().stream().map(accumulatorEntry -> {
+
+            Accumulator value1 = accumulatorEntry.getValue();
+
+            int val = value1.getNum();
+            int denom = value1.getDenom();
+            double perc = denom > 0 ?
+                (double) val
+                    / (double) denom * 100 :
+                (double) 0;
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setDecimalSeparator('.');
+            DecimalFormat df = new DecimalFormat("0.00", symbols);
+            String totalVal = df.format(perc);
+            String meta =
+                "total recs: " + denom +
+                    " \r\n - gene: " + val + " => "
+                    + totalVal + "%";
+
+            return new SimpleEntry<>(accumulatorEntry.getKey(), ColumnData.builder()
+                .value(totalVal + " " + val)
+                .meta(meta)
+                .dataType("string")
+                .isPercentage(true)
+                .description(amdrHeaderNameMap.get(accumulatorEntry.getKey()))
+                .hslColor(amdrHeaderColorMap.get(accumulatorEntry.getKey()))
+                .build());
+          }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+          Entry<String, Map<String, TriAccumulator>> stringMapEntry = triAccumulator.get(
+              mainAccumulatorEntry.getKey());
+
+          Map<String, ColumnData> string1 = stringMapEntry.getValue().entrySet().stream()
+              .map(stringTriAccumulatorEntry -> {
+
+                TriAccumulator value1 = stringTriAccumulatorEntry.getValue();
+
+                double mono = value1.getMono() /
+                    (value1.getTotalRecs() != null
+                        && value1.getTotalRecs() > 0 ?
+                        value1.getTotalRecs() : 1) * 100;
+                double mixed = value1.getMixed() /
+                    (value1.getTotalRecs() != null
+                        && value1.getTotalRecs() > 0 ?
+                        value1.getTotalRecs() : 1) * 100;
+                double total = value1.getTotal() /
+                    (value1.getTotalRecs() != null
+                        && value1.getTotalRecs() > 0 ?
+                        value1.getTotalRecs() : 1) * 100;
+                DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                symbols.setDecimalSeparator('.');
+                DecimalFormat df = new DecimalFormat("0.00", symbols);
+                String totalVal = df.format(total);
+                String meta =
+                    "total recs: " + value1.getTotalRecs() +
+                        " \r\n - mono: " + value1.getMono() + " => "
+                        + String.format(
+                        "%.2f", mono) + "%"
+                        + "\r\n - mixed: " + value1.getMixed() + " => "
+                        + String.format(
+                        "%.2f", mixed) + "%"
+                        + "\r\n - total: " + value1.getTotal() + " => "
+                        + totalVal + "%";
+                return new SimpleEntry<>(
+                    stringTriAccumulatorEntry.getKey(), ColumnData.builder()
+                    .value(totalVal + " " + total)
+                    .meta(meta)
+                    .dataType("string")
+                    .isPercentage(true)
+                    .hslColor(amdrHeaderColorMap.get(stringTriAccumulatorEntry.getKey()))
+                    .description(amdrHeaderNameMap.get(stringTriAccumulatorEntry.getKey()))
+                    .build());
+
+              }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+          string.putAll(string1);
+
+          return RowData.builder()
+              .childrenNumber(3l)
+              .columnDataMap(string)
+              .locationIdentifier(mainAccumulatorEntry.getKey())
+              .locationName("name")
+              .build();
+
+        }).collect(Collectors.toList());
+
+        return collect;
+
+      } else {
+        List<AmdrData> amdrDataStream = lists.stream()
+            .flatMap(listOfLocationIds -> {
+
+                  List<AmdrData> byLocationIdIn = amdrRepository.findByLocationIdInAndCollectionYearIn(
                       listOfLocationIds.stream()
                           .map(locationDetail -> locationDetail.getLocation().getIdentifier())
                           .collect(Collectors.toList()),
-                      List.of(String.valueOf(maxYear), "2025"))
-                  .stream()
-          ).collect(Collectors.toList());
-
-      Set<UUID> collect2 = collect1.stream().map(AmdrData::getLocationId)
-          .collect(Collectors.toSet());
-
-      List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
-          collect2);
-
-      Map<String, String> locationNameMapById = byIdentifierIn.stream()
-          .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
-              LocationNameProjection::getLocationName));
-
-      List<AmdrDataLocation> amdrDataLocationList = collect1.stream()
-          .map(amdrData -> AmdrDataLocation
-              .builder()
-              .data(amdrData.getData())
-              .collectionYear(amdrData.getCollectionYear())
-              .id(amdrData.getId())
-              .datetime(amdrData.getDatetime())
-              .locationId(amdrData.getLocationId())
-              .overallObject(amdrData.getOverallObject())
-              .type(amdrData.getType())
-              .overallValue(amdrData.getOverallValue())
-              .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
-              .build()
-          ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
-          .collect(Collectors.toList());
-
-
-      Map<UUID, List<AmdrDataLocation>> amdrDataLocationListMap = amdrDataLocationList.stream()
-          .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
-
-      Map<UUID, Map<String, Accumulator>> mainAccumulator = new HashMap<>();
-      Map<UUID, Entry<String, Map<String, TriAccumulator>>> triAccumulator = new HashMap<>();
-
-      for (Entry<UUID, List<AmdrDataLocation>> amdrDataLocationListEntry : amdrDataLocationListMap.entrySet()) {
-        boolean checked = true;
-        for (AmdrDataLocation amdrDataLocation : amdrDataLocationListEntry.getValue()) {
-
-          for (Entry<String, Map<String, AmdrCounters>> amdrCounterMapEntry : amdrDataLocation.getData()
-              .entrySet()) {
-            String key = amdrCounterMapEntry.getKey();
-
-            if (checked) {
-
-              List<AmdrData> amdrDataList = amdrRepository.findByTypeAndLocationIdAndCollectionYearIn(
-                  key, amdrDataLocationListEntry.getKey(),
-                  List.of(String.valueOf(maxYear), "2025"));
-
-              for (AmdrData amdrData1 : amdrDataList) {
-                int val = amdrData1.getOverallObject().getOverallValue();
-                int denom = amdrData1.getOverallObject().getOverallTotalRecs();
-
-                Map<String, Accumulator> stringAccumulatorMap = null;
-                if (mainAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
-                  stringAccumulatorMap = mainAccumulator.get(
-                      amdrDataLocationListEntry.getKey());
-                } else {
-                  stringAccumulatorMap = new HashMap<>();
+                      List.of(String.valueOf(maxYear), "2025"));
+                  return byLocationIdIn
+                      .stream();
                 }
-                Accumulator accumulator = null;
-                if (stringAccumulatorMap.containsKey(key)) {
-                  accumulator = stringAccumulatorMap.get(key);
-                } else {
-                  accumulator = new Accumulator();
-                }
+            ).collect(Collectors.toList());
 
-                accumulator.setNum(accumulator.getNum() + val);
-                accumulator.setDenom(accumulator.getDenom() + denom);
-                stringAccumulatorMap.put(key, accumulator);
-                mainAccumulator.put(amdrDataLocationListEntry.getKey(), stringAccumulatorMap);
-              }
-            }
+        Set<UUID> locSet = amdrDataStream.stream().map(AmdrData::getLocationId)
+            .collect(Collectors.toSet());
 
-            for (Entry<String, AmdrCounters> amdrCountersEntry : amdrCounterMapEntry.getValue()
-                .entrySet()) {
+        List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
+            locSet);
 
-              String key1 = amdrCountersEntry.getKey();
+        Map<String, String> locationNameMapById = byIdentifierIn.stream()
+            .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
+                LocationNameProjection::getLocationName));
 
-              Entry<String, Map<String, TriAccumulator>> triAccumulatorMapByOuterKey = null;
-              if (triAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
-                triAccumulatorMapByOuterKey = triAccumulator.get(
-                    amdrDataLocationListEntry.getKey());
-              } else {
-                Map<String, TriAccumulator> stringTriAccumulatorMap = new HashMap<>();
-                SimpleEntry<String, Map<String, TriAccumulator>> stringMapSimpleEntry = new SimpleEntry<>(
-                    key, stringTriAccumulatorMap);
-                triAccumulatorMapByOuterKey = stringMapSimpleEntry;
-              }
-              TriAccumulator triAccumulator1 = null;
-              if (triAccumulatorMapByOuterKey.getValue().containsKey(key1)) {
-                triAccumulator1 = triAccumulatorMapByOuterKey.getValue().get(key1);
-              } else {
-                triAccumulator1 = new TriAccumulator();
-              }
+        List<AmdrDataLocation> amdrDataLocationList = amdrDataStream.stream()
+            .map(amdrData -> AmdrDataLocation
+                .builder()
+                .data(amdrData.getData())
+                .collectionYear(amdrData.getCollectionYear())
+                .id(amdrData.getId())
+                .datetime(amdrData.getDatetime())
+                .locationId(amdrData.getLocationId())
+                .overallObject(amdrData.getOverallObject())
+                .type(amdrData.getType())
+                .overallValue(amdrData.getOverallValue())
+                .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
+                .build()
+            ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
+            .collect(Collectors.toList());
 
-              triAccumulator1.setMixed(
-                  triAccumulator1.getMixed() + amdrCountersEntry.getValue().getMixed());
-              triAccumulator1.setMono(
-                  triAccumulator1.getMono() + amdrCountersEntry.getValue().getMono());
-              triAccumulator1.setTotal(
-                  triAccumulator1.getTotal() + amdrCountersEntry.getValue().getTotal());
-              triAccumulator1.setTotalRecs(
-                  triAccumulator1.getTotalRecs() + amdrCountersEntry.getValue().getTotalRecs());
+        Map<UUID, List<AmdrDataLocation>> collect1 = amdrDataLocationList.stream()
+            .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
 
-              triAccumulatorMapByOuterKey.getValue().put(key1, triAccumulator1);
+        List<RowData> name = collect1.entrySet().stream().map(amdrLocationEntry -> {
 
-              triAccumulatorMapByOuterKey = new SimpleEntry<>(key,
-                  triAccumulatorMapByOuterKey.getValue());
+          Map<String, Accumulator> byType =
+              amdrLocationEntry.getValue().stream()
+                  .collect(Collectors.groupingBy(
+                      AmdrDataLocation::getType,
+                      Collector.of(
+                          Accumulator::new,
+                          (acc, d) -> {
+                            acc.setNum(
+                                acc.getNum()
+                                    + d.getOverallObject().getOverallValue()
+                            );
+                            acc.setDenom(
+                                acc.getDenom()
+                                    + d.getOverallObject().getOverallTotalRecs()
+                            );
+                          },
+                          (a1, a2) -> {
+                            a1.setNum(a1.getNum() + a2.getNum());
+                            a1.setDenom(a1.getDenom() + a2.getDenom());
+                            return a1;
+                          }
+                      )
+                  ));
 
-              triAccumulator.put(amdrDataLocationListEntry.getKey(), triAccumulatorMapByOuterKey);
+          Map<String, ColumnData> string = byType.entrySet().stream().map(entry -> {
+            String type = entry.getKey();
+            Accumulator value = entry.getValue();
+            int val = value.getNum();
+            int denom = value.getDenom();
+            double perc = denom > 0 ?
+                (double) val
+                    / (double) denom * 100 :
+                (double) 0;
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setDecimalSeparator('.');
+            DecimalFormat df = new DecimalFormat("0.00", symbols);
+            String format = df.format(perc);
+            String meta =
+                "total recs: " + denom +
+                    " \r\n - obs: " + val + " => "
+                    + format + "%";
+            ColumnData percentageCol = ColumnData.builder()
+                .value(format + " " + val)
+                .meta(meta)
+                .dataType("string")
+                .isPercentage(true)
+                .description(amdrHeaderNameMap.get(type))
+                .hslColor(amdrHeaderColorMap.get(type))
+                .build();
+            return new SimpleEntry<>(type, percentageCol);
+          }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
 
-            }
-
-          }
-          checked = false;
-        }
-
-      }
-
-      List<RowData> collect = mainAccumulator.entrySet().stream().map(mainAccumulatorEntry -> {
-
-        Map<String, Accumulator> value = mainAccumulatorEntry.getValue();
-
-        Map<String, ColumnData> string = value.entrySet().stream().map(accumulatorEntry -> {
-
-          Accumulator value1 = accumulatorEntry.getValue();
-
-          int val = value1.getNum();
-          int denom = value1.getDenom();
-          double perc = denom > 0 ?
-              (double) val
-                  / (double) denom * 100 :
-              (double) 0;
-          DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-          symbols.setDecimalSeparator('.');
-          DecimalFormat df = new DecimalFormat("0.00", symbols);
-          String totalVal = df.format(perc);
-          String meta =
-              "total recs: " + denom +
-                  " \r\n - gene: " + val + " => "
-                  + totalVal + "%";
-
-          return new SimpleEntry<>(accumulatorEntry.getKey(), ColumnData.builder()
-              .value(totalVal + " " + val)
-              .meta(meta)
-              .dataType("string")
-              .isPercentage(true)
-              .description(amdrHeaderNameMap.get(accumulatorEntry.getKey()))
-              .hslColor(amdrHeaderColorMap.get(accumulatorEntry.getKey()))
-              .build());
-        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
-
-        Entry<String, Map<String, TriAccumulator>> stringMapEntry = triAccumulator.get(
-            mainAccumulatorEntry.getKey());
-
-        Map<String, ColumnData> string1 = stringMapEntry.getValue().entrySet().stream()
-            .map(stringTriAccumulatorEntry -> {
-
-              TriAccumulator value1 = stringTriAccumulatorEntry.getValue();
-
-              double mono = value1.getMono() /
-                  (value1.getTotalRecs() != null
-                      && value1.getTotalRecs() > 0 ?
-                      value1.getTotalRecs() : 1) * 100;
-              double mixed = value1.getMixed() /
-                  (value1.getTotalRecs() != null
-                      && value1.getTotalRecs() > 0 ?
-                      value1.getTotalRecs() : 1) * 100;
-              double total = value1.getTotal() /
-                  (value1.getTotalRecs() != null
-                      && value1.getTotalRecs() > 0 ?
-                      value1.getTotalRecs() : 1) * 100;
-              DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-              symbols.setDecimalSeparator('.');
-              DecimalFormat df = new DecimalFormat("0.00", symbols);
-              String totalVal = df.format(total);
-              String meta =
-                  "total recs: " + value1.getTotalRecs() +
-                      " \r\n - mono: " + value1.getMono() + " => "
-                      + String.format(
-                      "%.2f", mono) + "%"
-                      + "\r\n - mixed: " + value1.getMixed() + " => "
-                      + String.format(
-                      "%.2f", mixed) + "%"
-                      + "\r\n - total: " + value1.getTotal() + " => "
-                      + totalVal + "%";
-              return new SimpleEntry<>(
-                  stringTriAccumulatorEntry.getKey(), ColumnData.builder()
-                  .value(totalVal + " " + total)
-                  .meta(meta)
-                  .dataType("string")
-                  .isPercentage(true)
-                  .hslColor(amdrHeaderColorMap.get(stringTriAccumulatorEntry.getKey()))
-                  .description(amdrHeaderNameMap.get(stringTriAccumulatorEntry.getKey()))
-                  .build());
-
-            }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
-
-        string.putAll(string1);
-
-        return RowData.builder()
-            .childrenNumber(3l)
-            .columnDataMap(string)
-            .locationIdentifier(mainAccumulatorEntry.getKey())
-            .locationName("name")
-            .build();
-
-      }).collect(Collectors.toList());
-
-
-      return collect;
-
-    } else {
-      List<AmdrData> amdrDataStream = lists.stream()
-          .flatMap(listOfLocationIds -> {
-
-                List<AmdrData> byLocationIdIn = amdrRepository.findByLocationIdInAndCollectionYearIn(
-                    listOfLocationIds.stream()
-                        .map(locationDetail -> locationDetail.getLocation().getIdentifier())
-                        .collect(Collectors.toList()),
-                    List.of(String.valueOf(maxYear), "2025"));
-                return byLocationIdIn
-                    .stream();
-              }
-          ).collect(Collectors.toList());
-
-      Set<UUID> locSet = amdrDataStream.stream().map(AmdrData::getLocationId)
-          .collect(Collectors.toSet());
-
-      List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
-          locSet);
-
-      Map<String, String> locationNameMapById = byIdentifierIn.stream()
-          .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
-              LocationNameProjection::getLocationName));
-
-      List<AmdrDataLocation> amdrDataLocationList = amdrDataStream.stream()
-          .map(amdrData -> AmdrDataLocation
-              .builder()
-              .data(amdrData.getData())
-              .collectionYear(amdrData.getCollectionYear())
-              .id(amdrData.getId())
-              .datetime(amdrData.getDatetime())
-              .locationId(amdrData.getLocationId())
-              .overallObject(amdrData.getOverallObject())
-              .type(amdrData.getType())
-              .overallValue(amdrData.getOverallValue())
-              .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
-              .build()
-          ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
-          .collect(Collectors.toList());
-
-      Map<UUID, List<AmdrDataLocation>> collect1 = amdrDataLocationList.stream()
-          .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
-
-      List<RowData> name = collect1.entrySet().stream().map(amdrLocationEntry -> {
-
-        Map<String, Accumulator> byType =
-            amdrLocationEntry.getValue().stream()
-                .collect(Collectors.groupingBy(
-                    AmdrDataLocation::getType,
-                    Collector.of(
-                        Accumulator::new,
-                        (acc, d) -> {
-                          acc.setNum(
-                              acc.getNum()
-                                  + d.getOverallObject().getOverallValue()
-                          );
-                          acc.setDenom(
-                              acc.getDenom()
-                                  + d.getOverallObject().getOverallTotalRecs()
-                          );
-                        },
-                        (a1, a2) -> {
-                          a1.setNum(a1.getNum() + a2.getNum());
-                          a1.setDenom(a1.getDenom() + a2.getDenom());
-                          return a1;
-                        }
-                    )
-                ));
-
-        Map<String, ColumnData> string = byType.entrySet().stream().map(entry -> {
-          String type = entry.getKey();
-          Accumulator value = entry.getValue();
-          int val = value.getNum();
-          int denom = value.getDenom();
-          double perc = denom > 0 ?
-              (double) val
-                  / (double) denom * 100 :
-              (double) 0;
-          DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-          symbols.setDecimalSeparator('.');
-          DecimalFormat df = new DecimalFormat("0.00", symbols);
-          String format = df.format(perc);
-          String meta =
-              "total recs: " + denom +
-                  " \r\n - obs: " + val + " => "
-                  + format + "%";
-          ColumnData percentageCol = ColumnData.builder()
-              .value(format + " " + val)
-              .meta(meta)
-              .dataType("string")
-              .isPercentage(true)
-              .description(amdrHeaderNameMap.get(type))
-              .hslColor(amdrHeaderColorMap.get(type))
+          return RowData.builder()
+              .childrenNumber(3l)
+              .columnDataMap(string)
+              .locationIdentifier(amdrLocationEntry.getKey())
+              .locationName("name")
               .build();
-          return new SimpleEntry<>(type, percentageCol);
-        }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
 
-        return RowData.builder()
-            .childrenNumber(3l)
-            .columnDataMap(string)
-            .locationIdentifier(amdrLocationEntry.getKey())
-            .locationName("name")
-            .build();
+        }).collect(Collectors.toList());
 
-      }).collect(Collectors.toList());
-
-      return name;
+        return name;
+      }
     }
+    return null;
   }
 
   public static <T> List<List<T>> splitList(List<T> originalList, int chunkSize) {
@@ -1653,8 +977,11 @@ public class AmdrService {
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
 
-    CoordsByYearOrLocationWithTicks coord = get3dData(locationDetails, clickedColumn);
-    response.setCoords(coord);
+    if (rowDataMap.size() == 0){
+      response.setNoDashboardData(true);
+    }
+//    CoordsByYearOrLocationWithTicks coord = get3dData(locationDetails, clickedColumn);
+//    response.setCoords(coord);
 
     return response;
   }
