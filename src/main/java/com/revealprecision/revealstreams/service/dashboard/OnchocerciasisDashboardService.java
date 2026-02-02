@@ -107,11 +107,9 @@ public class OnchocerciasisDashboardService {
     OnchocerciasisSurveyAdverseEventsAggregationProjection onchoSurveyFromAdverseEventsRecord = eventTrackerRepository.getOnchoSurveyFromAdverseEventsRecord(
         childLocation.getIdentifier(), plan.getIdentifier());
 
-    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevelFromEventTracker(
+    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevel(
         plan.getIdentifier(), childLocation.getIdentifier(),
         childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
-
-//    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = new HashMap<>();
 
     LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjectionOnTargetLevel = getLocationMetadataDoubleAggregateProjection(
         childLocation.getIdentifier().toString());
