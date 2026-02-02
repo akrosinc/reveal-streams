@@ -111,6 +111,8 @@ public class OnchocerciasisDashboardService {
         plan.getIdentifier(), childLocation.getIdentifier(),
         childLocation.getGeographicLevel().getName(), plan.getLocationHierarchy().getIdentifier());
 
+//    Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap = new HashMap<>();
+
     LocationMetadataDoubleAggregateProjection locationMetadataDoubleAggregateProjectionOnTargetLevel = getLocationMetadataDoubleAggregateProjection(
         childLocation.getIdentifier().toString());
 
@@ -710,7 +712,7 @@ public class OnchocerciasisDashboardService {
   public List<RowData> getMDALiteCoverageDataAboveStructureLevel(Plan plan,@Nullable Location childLocation,
       MdaLiteReportType type,   Location parentLocation) {
 
-    List<OnchocerciasisSurveyCddSummaryAggregationProjection> onchoSurveyFromHouseholdHeadDataList = eventTrackerRepository.getOnchoSurveyFromStructureDataFromEventTracker(
+    List<OnchocerciasisSurveyCddSummaryAggregationProjection> onchoSurveyFromHouseholdHeadDataList = eventTrackerRepository.getOnchoSurveyFromStructureData(
         parentLocation.getIdentifier(), plan.getIdentifier());
 
     List<RowData> collect = onchoSurveyFromHouseholdHeadDataList.stream()

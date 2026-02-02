@@ -184,8 +184,8 @@ public class LocationBusinessStatusService {
     log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
         planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
 
-    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevelFromEventTracker(
-        planIdentifier, parentLocationIdentifier,
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
+        planIdentifier, parentLocationIdentifier,"structure",
         locationHierarchyIdentifier);
 
     locationBusinessStateObjPerGeoLevel.forEach(
