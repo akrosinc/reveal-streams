@@ -77,6 +77,32 @@ public interface TaskBusinessStateTrackerRepository extends
       UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
       UUID locationHierarchyIdentifier);
 
+  @Query(value = "SELECT  Cast(t.plan_identifier as varchar) as planIdentifier\n"
+      + "     ,Cast(t.parentLocationIdentifier as varchar) as parentLocationIdentifier \n"
+      + "     ,t.parentName\n"
+      + "     ,t.parentgeographicLevel\n"
+      + "     ,t.business_status as taskBusinessStatus, count(*) as locationCount from (\n"
+      + "                  SELECT l.identifier  as locationIdentifier,\n"
+      + "                         l.name as locationName,\n"
+      + "                         pl.identifier as parentLocationIdentifier,\n"
+      + "                         pl.name as parentName,\n"
+      + "                         pl.location_property->>'geographicLevel' as parentgeographicLevel,\n"
+      + "                         t.business_status,\n"
+      + "                         t.plan_identifier\n"
+      + "                  from location l\n"
+      + "                           left join (\n"
+      + "                      select *\n"
+      + "                      from location_relationship lr,\n"
+      + "                           lateral unnest(lr.ancestry) with ordinality parent(parent, post)\n"
+      + "                  ) lr on lr.location_identifier = l.identifier\n"
+      + "                           left join location pl on pl.identifier = lr.parent\n"
+      + "                           inner join task t on l.identifier = t.base_entity_identifier\n"
+      + "              ) t\n"
+      + "WHERE t.parentLocationIdentifier = :parentLocationIdentifier and t.plan_identifier = :planIdentifier\n"
+      + "group by t.parentLocationIdentifier, t.plan_identifier, t.parentName,t.parentgeographicLevel, t.business_status",nativeQuery = true)
+  Set<LocationBusinessStateCount> getLocationBusinessStateCount(UUID planIdentifier,
+      UUID parentLocationIdentifier);
+
 
   @Query(
       value =

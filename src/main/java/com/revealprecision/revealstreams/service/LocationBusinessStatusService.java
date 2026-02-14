@@ -162,10 +162,12 @@ public class LocationBusinessStatusService {
 
     log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
         planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
-
-    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
-        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
-        locationHierarchyIdentifier);
+//
+//    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevel(
+//        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+//        locationHierarchyIdentifier);
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel = taskBusinessStateTrackerRepository.getLocationBusinessStateCount(
+        planIdentifier, parentLocationIdentifier);
 
     locationBusinessStateObjPerGeoLevel.forEach(
         locationBusinessStateCount -> log.debug("{} - locationBusinessStateObjPerGeoLevel({})",
