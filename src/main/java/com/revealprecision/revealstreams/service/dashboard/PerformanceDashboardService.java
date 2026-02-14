@@ -40,6 +40,7 @@ public class PerformanceDashboardService {
 
   private final IrsPerformanceDashboardService irsPerformanceDashboardService;
   private final IrsLitePerformanceDashboardService irsLitePerformanceDashboardService;
+  private final GhaSurveyPerformanceDashboardService ghaSurveyPerformanceDashboardService;
 
   private ReadOnlyKeyValueStore<String, UserParentChildren> userParentChildren;
 
@@ -82,7 +83,11 @@ public class PerformanceDashboardService {
       return getRowDatasIRSLite(plan,
           userLevels == null ? null : new HashSet<>(userLevels.values()), id);
 
-    } else {
+    }
+    else if (plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.SURVEY.name())) {
+      return ghaSurveyPerformanceDashboardService.getPerformanceColumnData(plan, null);
+    }
+    else {
       boolean startAtTop = false;
       if (id == null || id.equals("null") || id.equals("")) {
         startAtTop = true;
@@ -164,6 +169,10 @@ public class PerformanceDashboardService {
     return getPerformanceColumnDataIRS(plan,  parentUserLevelId, startAtTop);
   }
 
+  private List<RowData> getRowDatasGhaNih(Plan plan,
+      String parentUserLevelId, boolean startAtTop) {
+    return getPerformanceColumnDataIRS(plan,  parentUserLevelId, startAtTop);
+  }
 
 
   private void initialDataStores(Plan plan) {

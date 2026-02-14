@@ -1,6 +1,7 @@
 package com.revealprecision.revealstreams.persistence.repository.amdr;
 
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
+import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrPerformanceDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrTotalsLandingPageProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageCountsProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageProjection;
@@ -297,4 +298,99 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
       + "     ) t\n"
       + "group by t.year, t.month;",nativeQuery = true)
   List<LandingPageCountsProjection> getImportCountsByYearMonth();
+
+
+
+  @Query(value = "SELECT CAST(ppl.identifier as varchar) as parentIdentifier ,  ppl.name as parentName"
+      + ", cast(pl.identifier as varchar) as locationIdentifier ,pl.name as locationName"
+      + ", e.val ->> 'correct_structure' as verified, count(*) as count\n"
+      + " from (\n"
+      + "    SELECT *   from event e,\n"
+      + "               lateral amdr.extract_obs_fields_dynamic(\n"
+      + "                       e.additional_information,\n"
+      + "                       CAST(ARRAY ['individual',\n"
+      + "                           'correct_structure'] as text[])) with ordinality arr(val, pos)\n"
+      + "                  ) e\n"
+      + "         left join\n"
+      + "     (SELECT lr.location_identifier, arr.item_object\n"
+      + "      FROM location_relationship lr,\n"
+      + "           LATERAL unnest(array_append(lr.ancestry, lr.location_identifier)) WITH ORDINALITY arr(item_object, \"position\")\n"
+      + "     ) parents on parents.location_identifier = e.location_identifier\n"
+      + "         left join location pl on pl.identifier = parents.item_object\n"
+      + "         left join location_relationship lr on pl.identifier = lr.location_identifier\n"
+      + "         left join location ppl on ppl.identifier = lr.parent_identifier\n"
+      + "where e.identifier in\n"
+      + "      (\n"
+      + "          SELECT DISTINCT e.identifier\n"
+      + "\n"
+      + "          from event e,\n"
+      + "               lateral amdr.extract_obs_fields_dynamic(\n"
+      + "                       e.additional_information,\n"
+      + "                       CAST(ARRAY ['individual',\n"
+      + "                           'correct_structure'] as text[])) with ordinality arr(val, pos)\n"
+      + "          WHERE e.event_type = 'index_case_member'\n"
+      + "            and arr.val ->> 'correct_structure' in ('no', 'yes')\n"
+      + "      ) and ppl.identifier is null\n"
+      + "group by ppl.identifier, ppl.name, pl.identifier, pl.name, e.val ->> 'correct_structure';", nativeQuery = true)
+  List<AmdrPerformanceDataProjection> getTotalIndexVerifiedForRoot();
+
+  @Query(value = "SELECT CAST(ppl.identifier as varchar) as parentIdentifier ,  ppl.name as parentName"
+      + ", cast(pl.identifier as varchar) as locationIdentifier ,pl.name as locationName"
+      + ", e.val ->> 'correct_structure' as verified, count(*) as count\n"
+      + " from (\n"
+      + "    SELECT *   from event e,\n"
+      + "               lateral amdr.extract_obs_fields_dynamic(\n"
+      + "                       e.additional_information,\n"
+      + "                       CAST(ARRAY ['individual',\n"
+      + "                           'correct_structure'] as text[])) with ordinality arr(val, pos)\n"
+      + "                  ) e\n"
+      + "         left join\n"
+      + "     (SELECT lr.location_identifier, arr.item_object\n"
+      + "      FROM location_relationship lr,\n"
+      + "           LATERAL unnest(array_append(lr.ancestry, lr.location_identifier)) WITH ORDINALITY arr(item_object, \"position\")\n"
+      + "     ) parents on parents.location_identifier = e.location_identifier\n"
+      + "         left join location pl on pl.identifier = parents.item_object\n"
+      + "         left join location_relationship lr on pl.identifier = lr.location_identifier\n"
+      + "         left join location ppl on ppl.identifier = lr.parent_identifier\n"
+      + "where e.identifier in\n"
+      + "      (\n"
+      + "          SELECT DISTINCT e.identifier\n"
+      + "\n"
+      + "          from event e,\n"
+      + "               lateral amdr.extract_obs_fields_dynamic(\n"
+      + "                       e.additional_information,\n"
+      + "                       CAST(ARRAY ['individual',\n"
+      + "                           'correct_structure'] as text[])) with ordinality arr(val, pos)\n"
+      + "          WHERE e.event_type = 'index_case_member'\n"
+      + "            and arr.val ->> 'correct_structure' in ('no', 'yes')\n"
+      + "      ) and ppl.identifier = :parentIdentifier\n"
+      + "group by ppl.identifier, ppl.name, pl.identifier, pl.name, e.val ->> 'correct_structure';", nativeQuery = true)
+  List<AmdrPerformanceDataProjection> getTotalIndexVerified(String parentIdentifier);
+
+
+  @Query(value = "SELECT CAST(ppl.identifier as varchar) as parentIdentifier ,  ppl.name as parentName"
+      + ", cast(pl.identifier as varchar) as locationIdentifier ,pl.name as locationName"
+      + ", count(*) as count\n"
+      + "from (\n"
+      + "         SELECT DISTINCT t.base_entity_identifier, t.business_status\n"
+      + "         From task t\n"
+      + "                  left join action a on a.identifier = t.action_identifier\n"
+      + "\n"
+      + "         WHERE a.description in ('Index Case Member', 'Secondary Index Case Member')\n"
+      + "           AND t.business_status != 'Complete'\n"
+      + "     ) as t\n"
+      + "         left join person_location persl\n"
+      + "                   on persl.person_identifier = t.base_entity_identifier\n"
+      + "         left join location l on l.identifier = persl.location_identifier\n"
+      + "         left join\n"
+      + "     (SELECT lr.location_identifier, arr.item_object\n"
+      + "      FROM location_relationship lr,\n"
+      + "           LATERAL unnest(array_append(lr.ancestry, lr.location_identifier)) WITH ORDINALITY arr(item_object, \"position\")\n"
+      + "     ) parents on parents.location_identifier = l.identifier\n"
+      + "         left join location pl on pl.identifier = parents.item_object\n"
+      + "         left join location_relationship lr on pl.identifier = lr.location_identifier\n"
+      + "         left join location ppl on ppl.identifier = lr.parent_identifier\n"
+      + "     WHERE ppl.identifier is null\n"
+      + "group by  ppl.identifier,ppl.name,pl.identifier,pl.name;", nativeQuery = true)
+  List<AmdrPerformanceDataProjection> getTotalIndexToBeVerifiedForRoot();
 }
