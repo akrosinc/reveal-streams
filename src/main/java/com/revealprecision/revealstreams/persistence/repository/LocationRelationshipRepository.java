@@ -59,6 +59,12 @@ public interface LocationRelationshipRepository extends JpaRepository<LocationRe
   PlanLocationDetails getRootLocationDetailsByAndPlanId(
       @Param("planIdentifier") UUID planIdentifier);
 
+  @Query(value = "SELECT lr.location from LocationRelationship lr "
+      + "left join LocationHierarchy lh on lh.identifier = lr.locationHierarchy.identifier"
+      + " where lh.identifier = :hierarchyId and lr.parentLocation IS NULL")
+  List<Location> getRootLocationDetailsByAndHierarchyId(
+      UUID hierarchyId);
+
   @Query(value = "select DISTINCT "
       + "new com.revealprecision.revealstreams.dto.PlanLocationDetails(lr.location, count(pl), count(pa)) from LocationRelationship lr "
       + "left join PlanLocations pl on lr.location.identifier = pl.location.identifier and pl.plan.identifier = :planIdentifier "

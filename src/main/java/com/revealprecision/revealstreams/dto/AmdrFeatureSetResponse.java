@@ -1,8 +1,10 @@
 package com.revealprecision.revealstreams.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.revealprecision.revealstreams.models.amdr.AmdrMarkerStats;
 import com.revealprecision.revealstreams.service.dashboard.AmdrService.CoordsByYearOrLocationWithTicks;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,4 +27,5 @@ public class AmdrFeatureSetResponse {
   private Boolean noLocationData;
   private Boolean noDashboardData;
   private CoordsByYearOrLocationWithTicks coords;
+  private  Map<String, Map<String, AmdrMarkerStats>> markers;
 }

@@ -1,6 +1,6 @@
 package com.revealprecision.revealstreams.persistence.domain.amdr;
 
-import javax.persistence.Column;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -9,29 +9,22 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
 @Entity
 @Table(schema = "amdr")
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @Setter @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AmdrHeaderNames {
+public class AmdrDataCalMat {
 
   @EmbeddedId
-  private AmdrHeaderNamesId id;
+  private AmdrDataCalcMatId id;
 
-  private String name;
-
-  private String colName;
-
-  @Type(type = "jsonb")
-  @Column(columnDefinition = "jsonb")
-  private HslColor color;
-
-  @Column(insertable = false,updatable = false)
-  private String colType;
-
-  private String colParent;
+  private Long totalRecs;
+  private Long totalWild;
+  private Long totalMono;
+  private Long totalMixed;
 }

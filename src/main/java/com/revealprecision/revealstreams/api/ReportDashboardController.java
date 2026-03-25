@@ -7,12 +7,14 @@ import com.revealprecision.revealstreams.dto.amdr.AmdrLandPageResponse;
 import com.revealprecision.revealstreams.enums.ApplicableReportsEnum;
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
+import com.revealprecision.revealstreams.enums.amdr.AmdrColumnType;
 import com.revealprecision.revealstreams.models.AdditionalReportInfo;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.service.PlanService;
 import com.revealprecision.revealstreams.service.dashboard.AmdrService;
+import com.revealprecision.revealstreams.service.dashboard.AmdrService.HeaderName;
 import com.revealprecision.revealstreams.service.dashboard.DashboardService;
 import com.revealprecision.revealstreams.service.dashboard.PerformanceDashboardService;
 import java.util.List;
@@ -70,6 +72,12 @@ public class ReportDashboardController {
     return ResponseEntity.status(HttpStatus.OK)
         .body(amdrService.getDataForReport(parentIdentifier
             ,clickedColumn));
+  }
+
+  @GetMapping("/amdr/reportHeadings")
+  public ResponseEntity<Map<AmdrColumnType,Map<String, HeaderName>>> getAmdrHeadersForReports() {
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(amdrService.getHeadersForReport());
   }
 
   @GetMapping("/amdr/landingPageData")

@@ -127,7 +127,7 @@ public class DashboardProperties {
       ReportTypeEnum.MDA_LITE_COVERAGE, mdaLiteFilters, ReportTypeEnum.ONCHOCERCIASIS_SURVEY,onchocerciasisFilters);
 
   private final Map<String, Boolean> columnClickableReports = Map.of(
-      "AMDR",true
+      "AMDR",false
   );
 
   private final Map<String, Boolean> showMap = Map.of(
