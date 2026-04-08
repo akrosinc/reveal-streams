@@ -3,18 +3,24 @@ package com.revealprecision.revealstreams.service;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.enums.PlanInterventionTypeEnum;
 import com.revealprecision.revealstreams.exceptions.NotFoundException;
+import com.revealprecision.revealstreams.models.LocationNode;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
 import com.revealprecision.revealstreams.persistence.projection.LocationChildrenCountProjection;
+import com.revealprecision.revealstreams.persistence.projection.LocationFlat;
 import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +29,52 @@ public class LocationService {
   private final LocationRepository locationRepository;
   private final LocationRelationshipService locationRelationshipService;
   private final PlanService planService;
+
+  @Transactional(readOnly = true)
+  public List<LocationNode> buildTree() {
+
+    Map<UUID, LocationNode> map = new HashMap<>();
+
+    // STREAM FROM DB
+    try (Stream<LocationFlat> stream = locationRepository.streamAllFlat()) {
+
+      stream.forEach(row -> {
+        UUID id = row.getLocationIdentifier();
+
+        LocationNode node = map.computeIfAbsent(id, k ->
+            new LocationNode(
+                k,
+                row.getParentIdentifier(),
+                row.getName(),
+                row.getGeoLevelName()
+            )
+        );
+
+        // ensure parentId is set
+        node.setParentId( row.getParentIdentifier());
+      });
+    }
+
+    // LINK PARENTS + CHILDREN
+    List<LocationNode> roots = new ArrayList<>();
+
+    for (LocationNode node : map.values()) {
+      if (node.getParentId() == null) {
+        roots.add(node);
+      } else {
+        LocationNode parent = map.get(node.getParentId());
+
+        if (parent != null) {
+          parent.addChild(node);
+        } else {
+          // fallback if parent missing
+          roots.add(node);
+        }
+      }
+    }
+
+    return roots;
+  }
 
   public List<PlanLocationDetails> getAssignedLocationsByParentIdentifierAndPlanIdentifier(
       UUID parentIdentifier,
@@ -61,6 +113,11 @@ public class LocationService {
 
   public Location findByIdentifier(UUID identifier) {
     return locationRepository.findById(identifier).orElseThrow(
+        () -> new NotFoundException(Pair.of(Location.Fields.identifier, identifier),
+            Location.class));
+  }
+  public List<Location> findByListOfIdentifiers(List<UUID> identifier) {
+    return locationRepository.findAllByIdentifierIn(identifier).orElseThrow(
         () -> new NotFoundException(Pair.of(Location.Fields.identifier, identifier),
             Location.class));
   }

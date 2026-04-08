@@ -38,6 +38,7 @@ public class LocationPropertyResponse {
   private Object surveyCoverage;
   private String id;
   private Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
+
   private List<PersonMainData> persons;
   private List<EntityMetadataResponse> metadata;
   private String businessStatus;

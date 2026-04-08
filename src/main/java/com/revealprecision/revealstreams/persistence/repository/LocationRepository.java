@@ -2,13 +2,18 @@ package com.revealprecision.revealstreams.persistence.repository;
 
 
 import com.revealprecision.revealstreams.persistence.domain.Location;
+import com.revealprecision.revealstreams.persistence.projection.LocationFlat;
 import com.revealprecision.revealstreams.persistence.projection.LocationMultipartCountProjection;
 import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
+import javax.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,6 +22,19 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
   List<Location> getLocationsByPeople_Identifier(UUID personIdentifier);
 
   List<Location> findByIdentifierIn(Set<UUID> ids);
+
+  @Query("        SELECT\n"
+      + "            lr.location.identifier AS locationIdentifier,\n"
+      + "            lr.parentLocation.identifier AS parentIdentifier,\n"
+      + "            lr.location.name AS name,"
+      + "            lr.location.geographicLevel.identifier as geoLevelIdentifier,"
+      + "            lr.location.geographicLevel.name as geoLevelName\n"
+      + "        FROM LocationRelationship lr\n"
+      + "           WHERE  lr.location.geographicLevel.name <> 'structure' ")
+  @QueryHints(value = {
+      @QueryHint(name = "org.hibernate.fetchSize", value = "1000")
+  })
+  Stream<LocationFlat> streamAllFlat();
 
   @Query(value = "SELECT cast(l.identifier as varchar) as identifier, l.name as locationName from location l where l.identifier in :ids", nativeQuery = true)
   List<LocationNameProjection> findLocationNamesByIdentifierIn(Set<UUID> ids);
@@ -47,4 +65,6 @@ public interface LocationRepository extends JpaRepository<Location, UUID> {
 
 
   List<Location> getLocationsByGeographicLevel_Name(String location);
+
+  Optional<List<Location>> findAllByIdentifierIn(List<UUID> uuids);
 }

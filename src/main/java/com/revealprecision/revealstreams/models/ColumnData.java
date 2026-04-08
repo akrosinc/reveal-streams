@@ -1,6 +1,5 @@
 package com.revealprecision.revealstreams.models;
 
-import com.revealprecision.revealstreams.persistence.domain.amdr.HslColor;
 import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,5 +24,4 @@ public class ColumnData implements Serializable {
   private String meta;
   private String dataType = "double";
   private String description;
-  private HslColor hslColor;
 }

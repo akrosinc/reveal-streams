@@ -5,17 +5,28 @@ import static com.revealprecision.revealstreams.service.dashboard.DashboardServi
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revealprecision.revealstreams.dto.AmdrFeatureSetResponse;
+import com.revealprecision.revealstreams.dto.LocationPropertyResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.dto.amdr.AmdrLandPageResponse;
 import com.revealprecision.revealstreams.enums.amdr.AmdrColumnType;
+import com.revealprecision.revealstreams.enums.amdr.AmdrDateModes;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
+import com.revealprecision.revealstreams.models.LocationNode;
+import com.revealprecision.revealstreams.models.LocationNodeDetails;
 import com.revealprecision.revealstreams.models.RowData;
 import com.revealprecision.revealstreams.models.amdr.AmdrChartData;
 import com.revealprecision.revealstreams.models.amdr.AmdrColumnData;
 import com.revealprecision.revealstreams.models.amdr.AmdrCounters;
 import com.revealprecision.revealstreams.models.amdr.AmdrDataLocation;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugMarkerStats;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugYearlyMonthlyDate;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugYearlyMonthlyLocational;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugYearlyMonthlyLocationalItem;
+import com.revealprecision.revealstreams.models.amdr.AmdrHaplotypeYearlyMonthlyDate;
+import com.revealprecision.revealstreams.models.amdr.AmdrHaplotypeYearlyMonthlyLocational;
+import com.revealprecision.revealstreams.models.amdr.AmdrHaplotypeYearlyMonthlyLocationalItem;
 import com.revealprecision.revealstreams.models.amdr.AmdrLandingPageData;
 import com.revealprecision.revealstreams.models.amdr.AmdrMarkerStats;
 import com.revealprecision.revealstreams.models.amdr.AmdrTotalsLandingPageData;
@@ -37,17 +48,16 @@ import com.revealprecision.revealstreams.persistence.domain.LocationHierarchy;
 import com.revealprecision.revealstreams.persistence.domain.LocationRelationship;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrData;
 import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrHeaderNames;
-import com.revealprecision.revealstreams.persistence.domain.amdr.AmdrMappings;
 import com.revealprecision.revealstreams.persistence.domain.amdr.HslColor;
 import com.revealprecision.revealstreams.persistence.projection.LocationNameProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrDataCalcMatProjection;
+import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrYearlyMonthlyLocationProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.LandingPageCountsProjection;
 import com.revealprecision.revealstreams.persistence.repository.LocationHierarchyRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRelationshipRepository;
 import com.revealprecision.revealstreams.persistence.repository.LocationRepository;
 import com.revealprecision.revealstreams.persistence.repository.amdr.AmdrDataCalMatRepository;
 import com.revealprecision.revealstreams.persistence.repository.amdr.AmdrHeaderNamesRepository;
-import com.revealprecision.revealstreams.persistence.repository.amdr.AmdrMappingsRepository;
 import com.revealprecision.revealstreams.persistence.repository.amdr.AmdrRepository;
 import com.revealprecision.revealstreams.props.amdr.AmdrReportColumnProperties;
 import com.revealprecision.revealstreams.service.LocationService;
@@ -102,7 +112,8 @@ public class AmdrService {
 
   private final AmdrDataCalMatRepository amdrDataCalMatRepository;
 
-  private final AmdrMappingsRepository amdrMappingsRepository;
+//  private final AmdrMappingsRepository amdrMappingsRepository;
+
   public AmdrLandPageResponse getLandingPageData3() {
 
     List<LandingPageCountsProjection> rcdCountsByYearMonth = amdrRepository.getRCDCountsByYearMonth();
@@ -533,17 +544,19 @@ public class AmdrService {
 
     return amdrLandPageResponse;
   }
+
   @AllArgsConstructor
   @NoArgsConstructor
   @Data
   @Builder
-  public static class HeaderName implements Serializable{
+  public static class HeaderName implements Serializable {
+
     private HslColor color;
     private String name;
 
   }
 
-  public Map<AmdrColumnType,Map<String, HeaderName>> getHeadersForReport() {
+  public Map<AmdrColumnType, Map<String, HeaderName>> getHeadersForReport() {
     Map<AmdrColumnType, Map<String, HeaderName>> drugList = amdrHeaderNamesRepository.findAllByColType(
             AmdrColumnType.DRUG.name())
         .stream()
@@ -558,10 +571,10 @@ public class AmdrService {
             )
         ));
 
-     Map<String, HeaderName> haplotypeMap = amdrHeaderNamesRepository.findAllByColType(
+    Map<String, HeaderName> haplotypeMap = amdrHeaderNamesRepository.findAllByColType(
             AmdrColumnType.DRUG.name())
         .stream()
-         .filter(item -> !List.of("dhfr_dhps","crt_mdr1","dhfr").contains(item.getId().getKey()))
+        .filter(item -> !List.of("dhfr_dhps", "crt_mdr1", "dhfr").contains(item.getId().getKey()))
         .collect(// outer key
             Collectors.toMap(
                 item -> item.getId().getKey(), // inner map key
@@ -583,16 +596,454 @@ public class AmdrService {
 
   }
 
-  public AmdrFeatureSetResponse getDataForReport(
-      String parentIdentifierString, String clickedColumn) {
+  public LocationNodeDetails getLocationTree() {
+
+    LocationHierarchy aDefault = locationHierarchyRepository.findLocationHierarchyByName("default");
+    List<LocationNode> locationNodes = locationService.buildTree();
+    return new LocationNodeDetails(aDefault.getNodeOrder().stream().filter(item->!"structure".equals(item)).collect(
+        Collectors.toList()),locationNodes );
+
+  }
+
+  public AmdrFeatureSetResponse getDataForReportForDateForHaplotype(
+      String parentIdentifierString, AmdrColumnType dashboardView, List<UUID> locationList,
+      AmdrDateModes amdrDateModes) {
 
     List<AmdrHeaderNames> amdrHeaderNames = amdrHeaderNamesRepository.findAll();
 
     Map<String, String> amdrHeaderNameMap = amdrHeaderNames.stream()
-        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getName, (a, b) -> b));
+        .collect(
+            Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getName, (a, b) -> b));
+
 
     Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
-        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor, (a, b) -> b));
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
+            (a, b) -> b));
+
+
+    List<UUID> locIds = new ArrayList<>();
+    if (locationList.isEmpty()) {
+      Location parentLocation = null;
+      UUID parentIdentifier = null;
+
+      if (parentIdentifierString != null) {
+        try {
+          parentIdentifier = UUID.fromString(parentIdentifierString);
+        } catch (IllegalArgumentException illegalArgumentException) {
+          parentIdentifier = UUID.fromString(parentIdentifierString.split("_")[2]);
+        }
+      }
+
+      if (parentIdentifier != null) {
+        parentLocation = locationService.findByIdentifier(parentIdentifier);
+      }
+
+      LocationHierarchy aDefault = locationHierarchyRepository.findLocationHierarchyByName("default");
+
+      List<LocationRelationship> locationRelationshipsByParentLocation_identifierAndLocationHierarchy = locationRelationshipRepository.findLocationRelationshipsByParentLocation_IdentifierAndLocationHierarchy(
+          parentIdentifier, aDefault);
+
+      if (locationRelationshipsByParentLocation_identifierAndLocationHierarchy.isEmpty()) {
+        return AmdrFeatureSetResponse.builder().noLocationData(true).noDashboardData(true).build();
+      }
+
+      Location finalParentLocation = parentLocation;
+      List<PlanLocationDetails> collect = locationRelationshipsByParentLocation_identifierAndLocationHierarchy.stream()
+          .map(LocationRelationship::getLocation)
+          .map(location -> {
+            PlanLocationDetails planLocations = new PlanLocationDetails();
+            planLocations.setParentLocation(finalParentLocation);
+            planLocations.setLocation(location);
+            planLocations.setHasChildren(false);
+            planLocations.setAssignedLocations(0L);
+            planLocations.setChildrenNumber(0L);
+            planLocations.setAssignedTeams(0L);
+            return planLocations;
+          })
+          .collect(
+              Collectors.toList());
+      locIds.add(collect.get(0).getLocation().getIdentifier());
+    } else {
+      locIds.addAll(locationList);
+    }
+    List<LocationPropertyResponse> rowData = new ArrayList<>();
+
+    if (AmdrDateModes.YEARLY.equals(amdrDateModes)){
+      List<AmdrYearlyMonthlyLocationProjection> yearlyAggregation = amdrRepository.getYearlyAggregationForHaplotype(
+          locIds);
+
+      List<AmdrHaplotypeYearlyMonthlyDate> collect1 = yearlyAggregation.stream().map(yearlRecord -> {
+
+        Map<String,Map<String, AmdrDrugMarkerStats>> markersMap;
+        try {
+          markersMap = objectMapper.readValue(
+              yearlRecord.getData(),
+              new TypeReference<>() {
+              });
+        } catch (Exception e) {
+          markersMap = null;
+        }
+        return new AmdrHaplotypeYearlyMonthlyDate(yearlRecord.getCollectionYear(), markersMap);
+
+      }).collect(Collectors.toList());
+
+      rowData = getRowsForDateHaplotype(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+    } else {
+      List<AmdrYearlyMonthlyLocationProjection> yearlyAggregation = amdrRepository.getYearlyMonthlyAggregationForHaplotype(
+          locIds);
+
+      List<AmdrHaplotypeYearlyMonthlyDate> collect1 = yearlyAggregation.stream().map(yearlyRecord -> {
+
+        Map<String,Map<String, AmdrDrugMarkerStats>> markersMap;
+        try {
+          markersMap = objectMapper.readValue(
+              yearlyRecord.getData(),
+              new TypeReference<>() {
+              });
+        } catch (Exception e) {
+          markersMap = null;
+        }
+
+        YearMonth yearMonth = YearMonth.of((int) Double.parseDouble(yearlyRecord.getCollectionYear())
+            , (int) Double.parseDouble(yearlyRecord.getCollectionMonth()));
+
+        String yyyy_mmm = yearMonth.format(DateTimeFormatter.ofPattern("yyyy MMM"));
+        return new AmdrHaplotypeYearlyMonthlyDate(yyyy_mmm, markersMap);
+
+      }).collect(Collectors.toList());
+
+      rowData = getRowsForDateHaplotype(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+    }
+    List<Location> byListOfIdentifiers = locationService.findByListOfIdentifiers(locIds);
+
+    return getFeatureSetResponseDate(byListOfIdentifiers,
+        rowData, ALL_OTHER_LEVELS, dashboardView, null);
+  }
+
+  public  Map<String, HslColor>  getColorMap(){
+
+    List<AmdrHeaderNames> amdrHeaderNames = amdrHeaderNamesRepository.findAll();
+
+    Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
+            (a, b) -> b));
+
+    return amdrHeaderColorMap;
+  }
+
+  public List<AmdrHaplotypeYearlyMonthlyLocational>  getDataForReportForDateForHaplotypeLocation(
+      String parentIdentifierString,  List<UUID> locationList,
+      AmdrDateModes amdrDateModes) {
+
+    List<UUID> locIds = new ArrayList<>();
+    if (locationList.isEmpty()) {
+      Location parentLocation = null;
+      UUID parentIdentifier = null;
+
+      if (parentIdentifierString != null) {
+        try {
+          parentIdentifier = UUID.fromString(parentIdentifierString);
+        } catch (IllegalArgumentException illegalArgumentException) {
+          parentIdentifier = UUID.fromString(parentIdentifierString.split("_")[2]);
+        }
+      }
+
+      if (parentIdentifier != null) {
+        parentLocation = locationService.findByIdentifier(parentIdentifier);
+      }
+
+      LocationHierarchy aDefault = locationHierarchyRepository.findLocationHierarchyByName("default");
+
+      List<LocationRelationship> locationRelationshipsByParentLocation_identifierAndLocationHierarchy = locationRelationshipRepository.findLocationRelationshipsByParentLocation_IdentifierAndLocationHierarchy(
+          parentIdentifier, aDefault);
+
+      if (locationRelationshipsByParentLocation_identifierAndLocationHierarchy.isEmpty()) {
+        return new ArrayList<>();
+      }
+
+      Location finalParentLocation = parentLocation;
+      List<PlanLocationDetails> collect = locationRelationshipsByParentLocation_identifierAndLocationHierarchy.stream()
+          .map(LocationRelationship::getLocation)
+          .map(location -> {
+            PlanLocationDetails planLocations = new PlanLocationDetails();
+            planLocations.setParentLocation(finalParentLocation);
+            planLocations.setLocation(location);
+            planLocations.setHasChildren(false);
+            planLocations.setAssignedLocations(0L);
+            planLocations.setChildrenNumber(0L);
+            planLocations.setAssignedTeams(0L);
+            return planLocations;
+          })
+          .collect(
+              Collectors.toList());
+      locIds.add(collect.get(0).getLocation().getIdentifier());
+    } else {
+      locIds.addAll(locationList);
+    }
+
+    List<AmdrHaplotypeYearlyMonthlyLocational> locationalData = new ArrayList<>();
+
+    List<AmdrYearlyMonthlyLocationProjection> amdrYearlyMonthlyLocationProjections;
+
+    if (AmdrDateModes.YEARLY.equals(amdrDateModes)){
+
+      amdrYearlyMonthlyLocationProjections = amdrRepository.getYearlyLocationalAggregationForHaplotype(
+          locIds);
+
+    } else {
+
+      amdrYearlyMonthlyLocationProjections = amdrRepository.getYearlyMonthlyLocationalAggregationForHaplotype(
+          locIds);
+
+    }
+
+    locationalData = amdrYearlyMonthlyLocationProjections.stream()
+        .map(yearlyRecord -> {
+          List<AmdrHaplotypeYearlyMonthlyLocationalItem> markersList;
+          try {
+            markersList = objectMapper.readValue(
+                yearlyRecord.getData(),
+                new TypeReference<>() {
+                });
+          } catch (Exception e) {
+            markersList = null;
+          }
+          return new AmdrHaplotypeYearlyMonthlyLocational(
+              yearlyRecord.getLocationIdentifier().toString(), markersList);
+        }).collect(Collectors.toList());
+
+    return locationalData;
+
+  }
+
+  public AmdrFeatureSetResponse getDataForReportForDateForDrug(
+      String parentIdentifierString, AmdrColumnType dashboardView, List<UUID> locationList,
+       AmdrDateModes amdrDateModes) {
+
+    List<AmdrHeaderNames> amdrHeaderNames = amdrHeaderNamesRepository.findAll();
+
+    Map<String, String> amdrHeaderNameMap = amdrHeaderNames.stream()
+        .collect(
+            Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getName, (a, b) -> b));
+
+
+    Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
+            (a, b) -> b));
+
+
+    List<UUID> locIds = new ArrayList<>();
+    if (locationList.isEmpty()) {
+      Location parentLocation = null;
+      UUID parentIdentifier = null;
+
+      if (parentIdentifierString != null) {
+        try {
+          parentIdentifier = UUID.fromString(parentIdentifierString);
+        } catch (IllegalArgumentException illegalArgumentException) {
+          parentIdentifier = UUID.fromString(parentIdentifierString.split("_")[2]);
+        }
+      }
+
+      if (parentIdentifier != null) {
+        parentLocation = locationService.findByIdentifier(parentIdentifier);
+      }
+
+      LocationHierarchy aDefault = locationHierarchyRepository.findLocationHierarchyByName("default");
+
+      List<LocationRelationship> locationRelationshipsByParentLocation_identifierAndLocationHierarchy = locationRelationshipRepository.findLocationRelationshipsByParentLocation_IdentifierAndLocationHierarchy(
+          parentIdentifier, aDefault);
+
+      if (locationRelationshipsByParentLocation_identifierAndLocationHierarchy.isEmpty()) {
+        return AmdrFeatureSetResponse.builder().noLocationData(true).noDashboardData(true).build();
+
+      }
+
+      Location finalParentLocation = parentLocation;
+      List<PlanLocationDetails> collect = locationRelationshipsByParentLocation_identifierAndLocationHierarchy.stream()
+          .map(LocationRelationship::getLocation)
+          .map(location -> {
+            PlanLocationDetails planLocations = new PlanLocationDetails();
+            planLocations.setParentLocation(finalParentLocation);
+            planLocations.setLocation(location);
+            planLocations.setHasChildren(false);
+            planLocations.setAssignedLocations(0L);
+            planLocations.setChildrenNumber(0L);
+            planLocations.setAssignedTeams(0L);
+            return planLocations;
+          })
+          .collect(
+              Collectors.toList());
+      locIds.add(collect.get(0).getLocation().getIdentifier());
+    } else {
+      locIds.addAll(locationList);
+    }
+    List<LocationPropertyResponse> rowData = new ArrayList<>();
+
+    if (AmdrDateModes.YEARLY.equals(amdrDateModes)){
+      List<AmdrYearlyMonthlyLocationProjection> yearlyAggregation = amdrRepository.getYearlyAggregationForDrug(
+          locIds);
+
+      List<AmdrDrugYearlyMonthlyDate> collect1 = yearlyAggregation.stream().map(yearlRecord -> {
+
+        Map<String, AmdrDrugMarkerStats> markersMap;
+        try {
+          markersMap = objectMapper.readValue(
+              yearlRecord.getData(),
+              new TypeReference<>() {
+              });
+        } catch (Exception e) {
+          markersMap = null;
+        }
+        return new AmdrDrugYearlyMonthlyDate(yearlRecord.getCollectionYear(), markersMap);
+
+      }).collect(Collectors.toList());
+
+
+
+       rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+    } else {
+      List<AmdrYearlyMonthlyLocationProjection> yearlyAggregation = amdrRepository.getYearlyMonthlyAggregationForDrug(
+          locIds);
+
+      List<AmdrDrugYearlyMonthlyDate> collect1 = yearlyAggregation.stream().map(yearlRecord -> {
+
+        Map<String, AmdrDrugMarkerStats> markersMap;
+        try {
+          markersMap = objectMapper.readValue(
+              yearlRecord.getData(),
+              new TypeReference<>() {
+              });
+        } catch (Exception e) {
+          markersMap = null;
+        }
+
+        YearMonth yearMonth = YearMonth.of((int) Double.parseDouble(yearlRecord.getCollectionYear())
+            , (int) Double.parseDouble(yearlRecord.getCollectionMonth()));
+
+        String yyyy_mmm = yearMonth.format(DateTimeFormatter.ofPattern("yyyy MMM"));
+        return new AmdrDrugYearlyMonthlyDate(yyyy_mmm, markersMap);
+
+      }).collect(Collectors.toList());
+
+
+      rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+
+
+    }
+
+
+    List<Location> byListOfIdentifiers = locationService.findByListOfIdentifiers(locIds);
+
+    return getFeatureSetResponseDate(byListOfIdentifiers,
+        rowData, ALL_OTHER_LEVELS, dashboardView, null);
+
+  }
+
+  public  List<AmdrDrugYearlyMonthlyLocational> getDataForReportForDateForDrugLocation(
+      String parentIdentifierString, List<UUID> locationList,
+      AmdrDateModes amdrDateModes) {
+
+    List<AmdrHeaderNames> amdrHeaderNames = amdrHeaderNamesRepository.findAll();
+
+    Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
+            (a, b) -> b));
+
+    List<UUID> locIds = new ArrayList<>();
+    if (locationList.isEmpty()) {
+      Location parentLocation = null;
+      UUID parentIdentifier = null;
+
+      if (parentIdentifierString != null) {
+        try {
+          parentIdentifier = UUID.fromString(parentIdentifierString);
+        } catch (IllegalArgumentException illegalArgumentException) {
+          parentIdentifier = UUID.fromString(parentIdentifierString.split("_")[2]);
+        }
+      }
+
+      if (parentIdentifier != null) {
+        parentLocation = locationService.findByIdentifier(parentIdentifier);
+      }
+
+      LocationHierarchy aDefault = locationHierarchyRepository.findLocationHierarchyByName("default");
+
+      List<LocationRelationship> locationRelationshipsByParentLocation_identifierAndLocationHierarchy = locationRelationshipRepository.findLocationRelationshipsByParentLocation_IdentifierAndLocationHierarchy(
+          parentIdentifier, aDefault);
+
+      if (locationRelationshipsByParentLocation_identifierAndLocationHierarchy.isEmpty()) {
+        return new ArrayList<>();
+
+      }
+
+      Location finalParentLocation = parentLocation;
+      List<PlanLocationDetails> collect = locationRelationshipsByParentLocation_identifierAndLocationHierarchy.stream()
+          .map(LocationRelationship::getLocation)
+          .map(location -> {
+            PlanLocationDetails planLocations = new PlanLocationDetails();
+            planLocations.setParentLocation(finalParentLocation);
+            planLocations.setLocation(location);
+            planLocations.setHasChildren(false);
+            planLocations.setAssignedLocations(0L);
+            planLocations.setChildrenNumber(0L);
+            planLocations.setAssignedTeams(0L);
+            return planLocations;
+          })
+          .collect(
+              Collectors.toList());
+      locIds.add(collect.get(0).getLocation().getIdentifier());
+    } else {
+      locIds.addAll(locationList);
+    }
+
+    List<AmdrDrugYearlyMonthlyLocational> locationalData = new ArrayList<>();
+
+    List<AmdrYearlyMonthlyLocationProjection> yearlyMonthlyLocationalAggregationForDrug;
+
+    if (AmdrDateModes.YEARLY.equals(amdrDateModes)){
+
+      yearlyMonthlyLocationalAggregationForDrug = amdrRepository.getYearlyLocationalAggregationForDrug(
+          locIds);
+
+    } else {
+
+      yearlyMonthlyLocationalAggregationForDrug = amdrRepository.getYearlyMonthlyLocationalAggregationForDrug(
+          locIds);
+
+    }
+
+    locationalData = yearlyMonthlyLocationalAggregationForDrug.stream()
+        .map(yearlyRecord -> {
+          List<AmdrDrugYearlyMonthlyLocationalItem> markersList;
+          try {
+            markersList = objectMapper.readValue(
+                yearlyRecord.getData(),
+                new TypeReference<>() {
+                });
+          } catch (Exception e) {
+            markersList = null;
+          }
+          return new AmdrDrugYearlyMonthlyLocational(
+              yearlyRecord.getLocationIdentifier().toString(), markersList);
+        }).collect(Collectors.toList());
+
+    return locationalData;
+
+  }
+
+  public AmdrFeatureSetResponse getDataForReportForGeography(
+      String parentIdentifierString, AmdrColumnType dashboardView) {
+
+    List<AmdrHeaderNames> amdrHeaderNames = amdrHeaderNamesRepository.findAll();
+
+    Map<String, String> amdrHeaderNameMap = amdrHeaderNames.stream()
+        .collect(
+            Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getName, (a, b) -> b));
+
+    Map<String, HslColor> amdrHeaderColorMap = amdrHeaderNames.stream()
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
+            (a, b) -> b));
 
     Location parentLocation = null;
     UUID parentIdentifier = null;
@@ -642,11 +1093,11 @@ public class AmdrService {
     List<List<PlanLocationDetails>> lists = splitList(collect
         , 500);
 
-    List<RowData> rowData = getRows(parentLocation, collect, clickedColumn, amdrHeaderNameMap,
+    List<RowData> rowData = getRows3(parentLocation, collect, dashboardView, amdrHeaderNameMap,
         amdrHeaderColorMap, maxYear, lists);
 
     List<Location> parent;
-    if (parentIdentifier == null){
+    if (parentIdentifier == null) {
       parent = locationRelationshipRepository.getRootLocationDetailsByAndHierarchyId(
           aDefault.getIdentifier());
     } else {
@@ -658,12 +1109,12 @@ public class AmdrService {
             .map(Location::getIdentifier)
             .collect(Collectors.toList()),
         List.of(Double.valueOf(maxYear), 2025d));
-    Map<String,Map<String, AmdrMarkerStats>> markersMap;
+    Map<String, Map<String, AmdrMarkerStats>> markersMap;
     try {
-    markersMap = objectMapper.readValue(
-        amdrDataCalcMatIdsBy.getMarkers(),
-                new TypeReference<>() {
-                });
+      markersMap = objectMapper.readValue(
+          amdrDataCalcMatIdsBy.getMarkers(),
+          new TypeReference<>() {
+          });
     } catch (Exception e) {
       markersMap = null;
     }
@@ -676,7 +1127,7 @@ public class AmdrService {
       }
     }
     return getFeatureSetResponse(parentIdentifier, collect,
-        rowDataMap, ALL_OTHER_LEVELS, clickedColumn, markersMap);
+        rowDataMap, ALL_OTHER_LEVELS, dashboardView, markersMap);
   }
 
   @AllArgsConstructor
@@ -699,11 +1150,107 @@ public class AmdrService {
     private Double totalRecs = 0d;
   }
 
-  public List<RowData> getRows(
-      Location parentLocation, List<PlanLocationDetails> locationDetails, String clickedColumn,
-      Map<String, String> amdrHeaderNameMap, Map<String, HslColor> amdrHeaderColorMap, Long maxYear,
-      List<List<PlanLocationDetails>> lists ) {
+  public List<LocationPropertyResponse> getRowsforDateDrug(List<AmdrDrugYearlyMonthlyDate> yearlyAggregation
+      , Map<String, HslColor> amdrHeaderColorMap, Map<String, String> amdrHeaderNameMap) {
 
+    List<LocationPropertyResponse> collect1 = yearlyAggregation.stream().map(yearRecord -> {
+      Map<String, ColumnData> collect = yearRecord.getData().entrySet().stream()
+          .map(yearEntry -> {
+            String type = yearEntry.getKey();
+            AmdrDrugMarkerStats value = yearEntry.getValue();
+            Long val = value.getVal();
+            Long denom = value.getRec();
+            double perc = denom > 0 ?
+                (double) val
+                    / (double) denom * 100 :
+                (double) 0;
+
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setDecimalSeparator('.');
+            DecimalFormat df = new DecimalFormat("0.00", symbols);
+            String format = df.format(perc);
+            String meta =
+                "total recs: " + denom +
+                    " \r\n - obs: " + val + " => "
+                    + format + "%";
+
+            AmdrColumnData percentageCol = new AmdrColumnData();
+
+            percentageCol.setValue(format + " " + val);
+            percentageCol.setMeta(meta);
+            percentageCol.setDataType("string");
+            percentageCol.setIsPercentage(true);
+            percentageCol.setDescription(amdrHeaderNameMap.get(type));
+            return new SimpleEntry<>(type, percentageCol);
+          }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+      return LocationPropertyResponse.builder()
+          .columnDataMap(collect)
+          .name(yearRecord.getName())
+          .build();
+
+    }).collect(Collectors.toList());
+
+    return collect1;
+  }
+
+
+  public List<LocationPropertyResponse> getRowsForDateHaplotype(List<AmdrHaplotypeYearlyMonthlyDate> yearlyAggregation
+      , Map<String, HslColor> amdrHeaderColorMap, Map<String, String> amdrHeaderNameMap) {
+
+    List<LocationPropertyResponse> string = yearlyAggregation.stream().map(yearRecordItem -> {
+
+      Map<String, ColumnData> result =
+          yearRecordItem.getData().entrySet().stream().flatMap(yearRecord ->
+                  yearRecord.getValue().entrySet().stream().map(yearEntry -> {
+                        String type = yearEntry.getKey();
+                        AmdrDrugMarkerStats value = yearEntry.getValue();
+
+                        Long val = value.getVal();
+                        Long denom = value.getRec();
+
+                        double perc = denom > 0
+                            ? (double) val / (double) denom * 100
+                            : 0;
+
+                        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                        symbols.setDecimalSeparator('.');
+                        DecimalFormat df = new DecimalFormat("0.00", symbols);
+                        String format = df.format(perc);
+
+                        String meta =
+                            "total recs: " + denom +
+                                " \r\n - obs: " + val + " => "
+                                + format + "%";
+
+                        AmdrColumnData percentageCol = new AmdrColumnData();
+                        percentageCol.setValue(format + " " + val);
+                        percentageCol.setMeta(meta);
+                        percentageCol.setDataType("string");
+                        percentageCol.setIsPercentage(true);
+                        percentageCol.setDescription(amdrHeaderNameMap.get(type));
+                        percentageCol.setAmdrParent(yearRecord.getKey());
+                        return new AbstractMap.SimpleEntry<>(type, percentageCol);
+                      })
+              )
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a ));
+
+      return LocationPropertyResponse.builder()
+          .columnDataMap(result)
+          .name(yearRecordItem.getName())
+          .build();
+
+    }).collect(Collectors.toList());
+
+
+    return string;
+  }
+
+  public List<RowData> getRows3(
+      Location parentLocation, List<PlanLocationDetails> locationDetails,
+      AmdrColumnType dashboardView,
+      Map<String, String> amdrHeaderNameMap, Map<String, HslColor> amdrHeaderColorMap, Long maxYear,
+      List<List<PlanLocationDetails>> lists) {
 
     List<AmdrData> amdrDataStream = lists.stream()
         .flatMap(listOfLocationIds ->
@@ -716,272 +1263,152 @@ public class AmdrService {
         ).collect(Collectors.toList());
 
 
-    if (maxYear != null) {
-      if (clickedColumn != null) {
+    // -------------------------------
+    // 2. Location names
+    // -------------------------------
+    Set<UUID> locationIds = amdrDataStream.stream()
+        .map(AmdrData::getLocationId)
+        .collect(Collectors.toSet());
 
-        List<AmdrMappings> allMappings = amdrMappingsRepository.findAll();
+    Map<String, String> locationNameMap = locationRepository
+        .findLocationNamesByIdentifierIn(locationIds)
+        .stream()
+        .collect(Collectors.toMap(
+            LocationNameProjection::getIdentifier,
+            LocationNameProjection::getLocationName
+        ));
 
-        Map<String, String> subkeyParentMap = allMappings.stream()
-            .flatMap(mapItem -> mapItem.getAmdrSubKeys().entrySet().stream())
-            .flatMap(subKeyEntry -> {
-              List<String> subKeys = subKeyEntry.getValue();
-              return subKeys.stream().map(item -> new SimpleEntry<>(item, subKeyEntry.getKey()));
-            }).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue, (a, b) -> a));
-
-
-          Set<UUID> collect2 = amdrDataStream.stream().map(AmdrData::getLocationId)
-            .collect(Collectors.toSet());
-
-        List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
-            collect2);
-
-        Map<String, String> locationNameMapById = byIdentifierIn.stream()
-            .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
-                LocationNameProjection::getLocationName));
-
-        List<AmdrDataLocation> amdrDataLocationList = amdrDataStream.stream()
-            .map(amdrData -> AmdrDataLocation
-                .builder()
-                .data(amdrData.getData())
-                .collectionYear(amdrData.getCollectionYear())
-                .id(amdrData.getId())
-                .datetime(amdrData.getDatetime())
-                .locationId(amdrData.getLocationId())
-                .overallObject(amdrData.getOverallObject())
-                .type(amdrData.getType())
-                .overallValue(amdrData.getOverallValue())
-                .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
+    // -------------------------------
+    // 3. Transform + group
+    // -------------------------------
+    Map<UUID, List<AmdrDataLocation>> byLocation =
+        amdrDataStream.stream()
+            .map(data -> AmdrDataLocation.builder()
+                .id(data.getId())
+                .data(data.getData())
+                .collectionYear(data.getCollectionYear())
+                .datetime(data.getDatetime())
+                .locationId(data.getLocationId())
+                .overallObject(data.getOverallObject())
+                .type(data.getType())
+                .overallValue(data.getOverallValue())
+                .locationName(locationNameMap.get(data.getLocationId().toString()))
                 .build()
-            ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
-            .collect(Collectors.toList());
-
-        Map<UUID, List<AmdrDataLocation>> amdrDataLocationListMap = amdrDataLocationList.stream()
+            )
+            .sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
             .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
 
-        Map<UUID, Map<String, Accumulator>> mainAccumulator = new HashMap<>();
-        Map<UUID, Entry<String, Map<String, TriAccumulator>>> triAccumulator = new HashMap<>();
+    if (maxYear != null) {
+      if (AmdrColumnType.HAPLOTYPE.equals(dashboardView)) {
 
-        for (Entry<UUID, List<AmdrDataLocation>> amdrDataLocationListEntry : amdrDataLocationListMap.entrySet()) {
-          boolean checked = true;
-          for (AmdrDataLocation amdrDataLocation : amdrDataLocationListEntry.getValue()) {
 
-            for (Entry<String, Map<String, AmdrCounters>> amdrCounterMapEntry : amdrDataLocation.getData()
-                .entrySet()) {
-              String key = amdrCounterMapEntry.getKey();
+        // -------------------------------
+        // 1. Subkey → parent map
+        // -------------------------------
+        Map<String, String> subkeyParentMap = amdrHeaderNamesRepository
+            .findAllByColType(AmdrColumnType.HAPLOTYPE.name())
+            .stream()
+            .filter(item -> !List.of("dhfr_dhps", "crt_mdr1", "dhfr")
+                .contains(item.getId().getKey()))
+            .collect(Collectors.toMap(
+                item -> item.getId().getKey(),
+                AmdrHeaderNames::getColParent
+            ));
 
-              if (checked) {
 
-                List<AmdrData> amdrDataList = amdrRepository.findByTypeAndLocationIdAndCollectionYearIn(
-                    key, amdrDataLocationListEntry.getKey(),
-                    List.of(String.valueOf(maxYear), "2025"));
+        // -------------------------------
+        // 4. TRI ACCUMULATOR ONLY
+        // -------------------------------
+        Map<UUID, Map<String, TriAccumulator>> triAccumulator = new HashMap<>();
 
-                for (AmdrData amdrData1 : amdrDataList) {
-                  int val = amdrData1.getOverallObject().getOverallValue();
-                  int denom = amdrData1.getOverallObject().getOverallTotalRecs();
+        for (var entry : byLocation.entrySet()) {
 
-                  Map<String, Accumulator> stringAccumulatorMap = null;
-                  if (mainAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
-                    stringAccumulatorMap = mainAccumulator.get(
-                        amdrDataLocationListEntry.getKey());
-                  } else {
-                    stringAccumulatorMap = new HashMap<>();
-                  }
-                  Accumulator accumulator = null;
-                  if (stringAccumulatorMap.containsKey(key)) {
-                    accumulator = stringAccumulatorMap.get(key);
-                  } else {
-                    accumulator = new Accumulator();
-                  }
+          UUID locationId = entry.getKey();
+          List<AmdrDataLocation> locList = entry.getValue();
 
-                  accumulator.setNum(accumulator.getNum() + val);
-                  accumulator.setDenom(accumulator.getDenom() + denom);
-                  stringAccumulatorMap.put(key, accumulator);
-                  mainAccumulator.put(amdrDataLocationListEntry.getKey(), stringAccumulatorMap);
-                }
+          for (AmdrDataLocation loc : locList) {
+            for (var outer : loc.getData().entrySet()) {
+              for (var inner : outer.getValue().entrySet()) {
+
+                String subKey = inner.getKey();
+                AmdrCounters counters = inner.getValue();
+
+                TriAccumulator tri = triAccumulator
+                    .computeIfAbsent(locationId, k -> new HashMap<>())
+                    .computeIfAbsent(subKey, k -> new TriAccumulator());
+
+                tri.setMono(tri.getMono() + counters.getMono());
+                tri.setMixed(tri.getMixed() + counters.getMixed());
+                tri.setTotal(tri.getTotal() + counters.getTotal());
+                tri.setTotalRecs(tri.getTotalRecs() + counters.getTotalRecs());
               }
-
-              for (Entry<String, AmdrCounters> amdrCountersEntry : amdrCounterMapEntry.getValue()
-                  .entrySet()) {
-
-                String key1 = amdrCountersEntry.getKey();
-
-                Entry<String, Map<String, TriAccumulator>> triAccumulatorMapByOuterKey = null;
-                if (triAccumulator.containsKey(amdrDataLocationListEntry.getKey())) {
-                  triAccumulatorMapByOuterKey = triAccumulator.get(
-                      amdrDataLocationListEntry.getKey());
-                } else {
-                  Map<String, TriAccumulator> stringTriAccumulatorMap = new HashMap<>();
-                  SimpleEntry<String, Map<String, TriAccumulator>> stringMapSimpleEntry = new SimpleEntry<>(
-                      key, stringTriAccumulatorMap);
-                  triAccumulatorMapByOuterKey = stringMapSimpleEntry;
-                }
-                TriAccumulator triAccumulator1 = null;
-                if (triAccumulatorMapByOuterKey.getValue().containsKey(key1)) {
-                  triAccumulator1 = triAccumulatorMapByOuterKey.getValue().get(key1);
-                } else {
-                  triAccumulator1 = new TriAccumulator();
-                }
-
-                triAccumulator1.setMixed(
-                    triAccumulator1.getMixed() + amdrCountersEntry.getValue().getMixed());
-                triAccumulator1.setMono(
-                    triAccumulator1.getMono() + amdrCountersEntry.getValue().getMono());
-                triAccumulator1.setTotal(
-                    triAccumulator1.getTotal() + amdrCountersEntry.getValue().getTotal());
-                triAccumulator1.setTotalRecs(
-                    triAccumulator1.getTotalRecs() + amdrCountersEntry.getValue().getTotalRecs());
-
-                triAccumulatorMapByOuterKey.getValue().put(key1, triAccumulator1);
-
-                triAccumulatorMapByOuterKey = new SimpleEntry<>(key,
-                    triAccumulatorMapByOuterKey.getValue());
-
-                triAccumulator.put(amdrDataLocationListEntry.getKey(), triAccumulatorMapByOuterKey);
-
-              }
-
             }
-            checked = false;
           }
-
         }
 
-        List<RowData> collect = mainAccumulator.entrySet().stream().map(mainAccumulatorEntry -> {
+        // -------------------------------
+        // 5. Formatter
+        // -------------------------------
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        DecimalFormat df = new DecimalFormat("0.00", symbols);
 
-          Map<String, Accumulator> value = mainAccumulatorEntry.getValue();
+        // -------------------------------
+        // 6. Build response (NOW FROM TRI ONLY)
+        // -------------------------------
+        List<RowData> string = triAccumulator.entrySet().stream()
+            .map(entry -> {
 
-          Map<String, ColumnData> string = value.entrySet().stream().map(accumulatorEntry -> {
+              UUID locationId = entry.getKey();
+              Map<String, TriAccumulator> triMap = entry.getValue();
 
-            Accumulator value1 = accumulatorEntry.getValue();
+              Map<String, ColumnData> columnData = triMap.entrySet().stream()
+                  .map(e -> {
 
-            int val = value1.getNum();
-            int denom = value1.getDenom();
-            double perc = denom > 0 ?
-                (double) val
-                    / (double) denom * 100 :
-                (double) 0;
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-            symbols.setDecimalSeparator('.');
-            DecimalFormat df = new DecimalFormat("0.00", symbols);
-            String totalVal = df.format(perc);
-            String meta =
-                "total recs: " + denom +
-                    " \r\n - gene: " + val + " => "
-                    + totalVal + "%";
+                    String subKey = e.getKey();
+                    TriAccumulator v = e.getValue();
 
-            AmdrColumnData amdrColumnData = new AmdrColumnData();
+                    double totalRecs = (v.getTotalRecs() != null && v.getTotalRecs() > 0)
+                        ? v.getTotalRecs()
+                        : 1;
 
-            amdrColumnData.setValue(totalVal + " " + val);
-            amdrColumnData.setMeta(meta);
-            amdrColumnData.setDataType("string");
-            amdrColumnData.setIsPercentage(true);
-            amdrColumnData.setDescription(amdrHeaderNameMap.get(accumulatorEntry.getKey()));
-            amdrColumnData.setHslColor(amdrHeaderColorMap.get(accumulatorEntry.getKey()));
-            amdrColumnData.setAmdrParent(subkeyParentMap.get(accumulatorEntry.getKey()));
+                    double mono = v.getMono() / totalRecs * 100;
+                    double mixed = v.getMixed() / totalRecs * 100;
+                    double total = v.getTotal() / totalRecs * 100;
 
+                    String totalVal = df.format(total);
 
+                    String meta =
+                        "total recs: " + v.getTotalRecs() +
+                            "\n - mono: " + v.getMono() + " => " + df.format(mono) + "%" +
+                            "\n - mixed: " + v.getMixed() + " => " + df.format(mixed) + "%" +
+                            "\n - total: " + v.getTotal() + " => " + totalVal + "%";
 
-            return new SimpleEntry<>(accumulatorEntry.getKey(), amdrColumnData);
+                    AmdrColumnData col = new AmdrColumnData();
+                    col.setValue(totalVal);
+                    col.setMeta(meta);
+                    col.setDataType("string");
+                    col.setIsPercentage(true);
+                    col.setDescription(amdrHeaderNameMap.get(subKey));
+                    col.setAmdrParent(subkeyParentMap.get(subKey));
 
-          }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+                    return new SimpleEntry<>(subKey, col);
+                  })
+                  .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
-          Entry<String, Map<String, TriAccumulator>> stringMapEntry = triAccumulator.get(
-              mainAccumulatorEntry.getKey());
-
-          Map<String, ColumnData> string1 = stringMapEntry.getValue().entrySet().stream()
-              .map(stringTriAccumulatorEntry -> {
-
-                TriAccumulator value1 = stringTriAccumulatorEntry.getValue();
-
-                double mono = value1.getMono() /
-                    (value1.getTotalRecs() != null
-                        && value1.getTotalRecs() > 0 ?
-                        value1.getTotalRecs() : 1) * 100;
-                double mixed = value1.getMixed() /
-                    (value1.getTotalRecs() != null
-                        && value1.getTotalRecs() > 0 ?
-                        value1.getTotalRecs() : 1) * 100;
-                double total = value1.getTotal() /
-                    (value1.getTotalRecs() != null
-                        && value1.getTotalRecs() > 0 ?
-                        value1.getTotalRecs() : 1) * 100;
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-                symbols.setDecimalSeparator('.');
-                DecimalFormat df = new DecimalFormat("0.00", symbols);
-                String totalVal = df.format(total);
-                String meta =
-                    "total recs: " + value1.getTotalRecs() +
-                        " \r\n - mono: " + value1.getMono() + " => "
-                        + String.format(
-                        "%.2f", mono) + "%"
-                        + "\r\n - mixed: " + value1.getMixed() + " => "
-                        + String.format(
-                        "%.2f", mixed) + "%"
-                        + "\r\n - total: " + value1.getTotal() + " => "
-                        + totalVal + "%";
-
-                AmdrColumnData amdrColumnData = new AmdrColumnData();
-
-                amdrColumnData.setValue(totalVal + " " + total);
-                amdrColumnData.setMeta(meta);
-                amdrColumnData.setDataType("string");
-                amdrColumnData.setIsPercentage(true);
-                amdrColumnData.setHslColor(amdrHeaderColorMap.get(stringTriAccumulatorEntry.getKey()));
-                amdrColumnData.setDescription(amdrHeaderNameMap.get(stringTriAccumulatorEntry.getKey()));
-
-                amdrColumnData.setAmdrParent(subkeyParentMap.get(stringTriAccumulatorEntry.getKey()));
-
-                return new SimpleEntry<>(
-                    stringTriAccumulatorEntry.getKey(), amdrColumnData);
-
-              }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
-
-          string.putAll(string1);
-
-          return RowData.builder()
-              .childrenNumber(3l)
-              .columnDataMap(string)
-              .locationIdentifier(mainAccumulatorEntry.getKey())
-              .locationName("name")
-              .build();
-
-        }).collect(Collectors.toList());
-
-        return collect;
+              return RowData.builder()
+                  .childrenNumber(3L)
+                  .columnDataMap(columnData)
+                  .locationIdentifier(locationId)
+                  .locationName(locationNameMap.get(locationId.toString()))
+                  .build();
+            })
+            .collect(Collectors.toList());
+        return string;
 
       } else {
 
-
-        Set<UUID> locSet = amdrDataStream.stream().map(AmdrData::getLocationId)
-            .collect(Collectors.toSet());
-
-        List<LocationNameProjection> byIdentifierIn = locationRepository.findLocationNamesByIdentifierIn(
-            locSet);
-
-        Map<String, String> locationNameMapById = byIdentifierIn.stream()
-            .collect(Collectors.toMap(LocationNameProjection::getIdentifier,
-                LocationNameProjection::getLocationName));
-
-        List<AmdrDataLocation> amdrDataLocationList = amdrDataStream.stream()
-            .map(amdrData -> AmdrDataLocation
-                .builder()
-                .data(amdrData.getData())
-                .collectionYear(amdrData.getCollectionYear())
-                .id(amdrData.getId())
-                .datetime(amdrData.getDatetime())
-                .locationId(amdrData.getLocationId())
-                .overallObject(amdrData.getOverallObject())
-                .type(amdrData.getType())
-                .overallValue(amdrData.getOverallValue())
-                .locationName(locationNameMapById.get(amdrData.getLocationId().toString()))
-                .build()
-            ).sorted(Comparator.comparing(AmdrDataLocation::getLocationName))
-            .collect(Collectors.toList());
-
-        Map<UUID, List<AmdrDataLocation>> collect1 = amdrDataLocationList.stream()
-            .collect(Collectors.groupingBy(AmdrDataLocation::getLocationId));
-
-        List<RowData> name = collect1.entrySet().stream().map(amdrLocationEntry -> {
+        List<RowData> name = byLocation.entrySet().stream().map(amdrLocationEntry -> {
 
           Map<String, Accumulator> byType =
               amdrLocationEntry.getValue().stream()
@@ -1032,7 +1459,6 @@ public class AmdrService {
             percentageCol.setDataType("string");
             percentageCol.setIsPercentage(true);
             percentageCol.setDescription(amdrHeaderNameMap.get(type));
-            percentageCol.setHslColor(amdrHeaderColorMap.get(type));
 //            percentageCol.setColTotal(totalsForColumnData.get(amdrLocationEntry.getKey().toString()).getMarkers().get(entry.getKey()));
             return new SimpleEntry<>(type, percentageCol);
           }).collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
@@ -1052,6 +1478,7 @@ public class AmdrService {
     return null;
   }
 
+
   public static <T> List<List<T>> splitList(List<T> originalList, int chunkSize) {
     List<List<T>> chunks = new ArrayList<>();
 
@@ -1063,9 +1490,31 @@ public class AmdrService {
     return chunks;
   }
 
+  public AmdrFeatureSetResponse getFeatureSetResponseDate(
+      List<Location> locationDetails, List<LocationPropertyResponse> rowDataMap,
+      String reportLevel, AmdrColumnType dashboardView,
+      Map<String, Map<String, AmdrMarkerStats>> totalsForColumnData) {
+    AmdrFeatureSetResponse response = new AmdrFeatureSetResponse();
+    response.setType("FeatureCollection");
+    List<LocationResponse> locationResponses = locationDetails.stream()
+        .map(LocationResponseFactory::fromPlanLocationDetailsForDate)
+        .collect(Collectors.toList());
+    response.setDefaultDisplayColumn(dashboardView.name());
+    response.setFeatures(locationResponses);
+//    response.setIdentifier("Date");
+    response.setMarkers(totalsForColumnData);
+    response.setRows(rowDataMap);
+
+    if (rowDataMap.size() == 0) {
+      response.setNoDashboardData(true);
+    }
+    return response;
+  }
+
   public AmdrFeatureSetResponse getFeatureSetResponse(UUID parentIdentifier,
       List<PlanLocationDetails> locationDetails, Map<UUID, RowData> rowDataMap,
-      String reportLevel, String clickedColumn, Map<String,Map<String, AmdrMarkerStats>> totalsForColumnData) {
+      String reportLevel, AmdrColumnType dashboardView,
+      Map<String, Map<String, AmdrMarkerStats>> totalsForColumnData) {
     AmdrFeatureSetResponse response = new AmdrFeatureSetResponse();
     response.setType("FeatureCollection");
     List<LocationResponse> locationResponses = locationDetails.stream()
@@ -1073,13 +1522,12 @@ public class AmdrService {
         .collect(Collectors.toList());
 
     locationResponses = setGeoJsonProperties(rowDataMap, locationResponses);
-    response.setDefaultDisplayColumn(clickedColumn);
+    response.setDefaultDisplayColumn(dashboardView.name());
     response.setFeatures(locationResponses);
     response.setIdentifier(parentIdentifier);
     response.setMarkers(totalsForColumnData);
 
-
-    if (rowDataMap.size() == 0){
+    if (rowDataMap.size() == 0) {
       response.setNoDashboardData(true);
     }
     return response;
@@ -1485,5 +1933,16 @@ public class AmdrService {
 
         }).collect(Collectors.toList());
   }
+//  private List<LocationResponse> setGeoJsonPropertiesDate( RowData rowDataMap,
+//      List<LocationResponse> locationResponses) {
+//    return locationResponses.stream()
+//        .filter(loc -> rowDataMap.containsKey(loc.getIdentifier()))
+//        .peek(loc -> {
+//          loc.getProperties()
+//              .setColumnDataMap(rowDataMap.get(loc.getIdentifier()).getColumnDataMap());
+//          loc.getProperties().setId(loc.getIdentifier().toString());
+//
+//        }).collect(Collectors.toList());
+//  }
 
 }

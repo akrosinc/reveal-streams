@@ -4,6 +4,7 @@ package com.revealprecision.revealstreams.factory;
 import com.revealprecision.revealstreams.dto.LocationPropertyResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
+import com.revealprecision.revealstreams.persistence.domain.Location;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -29,6 +30,21 @@ public class LocationResponseFactory {
                 .parentIdentifier(planLocationDetails.getParentLocation() == null ? parentIdentifier
                     : planLocationDetails.getParentLocation().getIdentifier())
                 .childrenNumber(planLocationDetails.getChildrenNumber()!= null ? planLocationDetails.getChildrenNumber() : 0L)
+                .build())
+        .build();
+  }
+
+  public static LocationResponse fromPlanLocationDetailsForDate(Location locationDetails) {
+    return LocationResponse.builder()
+        .identifier(locationDetails.getIdentifier())
+        .type(locationDetails.getType())
+        .geometry(locationDetails.getGeometry())
+        .properties(
+            LocationPropertyResponse.builder()
+                .name(locationDetails.getName())
+                .status(locationDetails.getStatus())
+                .externalId(locationDetails.getExternalId())
+                .geographicLevel(locationDetails.getGeographicLevel().getName())
                 .build())
         .build();
   }

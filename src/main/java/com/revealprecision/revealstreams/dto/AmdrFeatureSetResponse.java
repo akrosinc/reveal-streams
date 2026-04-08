@@ -1,8 +1,10 @@
 package com.revealprecision.revealstreams.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugYearlyMonthlyLocational;
 import com.revealprecision.revealstreams.models.amdr.AmdrMarkerStats;
 import com.revealprecision.revealstreams.service.dashboard.AmdrService.CoordsByYearOrLocationWithTicks;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,5 +29,7 @@ public class AmdrFeatureSetResponse {
   private Boolean noLocationData;
   private Boolean noDashboardData;
   private CoordsByYearOrLocationWithTicks coords;
+  private List<LocationPropertyResponse> rows = new ArrayList<>();;
+  private List<AmdrDrugYearlyMonthlyLocational> amdrDrugYearlyMonthlyLocationals = new ArrayList<>();
   private  Map<String, Map<String, AmdrMarkerStats>> markers;
 }

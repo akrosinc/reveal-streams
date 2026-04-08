@@ -8,9 +8,14 @@ import com.revealprecision.revealstreams.enums.ApplicableReportsEnum;
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.enums.amdr.AmdrColumnType;
+import com.revealprecision.revealstreams.enums.amdr.AmdrDateModes;
 import com.revealprecision.revealstreams.models.AdditionalReportInfo;
+import com.revealprecision.revealstreams.models.LocationNodeDetails;
 import com.revealprecision.revealstreams.models.RowData;
+import com.revealprecision.revealstreams.models.amdr.AmdrDrugYearlyMonthlyLocational;
+import com.revealprecision.revealstreams.models.amdr.AmdrHaplotypeYearlyMonthlyLocational;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.persistence.domain.amdr.HslColor;
 import com.revealprecision.revealstreams.props.DashboardProperties;
 import com.revealprecision.revealstreams.service.PlanService;
 import com.revealprecision.revealstreams.service.dashboard.AmdrService;
@@ -25,9 +30,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/dashboard")
@@ -55,27 +63,82 @@ public class ReportDashboardController {
   @GetMapping("/reportData")
   public ResponseEntity<FeatureSetResponse> getDataForReports(
       @RequestParam(name = "reportType") String reportType,
-      @RequestParam(name = "planIdentifier",required = false) UUID planIdentifier,
+      @RequestParam(name = "planIdentifier", required = false) UUID planIdentifier,
       @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
       @RequestParam(name = "filters", required = false) List<String> filters,
       @RequestParam(name = "type", required = false, defaultValue = "TREATMENT_COVERAGE") MdaLiteReportType type,
       @RequestParam(name = "clickedColumn", required = false) String clickedColumn) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(dashboardService.getDataForReport(reportType, planIdentifier, parentIdentifier,
-            filters, type,clickedColumn));
+            filters, type, clickedColumn));
   }
 
   @GetMapping("/amdr/reportData")
   public ResponseEntity<AmdrFeatureSetResponse> getAmdrDataForReports(
       @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
-      @RequestParam(name = "clickedColumn", required = false) String clickedColumn) {
+      @RequestParam(name = "dashboardView", required = false) AmdrColumnType dashboardView) {
     return ResponseEntity.status(HttpStatus.OK)
-        .body(amdrService.getDataForReport(parentIdentifier
-            ,clickedColumn));
+        .body(amdrService.getDataForReportForGeography(parentIdentifier
+            , dashboardView));
+  }
+
+  @PostMapping("/amdr/reportData/date")
+  public ResponseEntity<AmdrFeatureSetResponse> getAmdrDataForReportsDate(
+      @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
+      @RequestParam(name = "dashboardView", required = false) AmdrColumnType dashboardView,
+      @RequestParam(name = "amdrDateModes", required = false) AmdrDateModes amdrDateModes,
+      @RequestBody List<UUID> locationList) {
+
+    if (AmdrColumnType.DRUG.equals(dashboardView)) {
+      return ResponseEntity.status(HttpStatus.OK)
+          .body(amdrService.getDataForReportForDateForDrug(parentIdentifier
+              , dashboardView, locationList, amdrDateModes));
+    } else {
+      return ResponseEntity.status(HttpStatus.OK)
+          .body(amdrService.getDataForReportForDateForHaplotype(parentIdentifier
+              , dashboardView, locationList, amdrDateModes));
+    }
+
+  }
+
+  @PostMapping("/amdr/reportData/date/location/drug")
+  public ResponseEntity<List<AmdrDrugYearlyMonthlyLocational>> getAmdrDataForReportsDateLocationDrug(
+      @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
+      @RequestParam(name = "amdrDateModes", required = false) AmdrDateModes amdrDateModes,
+      @RequestBody List<UUID> locationList) {
+
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(amdrService.getDataForReportForDateForDrugLocation(parentIdentifier
+            , locationList, amdrDateModes));
+  }
+
+  @PostMapping("/amdr/reportData/date/location/haplotype")
+  public ResponseEntity<List<AmdrHaplotypeYearlyMonthlyLocational>> getAmdrDataForReportsDateLocationHaplotype(
+      @RequestParam(name = "parentIdentifier", required = false) String parentIdentifier,
+      @RequestParam(name = "amdrDateModes", required = false) AmdrDateModes amdrDateModes,
+      @RequestBody List<UUID> locationList) {
+
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(amdrService.getDataForReportForDateForHaplotypeLocation(parentIdentifier
+            , locationList, amdrDateModes));
+
+  }
+
+
+  @GetMapping("/amdr/colorMap")
+  public Map<String, HslColor> colorMap() {
+    return amdrService.getColorMap();
+  }
+
+
+  @GetMapping("/amdr/locationTree")
+  public ResponseEntity<LocationNodeDetails> getAmdrLocationTree() {
+    return ResponseEntity.status(HttpStatus.OK)
+        .body(amdrService.getLocationTree());
   }
 
   @GetMapping("/amdr/reportHeadings")
-  public ResponseEntity<Map<AmdrColumnType,Map<String, HeaderName>>> getAmdrHeadersForReports() {
+  public ResponseEntity<Map<AmdrColumnType, Map<String, HeaderName>>> getAmdrHeadersForReports() {
     return ResponseEntity.status(HttpStatus.OK)
         .body(amdrService.getHeadersForReport());
   }
@@ -104,9 +167,9 @@ public class ReportDashboardController {
             .reportTypeEnum(reportType)
             .columnClickable(
                 dashboardProperties.getColumnClickableReports().getOrDefault(reportType, false))
-            .showMap(dashboardProperties.getShowMap().getOrDefault(reportType,false))
-            .showGraphs(dashboardProperties.getShowGraph().getOrDefault(reportType,false))
-            .show3dGraphs(dashboardProperties.getShow3dGraph().getOrDefault(reportType,false))
+            .showMap(dashboardProperties.getShowMap().getOrDefault(reportType, false))
+            .showGraphs(dashboardProperties.getShowGraph().getOrDefault(reportType, false))
+            .show3dGraphs(dashboardProperties.getShow3dGraph().getOrDefault(reportType, false))
             .build()
         );
   }
