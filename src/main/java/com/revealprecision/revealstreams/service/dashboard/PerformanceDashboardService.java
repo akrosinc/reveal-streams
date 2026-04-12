@@ -85,7 +85,11 @@ public class PerformanceDashboardService {
 
     }
     else if (plan.getInterventionType().getCode().equals(PlanInterventionTypeEnum.SURVEY.name())) {
-      return ghaSurveyPerformanceDashboardService.getPerformanceColumnData(plan, null);
+      String passedId = null;
+      if (!(id == null || id.equals("null") || id.equals(""))) {
+        passedId = id;
+      }
+      return ghaSurveyPerformanceDashboardService.getPerformanceColumnData(plan, passedId);
     }
     else {
       boolean startAtTop = false;

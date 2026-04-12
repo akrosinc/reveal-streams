@@ -1,5 +1,6 @@
 package com.revealprecision.revealstreams.persistence.domain.amdr;
 
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
@@ -24,8 +25,6 @@ public class AmdrHeaderNames {
 
   private String name;
 
-  private String colName;
-
   @Type(type = "jsonb")
   @Column(columnDefinition = "jsonb")
   private HslColor color;
@@ -34,4 +33,9 @@ public class AmdrHeaderNames {
   private String colType;
 
   private String colParent;
+
+  @Type(type = "list-array")
+  private List<String> contributingCol;
+
+  private int colOrder;
 }

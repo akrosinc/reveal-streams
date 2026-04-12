@@ -15,14 +15,19 @@ import static com.revealprecision.revealstreams.service.dashboard.PerformanceDas
 import static com.revealprecision.revealstreams.service.dashboard.PerformanceDashboardService.AVERAGE_START_TIME;
 import static com.revealprecision.revealstreams.service.dashboard.PerformanceDashboardService.DAYS_WORKED;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.enums.ReportTypeEnum;
 import com.revealprecision.revealstreams.models.ColumnData;
 import com.revealprecision.revealstreams.models.RowData;
+import com.revealprecision.revealstreams.models.amdr.AmdrPerformanceAggregatedData;
+import com.revealprecision.revealstreams.models.amdr.AmdrPerformanceAggregatedDataString;
 import com.revealprecision.revealstreams.persistence.domain.Location;
 import com.revealprecision.revealstreams.persistence.domain.Plan;
+import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrAggregatedDataProjection;
 import com.revealprecision.revealstreams.persistence.projection.amdr.AmdrPerformanceDataProjection;
 import com.revealprecision.revealstreams.persistence.repository.amdr.AmdrRepository;
 import com.revealprecision.revealstreams.props.DashboardProperties;
@@ -56,6 +61,8 @@ public class GhaSurveyPerformanceDashboardService {
   private final DashboardProperties dashboardProperties;
 
   private final AmdrRepository amdrRepository;
+
+  private final ObjectMapper objectMapper;
 
   public static final String FOUND = "Number of Structures Found";
   public static final String DAY = "Day";
@@ -150,6 +157,7 @@ public class GhaSurveyPerformanceDashboardService {
   @Data
   @AllArgsConstructor
   public static class GhaLocation implements Serializable {
+
     private String identifier;
     private String name;
 
@@ -177,31 +185,110 @@ public class GhaSurveyPerformanceDashboardService {
       String parentIdentifierString, MdaLiteReportType type,
       List<PlanLocationDetails> locationDetails, String clickedColumn) {
 
-    List<AmdrPerformanceDataProjection> totalIndexVerifiedForRoot = amdrRepository.getTotalIndexVerifiedForRoot();
+    List<AmdrPerformanceDataProjection> totalIndexVerifiedForRoot = amdrRepository.getTotalIndexVerifiedForRoot(
+        parentLocation == null ? "null" : parentLocation.getIdentifier().toString());
 
     Map<String, AmdrPerformanceDataProjection> verifiedMap = totalIndexVerifiedForRoot.stream()
+        .filter(verified -> verified.getVerified() != null)
         .filter(verified -> verified.getVerified().equals("yes"))
         .map(verified -> new SimpleEntry<>(verified.getLocationIdentifier(), verified))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
 
-    Map<String, Long> totalCountMap = totalIndexVerifiedForRoot.stream()
-        .collect(Collectors.groupingBy(AmdrPerformanceDataProjection::getLocationIdentifier,
-            Collectors.summingLong(AmdrPerformanceDataProjection::getCount)));
+//    Map<String, Long> totalCountMap = totalIndexVerifiedForRoot.stream()
+//        .collect(Collectors.groupingBy(AmdrPerformanceDataProjection::getLocationIdentifier,
+//            Collectors.summingLong(AmdrPerformanceDataProjection::getCount)));
 
     List<GhaLocation> indexesVerified = totalIndexVerifiedForRoot.stream()
+        .filter(verified -> verified.getVerified() != null)
         .filter(verified -> verified.getVerified().equals("yes"))
-        .map(verified -> new GhaLocation(verified.getLocationIdentifier(),verified.getLocationName() ))
+        .map(verified -> new GhaLocation(verified.getLocationIdentifier(),
+            verified.getLocationName()))
         .collect(Collectors.toList());
 
-    List<AmdrPerformanceDataProjection> totalIndexToBeVerifiedForRoot = amdrRepository.getTotalIndexToBeVerifiedForRoot();
+    List<AmdrPerformanceDataProjection> totalIndexToBeVerifiedForRoot = amdrRepository.getTotalIndexToBeVerifiedForRoot(
+        parentLocation == null ? "null" : parentLocation.getIdentifier().toString());
 
     List<GhaLocation> indexesToBeVerified = totalIndexToBeVerifiedForRoot.stream()
-        .map(toBeVerified -> new GhaLocation(toBeVerified.getLocationIdentifier(),toBeVerified.getLocationName() ))
+        .map(toBeVerified -> new GhaLocation(toBeVerified.getLocationIdentifier(),
+            toBeVerified.getLocationName()))
         .collect(Collectors.toList());
 
     Map<String, AmdrPerformanceDataProjection> toBeVerifiedMap = totalIndexToBeVerifiedForRoot.stream()
         .map(toBeVerified -> new SimpleEntry<>(toBeVerified.getLocationIdentifier(), toBeVerified))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue, (a, b) -> b));
+
+    List<AmdrAggregatedDataProjection> racdPerformanceCounts = amdrRepository.getRACDPerformanceCounts(
+        parentLocation == null ? "null" : parentLocation.getIdentifier().toString());
+
+    Map<String, AmdrPerformanceAggregatedData> visitedCounts = racdPerformanceCounts.stream()
+        .map(item -> {
+          Map<String, Long> stateMap = new HashMap<>();
+          try {
+            stateMap = objectMapper.readValue(
+                item.getObj(),
+                new TypeReference<>() {
+                });
+          } catch (Exception e) {
+            stateMap = null;
+          }
+          return AmdrPerformanceAggregatedData.builder()
+              .locationIdentifier(item.getLocationIdentifier())
+              .locationName(item.getLocationName())
+              .parentName(item.getParentName())
+              .parentIdentifier(item.getParentIdentifier())
+              .stateCounts(stateMap)
+              .build();
+        }).collect(
+            Collectors.toMap(AmdrPerformanceAggregatedData::getLocationIdentifier, item -> item,
+                (a, b) -> b));
+
+    List<AmdrAggregatedDataProjection> performanceStartEndTimesProjection = amdrRepository.getPerformanceStartEndTimes(
+        parentLocation == null ? "null" : parentLocation.getIdentifier().toString());
+
+    Map<String, AmdrPerformanceAggregatedDataString> performanceStartEndTimesMap = performanceStartEndTimesProjection.stream()
+        .map(item -> {
+          Map<String, String> stateMap = new HashMap<>();
+          try {
+            stateMap = objectMapper.readValue(
+                item.getObj(),
+                new TypeReference<>() {
+                });
+          } catch (Exception e) {
+            stateMap = null;
+          }
+          return AmdrPerformanceAggregatedDataString.builder()
+              .locationIdentifier(item.getLocationIdentifier())
+              .locationName(item.getLocationName())
+              .parentName(item.getParentName())
+              .parentIdentifier(item.getParentIdentifier())
+              .stateCounts(stateMap)
+              .build();
+        }).collect(Collectors.toMap(AmdrPerformanceAggregatedDataString::getLocationIdentifier,
+            item -> item, (a, b) -> b));
+
+    List<AmdrAggregatedDataProjection> withinThreeDayProjection = amdrRepository.getWithinThreeDayCounts(
+        parentLocation == null ? "null" : parentLocation.getIdentifier().toString());
+
+    Map<String, AmdrPerformanceAggregatedData> withinThreeDay = withinThreeDayProjection.stream()
+        .map(item -> {
+          Map<String, Long> stateMap = new HashMap<>();
+          try {
+            stateMap = objectMapper.readValue(
+                item.getObj(),
+                new TypeReference<>() {
+                });
+          } catch (Exception e) {
+            stateMap = null;
+          }
+          return AmdrPerformanceAggregatedData.builder()
+              .locationIdentifier(item.getLocationIdentifier())
+              .locationName(item.getLocationName())
+              .parentName(item.getParentName())
+              .parentIdentifier(item.getParentIdentifier())
+              .stateCounts(stateMap)
+              .build();
+        }).collect(Collectors.toMap(AmdrPerformanceAggregatedData::getLocationIdentifier,
+            item -> item, (a, b) -> b));
 
     Set<GhaLocation> all = new HashSet<>();
     all.addAll(indexesVerified);
@@ -216,28 +303,127 @@ public class GhaSurveyPerformanceDashboardService {
       AmdrPerformanceDataProjection toBeVerifiedProjection = toBeVerifiedMap.get(
           ghaLocation.getIdentifier());
 
+      AmdrPerformanceAggregatedData amdrRACDVisitedsCounts = visitedCounts.get(
+          ghaLocation.getIdentifier());
+
+      AmdrPerformanceAggregatedDataString performanceStartEndTimes = performanceStartEndTimesMap.get(
+          ghaLocation.getIdentifier());
+
       long totalVerified = verifiedProjection != null ? verifiedProjection.getCount() : 0L;
+
+      long totalToBeVerified =
+          toBeVerifiedProjection != null ? toBeVerifiedProjection.getCount() : 0L;
+
+//      Long aLong = totalCountMap.get(ghaLocation.getIdentifier());
+
+      long totalCases = totalVerified + totalToBeVerified;
+
+      AmdrPerformanceAggregatedData withInThreeDayData = withinThreeDay.get(
+          ghaLocation.getIdentifier());
+
+      Long visitedRACD = 0l;
+      Long toBeVisitedRACD = 0l;
+      if (amdrRACDVisitedsCounts != null && amdrRACDVisitedsCounts.getStateCounts() != null) {
+        if (amdrRACDVisitedsCounts.getStateCounts().containsKey("visited")) {
+          visitedRACD = amdrRACDVisitedsCounts.getStateCounts().get("visited");
+        }
+        if (amdrRACDVisitedsCounts.getStateCounts().containsKey("notVisited")) {
+          toBeVisitedRACD = amdrRACDVisitedsCounts.getStateCounts().get("notVisited");
+        }
+      }
+
+      long totalRcdCases = visitedRACD  + toBeVisitedRACD;
+
+
+
+      String start = "";
+      String end = "";
+      if (performanceStartEndTimes != null && performanceStartEndTimes.getStateCounts() != null) {
+        if (performanceStartEndTimes.getStateCounts().containsKey("start")) {
+          start = performanceStartEndTimes.getStateCounts().get("start");
+        }
+        if (performanceStartEndTimes.getStateCounts().containsKey("end")) {
+          end = performanceStartEndTimes.getStateCounts().get("end");
+        }
+      }
+
+      Long rcd3Day = 0l;
+      Long rcdAllDay = 0l;
+      Long index3Day = 0l;
+      Long indexAllDay = 0l;
+      if (withInThreeDayData != null && withInThreeDayData.getStateCounts() != null) {
+        if (withInThreeDayData.getStateCounts().containsKey("rcd-3")) {
+          rcd3Day = withInThreeDayData.getStateCounts().get("rcd-3");
+        }
+        if (withInThreeDayData.getStateCounts().containsKey("rcd-all")) {
+          rcdAllDay = withInThreeDayData.getStateCounts().get("rcd-all");
+        }
+
+        if (withInThreeDayData.getStateCounts().containsKey("index_case_member-3")) {
+          index3Day = withInThreeDayData.getStateCounts().get("index_case_member-3");
+        }
+        if (withInThreeDayData.getStateCounts().containsKey("index_case_member-all")) {
+          indexAllDay = withInThreeDayData.getStateCounts().get("index_case_member-all");
+        }
+      }
+
+
+
       Map<String, ColumnData> columnDataMap = new LinkedHashMap<>();
       ColumnData verifiedColumnData = ColumnData.builder()
           .value(totalVerified)
           .build();
-      columnDataMap.put("Total # index cases verified", verifiedColumnData);
+      columnDataMap.put("Count: Total # index cases verified", verifiedColumnData);
 
-      long totalToBeVerified =
-          toBeVerifiedProjection != null ? toBeVerifiedProjection.getCount() : 0L;
       ColumnData toBeVerifiedColumnData = ColumnData.builder()
           .value(totalToBeVerified)
           .build();
-      columnDataMap.put("Total # index cases to be verified", toBeVerifiedColumnData);
+      columnDataMap.put("Count: Total # index cases to be verified", toBeVerifiedColumnData);
 
-      Long aLong = totalCountMap.get(ghaLocation.getIdentifier());
+      ColumnData indexCaseWith3DaysColumnData = ColumnData.builder()
+          .value(index3Day)
+          .build();
+      columnDataMap.put("Count: Total # index cases within 3 days", indexCaseWith3DaysColumnData);
 
-      long totalCases = (aLong != null ? aLong : 0L) + totalToBeVerified;
+      ColumnData indexCaseWithAllColumnData = ColumnData.builder()
+          .value(indexAllDay)
+          .build();
+      columnDataMap.put("Count: Total # index cases", indexCaseWithAllColumnData);
 
+      ColumnData visitedRACDData = ColumnData.builder()
+          .value(visitedRACD)
+          .build();
+      columnDataMap.put("Count: # structures visited for RACD", visitedRACDData);
+
+      ColumnData toBeVisitedData = ColumnData.builder()
+          .value(toBeVisitedRACD)
+          .build();
+      columnDataMap.put("Count: # remaining structures to be visited for RACD", toBeVisitedData);
+
+      ColumnData rcdWith3DaysColumnData = ColumnData.builder()
+          .value(rcd3Day)
+          .build();
+      columnDataMap.put("Count: Total # index cases within 3 days", rcdWith3DaysColumnData);
+
+      ColumnData rcdWithAllColumnData = ColumnData.builder()
+          .value(rcdAllDay)
+          .build();
+      columnDataMap.put("Count: Total # rcd cases", rcdWithAllColumnData);
+
+      ColumnData startColumnData = ColumnData.builder()
+          .value(start)
+          .build();
+      columnDataMap.put("Daily average: Start time", startColumnData);
+
+      ColumnData endColumnData = ColumnData.builder()
+          .value(end)
+          .build();
+      columnDataMap.put("Daily average: End time", endColumnData);
 
       rowData.setColumnDataMap(columnDataMap);
-      rowData.setLocationIdentifier(UUID.fromString(ghaLocation.getIdentifier()));
-      rowData.setLocationName(ghaLocation.getName());
+      rowData.setUserId(UUID.fromString(ghaLocation.getIdentifier()).toString());
+      rowData.setUserLabel("Location");
+      rowData.setUserName(ghaLocation.getName());
 
       return rowData;
     }).collect(Collectors.toList());

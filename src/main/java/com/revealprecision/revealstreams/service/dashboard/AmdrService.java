@@ -553,6 +553,8 @@ public class AmdrService {
 
     private HslColor color;
     private String name;
+    private int order;
+
 
   }
 
@@ -567,6 +569,7 @@ public class AmdrService {
                 item -> HeaderName.builder()   // inner map value
                     .color(item.getColor())
                     .name(item.getName())
+                    .order(item.getColOrder())
                     .build()
             )
         ));
@@ -581,16 +584,36 @@ public class AmdrService {
                 item -> HeaderName.builder()   // inner map value
                     .color(item.getColor())
                     .name(item.getId().getKey())
+                    .order(item.getColOrder())
+                    .build()
+            )
+        );
+    Map<AmdrColumnType, Map<String, HeaderName>> haplotypeList =
+        Map.of(AmdrColumnType.HAPLOTYPE, haplotypeMap);
+
+    Map<String, HeaderName> geneMap = amdrHeaderNamesRepository.findAllByColType(
+            AmdrColumnType.HAPLOTYPE.name())
+        .stream()
+        .collect(// outer key
+            Collectors.toMap(
+                item -> item.getId().getKey(), // inner map key
+                item -> HeaderName.builder()   // inner map value
+                    .color(item.getColor())
+                    .name(item.getId().getKey())
+                    .order(item.getColOrder())
                     .build()
             )
         );
 
-    Map<AmdrColumnType, Map<String, HeaderName>> haplotypeList =
-        Map.of(AmdrColumnType.HAPLOTYPE, haplotypeMap);
+
+    Map<AmdrColumnType, Map<String, HeaderName>> genetypeList =
+        Map.of(AmdrColumnType.GENE, geneMap);
+
 
     Map<AmdrColumnType, Map<String, HeaderName>> combinedMap = new HashMap<>();
     combinedMap.putAll(drugList);
     combinedMap.putAll(haplotypeList);
+    combinedMap.putAll(genetypeList);
 
     return combinedMap;
 
@@ -831,6 +854,11 @@ public class AmdrService {
         .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
             (a, b) -> b));
 
+    Map<String, List<String>> amdrHeaderContributingColumnsMap = amdrHeaderNames.stream()
+        .filter(item -> item.getContributingCol()!= null && !item.getContributingCol().isEmpty())
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getContributingCol,
+            (a, b) -> b));
+
 
     List<UUID> locIds = new ArrayList<>();
     if (locationList.isEmpty()) {
@@ -901,7 +929,7 @@ public class AmdrService {
 
 
 
-       rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+       rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap,amdrHeaderContributingColumnsMap);
     } else {
       List<AmdrYearlyMonthlyLocationProjection> yearlyAggregation = amdrRepository.getYearlyMonthlyAggregationForDrug(
           locIds);
@@ -927,7 +955,7 @@ public class AmdrService {
       }).collect(Collectors.toList());
 
 
-      rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap);
+      rowData = getRowsforDateDrug(collect1,amdrHeaderColorMap,amdrHeaderNameMap,amdrHeaderContributingColumnsMap);
 
 
     }
@@ -1045,6 +1073,11 @@ public class AmdrService {
         .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getColor,
             (a, b) -> b));
 
+    Map<String, List<String>> amdrHeaderContributingColumnsMap = amdrHeaderNames.stream()
+        .filter(item -> item.getContributingCol()!= null && !item.getContributingCol().isEmpty())
+        .collect(Collectors.toMap(item -> item.getId().getKey(), AmdrHeaderNames::getContributingCol,
+            (a, b) -> b));
+
     Location parentLocation = null;
     UUID parentIdentifier = null;
 
@@ -1094,7 +1127,7 @@ public class AmdrService {
         , 500);
 
     List<RowData> rowData = getRows3(parentLocation, collect, dashboardView, amdrHeaderNameMap,
-        amdrHeaderColorMap, maxYear, lists);
+        amdrHeaderColorMap, maxYear, lists,amdrHeaderContributingColumnsMap);
 
     List<Location> parent;
     if (parentIdentifier == null) {
@@ -1151,7 +1184,8 @@ public class AmdrService {
   }
 
   public List<LocationPropertyResponse> getRowsforDateDrug(List<AmdrDrugYearlyMonthlyDate> yearlyAggregation
-      , Map<String, HslColor> amdrHeaderColorMap, Map<String, String> amdrHeaderNameMap) {
+      , Map<String, HslColor> amdrHeaderColorMap, Map<String, String> amdrHeaderNameMap
+      , Map<String, List<String>> amdrHeaderContributingColumnsMap) {
 
     List<LocationPropertyResponse> collect1 = yearlyAggregation.stream().map(yearRecord -> {
       Map<String, ColumnData> collect = yearRecord.getData().entrySet().stream()
@@ -1169,9 +1203,16 @@ public class AmdrService {
             symbols.setDecimalSeparator('.');
             DecimalFormat df = new DecimalFormat("0.00", symbols);
             String format = df.format(perc);
+//            String meta =
+//                "total recs: " + denom +
+//                    " \r\n - obs: " + val + " => "
+//                    + format + "%";
+            String collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
+                .map(item -> amdrHeaderNameMap.get(item))
+                .collect(Collectors.joining(" \r\n"));
             String meta =
-                "total recs: " + denom +
-                    " \r\n - obs: " + val + " => "
+                collect2 +
+                "obs: " + val + " / total recs: " + denom  + " => "
                     + format + "%";
 
             AmdrColumnData percentageCol = new AmdrColumnData();
@@ -1219,8 +1260,7 @@ public class AmdrService {
                         String format = df.format(perc);
 
                         String meta =
-                            "total recs: " + denom +
-                                " \r\n - obs: " + val + " => "
+                            "obs: " + val + " / total recs: " + denom  + " => "
                                 + format + "%";
 
                         AmdrColumnData percentageCol = new AmdrColumnData();
@@ -1250,7 +1290,7 @@ public class AmdrService {
       Location parentLocation, List<PlanLocationDetails> locationDetails,
       AmdrColumnType dashboardView,
       Map<String, String> amdrHeaderNameMap, Map<String, HslColor> amdrHeaderColorMap, Long maxYear,
-      List<List<PlanLocationDetails>> lists) {
+      List<List<PlanLocationDetails>> lists, Map<String, List<String>> amdrHeaderContributingColumnsMap) {
 
     List<AmdrData> amdrDataStream = lists.stream()
         .flatMap(listOfLocationIds ->
@@ -1447,9 +1487,17 @@ public class AmdrService {
             symbols.setDecimalSeparator('.');
             DecimalFormat df = new DecimalFormat("0.00", symbols);
             String format = df.format(perc);
+//            String meta =
+//                "total recs: " + denom +
+//                    " \r\n - obs: " + val + " => "
+//                    + format + "%";
+            String collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
+                .map(item -> amdrHeaderNameMap.get(item))
+                .collect(Collectors.joining("\r\n"));
+
             String meta =
-                "total recs: " + denom +
-                    " \r\n - obs: " + val + " => "
+                collect2 + "\r\n" +
+                "obs: " + val + " / total recs: " + denom  + " => "
                     + format + "%";
 
             AmdrColumnData percentageCol = new AmdrColumnData();
