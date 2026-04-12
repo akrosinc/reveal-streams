@@ -1203,13 +1203,14 @@ public class AmdrService {
             symbols.setDecimalSeparator('.');
             DecimalFormat df = new DecimalFormat("0.00", symbols);
             String format = df.format(perc);
-//            String meta =
-//                "total recs: " + denom +
-//                    " \r\n - obs: " + val + " => "
-//                    + format + "%";
-            String collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
-                .map(item -> amdrHeaderNameMap.get(item))
-                .collect(Collectors.joining(" \r\n"));
+            String collect2 = "";
+            if (amdrHeaderContributingColumnsMap.get(type) != null && amdrHeaderContributingColumnsMap.get(type).size() == 1) {
+              collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
+                  .map(item -> amdrHeaderNameMap.get(item))
+                  .collect(Collectors.joining("\r\n"));
+              collect2 = collect2 + "\r\n";
+            }
+
             String meta =
                 collect2 +
                 "obs: " + val + " / total recs: " + denom  + " => "
@@ -1487,16 +1488,17 @@ public class AmdrService {
             symbols.setDecimalSeparator('.');
             DecimalFormat df = new DecimalFormat("0.00", symbols);
             String format = df.format(perc);
-//            String meta =
-//                "total recs: " + denom +
-//                    " \r\n - obs: " + val + " => "
-//                    + format + "%";
-            String collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
-                .map(item -> amdrHeaderNameMap.get(item))
-                .collect(Collectors.joining("\r\n"));
+
+            String collect2 = "";
+            if (amdrHeaderContributingColumnsMap.get(type) != null && amdrHeaderContributingColumnsMap.get(type).size() == 1) {
+              collect2 = amdrHeaderContributingColumnsMap.get(type).stream()
+                  .map(item -> amdrHeaderNameMap.get(item))
+                  .collect(Collectors.joining("\r\n"));
+              collect2 = collect2 + "\r\n";
+            }
 
             String meta =
-                collect2 + "\r\n" +
+                 collect2 +
                 "obs: " + val + " / total recs: " + denom  + " => "
                     + format + "%";
 
