@@ -29,6 +29,16 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
   List<AmdrData> findByLocationIdInAndCollectionYear(List<UUID> locationIds, String collectionYear);
   List<AmdrData> findByLocationIdInAndCollectionYearIn(List<UUID> locationIds, List<String> collectionYear);
 
+  @Query(value = ""
+      + "SELECT ad.* From amdr.amdr_data ad\n"
+      + "where ad.location_id in :locationIds  "
+      + "and ad.type in "
+      + "   (SELECT DISTINCT  ahn.col_parent "
+      + "       From amdr.amdr_header_names ahn\n"
+      + "    WHERE ahn.col_type = 'HAPLOTYPE') "
+      + "and ad.collection_year in :collectionYear", nativeQuery = true)
+  List<AmdrData> findByLocationIdInAndCollectionYearInForHaplotype(List<UUID> locationIds, List<String> collectionYear);
+
 
   List<AmdrData> findByLocationIdIn(List<UUID> locationIds);
 
@@ -1884,7 +1894,7 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
       + "            ('pfmdr1','pfmdr1_1246', t.pfmdr1_1246),\n"
       + "\n"
       + "            -- kelch13\n"
-      + "            ('kelch13','kelch13', t.kelch)\n"
+      + "            ('kelch13','kelch_13', t.kelch)\n"
       + "        ) AS v(outer_key, inner_key, val)\n"
       + "    WHERE  l.identifier in :locationList\n"
       + "      AND t.status = 'PROCESSED'\n"
@@ -1973,7 +1983,7 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
       + "            ('pfmdr1','pfmdr1_1246', t.pfmdr1_1246),\n"
       + "\n"
       + "            -- kelch13\n"
-      + "            ('kelch13','kelch13', t.kelch)\n"
+      + "            ('kelch13','kelch_13', t.kelch)\n"
       + "        ) AS v(outer_key, inner_key, val)\n"
       + "    WHERE l.identifier in :locationList\n"
       + "      AND t.status = 'PROCESSED'\n"

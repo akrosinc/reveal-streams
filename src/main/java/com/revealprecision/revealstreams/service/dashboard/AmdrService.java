@@ -599,7 +599,7 @@ public class AmdrService {
                 item -> item.getId().getKey(), // inner map key
                 item -> HeaderName.builder()   // inner map value
                     .color(item.getColor())
-                    .name(item.getId().getKey())
+                    .name(item.getName())
                     .order(item.getColOrder())
                     .build()
             )
@@ -1292,17 +1292,28 @@ public class AmdrService {
       AmdrColumnType dashboardView,
       Map<String, String> amdrHeaderNameMap, Map<String, HslColor> amdrHeaderColorMap, Long maxYear,
       List<List<PlanLocationDetails>> lists, Map<String, List<String>> amdrHeaderContributingColumnsMap) {
-
-    List<AmdrData> amdrDataStream = lists.stream()
-        .flatMap(listOfLocationIds ->
-            amdrRepository.findByLocationIdInAndCollectionYearIn(
-                    listOfLocationIds.stream()
-                        .map(locationDetail -> locationDetail.getLocation().getIdentifier())
-                        .collect(Collectors.toList()),
-                    List.of(String.valueOf(maxYear), "2025"))
-                .stream()
-        ).collect(Collectors.toList());
-
+    List<AmdrData> amdrDataStream;
+    if (AmdrColumnType.HAPLOTYPE.equals(dashboardView)) {
+      amdrDataStream = lists.stream()
+          .flatMap(listOfLocationIds ->
+              amdrRepository.findByLocationIdInAndCollectionYearInForHaplotype(
+                      listOfLocationIds.stream()
+                          .map(locationDetail -> locationDetail.getLocation().getIdentifier())
+                          .collect(Collectors.toList()),
+                      List.of(String.valueOf(maxYear), "2025"))
+                  .stream()
+          ).collect(Collectors.toList());
+    } else {
+      amdrDataStream = lists.stream()
+          .flatMap(listOfLocationIds ->
+              amdrRepository.findByLocationIdInAndCollectionYearIn(
+                      listOfLocationIds.stream()
+                          .map(locationDetail -> locationDetail.getLocation().getIdentifier())
+                          .collect(Collectors.toList()),
+                      List.of(String.valueOf(maxYear), "2025"))
+                  .stream()
+          ).collect(Collectors.toList());
+    }
 
     // -------------------------------
     // 2. Location names
@@ -1433,7 +1444,7 @@ public class AmdrService {
                     col.setDescription(amdrHeaderNameMap.get(subKey));
                     col.setAmdrParent(subkeyParentMap.get(subKey));
 
-                    return new SimpleEntry<>(subKey, col);
+                    return new SimpleEntry<>(subKey.split("-")[0], col);
                   })
                   .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
