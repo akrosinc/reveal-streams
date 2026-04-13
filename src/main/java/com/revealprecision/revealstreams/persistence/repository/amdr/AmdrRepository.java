@@ -383,7 +383,9 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
   List<AmdrPerformanceDataProjection> getTotalIndexVerified(String parentIdentifier);
 
 
-  @Query(value = "SELECT CAST(ppl.identifier as varchar) as parentIdentifier ,  ppl.name as parentName"
+  @Query(value = ""
+      + "SELECT t.parentIdentifier, t.parentName,t.locationIdentifier,t.locationName,t.count from ("
+      + "SELECT CAST(ppl.identifier as varchar) as parentIdentifier ,  ppl.name as parentName"
       + ", cast(pl.identifier as varchar) as locationIdentifier ,pl.name as locationName"
       + ", count(*) as count\n"
       + "from (\n"
@@ -408,7 +410,9 @@ public interface AmdrRepository extends JpaRepository<AmdrData, UUID> {
       + "    WHERE  (:locationId = 'null'  and ppl.identifier is null )\n"
       + "   or (:locationId <> 'null'\n"
       + "           and cast(ppl.identifier as varchar) = :locationId)\n"
-      + "group by  ppl.identifier,ppl.name,pl.identifier,pl.name;", nativeQuery = true)
+      + "group by  ppl.identifier,ppl.name,pl.identifier,pl.name"
+      + " ) as t  inner join\n"
+      + "              location_relationship breaker on cast(breaker.location_identifier as varchar) = t.locationIdentifier", nativeQuery = true)
   List<AmdrPerformanceDataProjection> getTotalIndexToBeVerifiedForRoot(String locationId);
 
 
