@@ -16,6 +16,7 @@ import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboa
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.STH_TREATMENT_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.MDALiteDashboardService.TOTAL_LIVING_ON_THE_STREET;
+import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.COMPLETION_COVERAGE;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.RACD_BASED_MALARIA_PREVALENCE;
 import static com.revealprecision.revealstreams.service.dashboard.SurveyDashboardService.VISITATION_COVERAGE;
 import static java.util.Map.entry;
@@ -68,6 +69,12 @@ public class DashboardProperties {
       ALL_OTHER_LEVELS,
       VISITATION_COVERAGE
       ,DIRECTLY_ABOVE_STRUCTURE_LEVEL, VISITATION_COVERAGE);
+
+
+  private final Map<String, String> zamSurveyDefaultDisplayColumns = Map.of(
+      ALL_OTHER_LEVELS,
+      COMPLETION_COVERAGE
+      ,DIRECTLY_ABOVE_STRUCTURE_LEVEL, COMPLETION_COVERAGE);
 
   private final Map<String, String> nihGhaSurveyDefaultDisplayColumns = Map.of(
       ALL_OTHER_LEVELS,

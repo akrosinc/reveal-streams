@@ -693,6 +693,9 @@ public class SurveyDashboardService {
     if ("uw".equals(instanceProperties.getClient())) {
       response.setDefaultDisplayColumn(
           dashboardProperties.getUwSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
+    } else if ("zam".equals(instanceProperties.getClient())) {
+      response.setDefaultDisplayColumn(
+          dashboardProperties.getZamSurveyDefaultDisplayColumns().getOrDefault(reportLevel, null));
     } else {
       response.setDefaultDisplayColumn(
           dashboardProperties.getNihGhaSurveyDefaultDisplayColumns()
