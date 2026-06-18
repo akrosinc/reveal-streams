@@ -1,6 +1,9 @@
 package com.revealprecision.revealstreams.service.dashboard;
 
 
+import static com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus.NOT_ELIGIBLE;
+import static com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus.NOT_VISITED;
+import static com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus.NO_APPROPRIATE_ADULT_AVAILABLE;
 import static com.revealprecision.revealstreams.util.DashboardUtils.getBusinessStatusColor;
 
 import com.revealprecision.revealstreams.constants.FormConstants.BusinessStatus;
@@ -67,6 +70,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
+  public static final String COMPLETION_COVERAGE = "Completion Coverage (Visited/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
   public static final String COMPLETE = "Complete";
@@ -165,6 +169,56 @@ public class SurveyDashboardService {
 
       columns.put(VISITATION_COVERAGE,
           getFoundCoverage(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+    } else if (instanceProperties.getClient().equals("zam")) {
+
+      columns.put(TOTAL_STRUCTURES,
+          getTotalStructuresCounts(totalStructuresCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(TOTAL_STRUCTURES_TARGETED,
+          getTotalStructuresTargetedCount(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+
+
+      ColumnData noOneHome = getTotalStructuresByState(
+          BusinessStatus.NO_ONE_HOME,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(BusinessStatus.NO_ONE_HOME, noOneHome);
+
+      ColumnData noAppropriateAdult = getTotalStructuresByState(
+          NO_APPROPRIATE_ADULT_AVAILABLE,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(NO_APPROPRIATE_ADULT_AVAILABLE, noAppropriateAdult);
+
+      ColumnData noEligible = getTotalStructuresByState(
+          NOT_ELIGIBLE,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(NOT_ELIGIBLE, noEligible);
+
+      ColumnData notVisited = getTotalStructuresByState(
+          NOT_VISITED,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(NOT_VISITED, notVisited);
+
+      ColumnData completed = getTotalStructuresByState(
+          COMPLETE,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(COMPLETE, completed);
+
+
+      columns.put(
+          TOTAL_STRUCTURES_VISITED,
+          getTotalStructuresFoundCountZam(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+
+
+      columns.put(VISITATION_COVERAGE,
+          getFoundCoverageZam(totalStructuresTargetedCountObj,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(COMPLETION_COVERAGE,
+          getCompletionCoverageZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
     } else {
 
@@ -277,6 +331,50 @@ public class SurveyDashboardService {
     return columnData;
   }
 
+  private ColumnData getFoundCoverageZam(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+    ColumnData columnData = new ColumnData();
+    columnData.setIsPercentage(true);
+    double foundStructures = (double) getTotalStructuresFoundCountZam(totalStructuresTargetedCountObj,
+        locationBusinessStateObjPerGeoLevelMap).getValue();
+    double targetedStructures = (double) getTotalStructuresTargetedCount(
+        totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
+    if (targetedStructures == 0) {
+      columnData.setValue(0d);
+    } else {
+      columnData.setValue((foundStructures / targetedStructures) * 100);
+    }
+    columnData.setMeta("Visited Structures: " + foundStructures + " / " + "Targeted Structure: "
+        + targetedStructures);
+    return columnData;
+  }
+
+
+  private ColumnData getCompletionCoverageZam(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+    ColumnData columnData = new ColumnData();
+    columnData.setIsPercentage(true);
+
+    double completedStructuresCount;
+    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        COMPLETE);
+    if (completedStructuresCountObjCount != null) {
+      completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
+    } else {
+      completedStructuresCount = 0L;
+    }
+
+    double targetedStructures = (double) getTotalStructuresTargetedCount(
+        totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
+    if (targetedStructures == 0) {
+      columnData.setValue(0d);
+    } else {
+      columnData.setValue((completedStructuresCount / targetedStructures) * 100);
+    }
+    columnData.setMeta("Complete Structures: " + completedStructuresCount + " / " + "Targeted Structure: "
+        + targetedStructures);
+    return columnData;
+  }
 //  private ColumnData getDistributionCoverage(long totalStructuresTargetedCountObj,
 //      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 //    ColumnData columnData = new ColumnData();
@@ -534,6 +632,33 @@ public class SurveyDashboardService {
     return columnData;
   }
 
+  private ColumnData getTotalStructuresFoundCountZam(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+
+    ColumnData columnData = new ColumnData();
+    columnData.setValue(0d);
+
+
+    Long notVisitedStructuresCountObj = null;
+    LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+        BusinessStatus.NOT_VISITED);
+
+    if (notVisitedStructuresCountObjCount != null) {
+      notVisitedStructuresCountObj = notVisitedStructuresCountObjCount.getLocationCount();
+    }
+
+    double notVisitedStructuresCount = 0;
+    if (notVisitedStructuresCountObj != null) {
+      notVisitedStructuresCount = notVisitedStructuresCountObj;
+    }
+
+    double found = totalStructuresTargetedCountObj - notVisitedStructuresCount;
+
+    columnData.setValue(found);
+
+    return columnData;
+  }
+
   private ColumnData getTotalStructuresCompleteCount(long totalStructuresTargetedCountObj,
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
 
@@ -613,11 +738,14 @@ public class SurveyDashboardService {
 
     List<GdrsCountsProjection> arr = new ArrayList<>();
 
-    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getRCDCounts(parentLocation.getGeographicLevel().getName());
+    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getRCDCounts(
+        parentLocation.getGeographicLevel().getName());
 
-    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getPassiveCounts(parentLocation.getGeographicLevel().getName());
+    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getPassiveCounts(
+        parentLocation.getGeographicLevel().getName());
 
-    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getIndexCounts(parentLocation.getGeographicLevel().getName());
+    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getIndexCounts(
+        parentLocation.getGeographicLevel().getName());
 
     arr.addAll(rcdCounts);
     arr.addAll(passiveCounts);
@@ -655,7 +783,6 @@ public class SurveyDashboardService {
             Collectors.summingInt(GdrsCountsProjection::getCount)
         ));
 
-
     List<IndividualsPerCompoundByLocationProjection> numberOfIndividualsPerCompoundByLocation
         = hdssCompoundsRepository.getListOfNumberOfIndividualsByLocation(
         parentLocation.getIdentifier());
@@ -673,7 +800,8 @@ public class SurveyDashboardService {
     log.info("IndividualsPerCompoundByLocationProjectionObj {} ",
         individualsByLocationProjectionMap);
 
-    GRDSCountsBelow grdsCountsBelow = new GRDSCountsBelow(totalRCDTested,totalRCDPositive,totalPassiveTested,totalPassivePositive,totalIndex,individualsByLocationProjectionMap);
+    GRDSCountsBelow grdsCountsBelow = new GRDSCountsBelow(totalRCDTested, totalRCDPositive,
+        totalPassiveTested, totalPassivePositive, totalIndex, individualsByLocationProjectionMap);
 
     List<RowData> collect = locations.stream()
         .map(location -> getOperationalDataBelowHighestLevel(
@@ -722,7 +850,7 @@ public class SurveyDashboardService {
     private Map<String, Integer> totalPassiveTested;
     private Map<String, Integer> totalPassivePositive;
     private Map<String, Integer> totalIndex;
-        private Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap;
+    private Map<String, IndividualsPerCompoundByLocationProjectionObj> individualsByLocationProjectionMap;
 //    private IndividualsByLocationProjection numberOfIndividualsByLocation;
   }
 
@@ -772,7 +900,6 @@ public class SurveyDashboardService {
         .collect(Collectors.groupingBy(GdrsCountsProjection::getParIdentifier,
             Collectors.summingInt(GdrsCountsProjection::getCount)
         ));
-
 
     IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
         childLocation.getIdentifier());
@@ -896,8 +1023,11 @@ public class SurveyDashboardService {
 
     int totalIndividuals = 0;
 
-    if (grdsCountsBelow.getIndividualsByLocationProjectionMap()!=null && grdsCountsBelow.getIndividualsByLocationProjectionMap().containsKey(location.getLocationId())){
-      totalIndividuals = grdsCountsBelow.individualsByLocationProjectionMap.get(location.getLocationId()).getIndividualCount();
+    if (grdsCountsBelow.getIndividualsByLocationProjectionMap() != null
+        && grdsCountsBelow.getIndividualsByLocationProjectionMap()
+        .containsKey(location.getLocationId())) {
+      totalIndividuals = grdsCountsBelow.individualsByLocationProjectionMap.get(
+          location.getLocationId()).getIndividualCount();
     }
 
     columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
@@ -905,11 +1035,12 @@ public class SurveyDashboardService {
 
     Integer totalIndexObj = grdsCountsBelow.getTotalIndex().get(location.getLocationId());
     Integer totalRCDObj = grdsCountsBelow.getTotalRCDPositive().get(location.getLocationId());
-    Integer totalPassiveObj = grdsCountsBelow.getTotalPassivePositive().get(location.getLocationId());
+    Integer totalPassiveObj = grdsCountsBelow.getTotalPassivePositive()
+        .get(location.getLocationId());
 
     Integer rcdTestedObj = grdsCountsBelow.getTotalRCDTested().get(location.getLocationId());
-    Integer passiveTestedObj = grdsCountsBelow.getTotalPassiveTested().get(location.getLocationId());
-
+    Integer passiveTestedObj = grdsCountsBelow.getTotalPassiveTested()
+        .get(location.getLocationId());
 
     int totalCases = 0;
     int totalPassive = 0;
@@ -918,15 +1049,25 @@ public class SurveyDashboardService {
     int totalIndex = 0;
     int totalRcdTested = 0;
     int totalPassiveTested = 0;
-    if (totalIndexObj!=null) totalIndex = totalIndexObj;
-    if (totalPassiveObj!=null) totalPassive = totalPassiveObj;
-    if (totalRCDObj!=null) totalRCD = totalRCDObj;
-    if (rcdTestedObj != null) totalRcdTested = rcdTestedObj;
-    if (passiveTestedObj!=null) totalPassiveTested = passiveTestedObj;
+    if (totalIndexObj != null) {
+      totalIndex = totalIndexObj;
+    }
+    if (totalPassiveObj != null) {
+      totalPassive = totalPassiveObj;
+    }
+    if (totalRCDObj != null) {
+      totalRCD = totalRCDObj;
+    }
+    if (rcdTestedObj != null) {
+      totalRcdTested = rcdTestedObj;
+    }
+    if (passiveTestedObj != null) {
+      totalPassiveTested = passiveTestedObj;
+    }
 
-    totalCases = totalRCD + totalPassive ;
+    totalCases = totalRCD + totalPassive;
 
-    String totalCasesMeta = "rcd:  "+totalRCD+" passive: "+totalPassive;
+    String totalCasesMeta = "rcd:  " + totalRCD + " passive: " + totalPassive;
 
     columns.put(TOTAL_INDEX_CASES,
         new ColumnData().setValue(totalPassive));
@@ -965,7 +1106,8 @@ public class SurveyDashboardService {
 
     columns.put(RACD_BASED_MALARIA_PREVALENCE,
         new ColumnData().setValue(
-            rcdBasedMalariaPrevalence).setIsPercentage(true).setMeta(rcdBasedMalariaPrevalenceMeta));
+                rcdBasedMalariaPrevalence).setIsPercentage(true)
+            .setMeta(rcdBasedMalariaPrevalenceMeta));
 
     log.info("Columns {}", columns);
     return columns;
@@ -990,8 +1132,7 @@ public class SurveyDashboardService {
 
     columns.put(TOTAL_INDIVIDUALS, new ColumnData().setValue(
         grdsCounts.getNumberOfIndividualsByLocation() != null
-            ?  grdsCounts.getNumberOfIndividualsByLocation().getIndividualCount(): 0));
-
+            ? grdsCounts.getNumberOfIndividualsByLocation().getIndividualCount() : 0));
 
     int totalIndex = 0;
     int totalRCD = 0;
@@ -1005,21 +1146,31 @@ public class SurveyDashboardService {
     Integer totalRCDPositiveObj = grdsCounts.getTotalRCDPositive().get(location.getLocationId());
     Integer totalPassiveObj = grdsCounts.getTotalPassivePositive().get(location.getLocationId());
 
-    if (totalIndexObj != null) totalIndex = totalIndexObj;
-    if (totalPassiveObj != null) totalPassive = totalPassiveObj;
-    if (totalRCDPositiveObj != null) totalRCD = totalRCDPositiveObj;
-    if (rcdTestedObj!=null) totalRcdTested = rcdTestedObj;
-    if (passiveTestedObj!=null) totalPassiveTested = passiveTestedObj;
+    if (totalIndexObj != null) {
+      totalIndex = totalIndexObj;
+    }
+    if (totalPassiveObj != null) {
+      totalPassive = totalPassiveObj;
+    }
+    if (totalRCDPositiveObj != null) {
+      totalRCD = totalRCDPositiveObj;
+    }
+    if (rcdTestedObj != null) {
+      totalRcdTested = rcdTestedObj;
+    }
+    if (passiveTestedObj != null) {
+      totalPassiveTested = passiveTestedObj;
+    }
 
     int totalTested =
-        totalPassiveTested+
+        totalPassiveTested +
             totalRcdTested;
 
     int totalCases =
-        totalRCD+
+        totalRCD +
             totalPassive;
 
-    String totalCasesMeta = "rcd:  "+totalRCD+" passive: "+totalPassive;
+    String totalCasesMeta = "rcd:  " + totalRCD + " passive: " + totalPassive;
 
     columns.put(TOTAL_INDEX_CASES,
         new ColumnData().setValue(totalPassive));
@@ -1048,8 +1199,8 @@ public class SurveyDashboardService {
 
             .setMeta(passiveIndexCaseDetectionRatioMeta));
 
-    int totalIndividuals=0;
-    if ( grdsCounts.getNumberOfIndividualsByLocation()!= null) {
+    int totalIndividuals = 0;
+    if (grdsCounts.getNumberOfIndividualsByLocation() != null) {
       totalIndividuals = grdsCounts.getNumberOfIndividualsByLocation().getIndividualCount();
     }
 
@@ -1061,7 +1212,8 @@ public class SurveyDashboardService {
 
     columns.put(RACD_BASED_MALARIA_PREVALENCE,
         new ColumnData().setValue(
-            rcdBasedMalariaPrevalence).setIsPercentage(true).setMeta(rcdBasedMalariaPrevalenceMeta));
+                rcdBasedMalariaPrevalence).setIsPercentage(true)
+            .setMeta(rcdBasedMalariaPrevalenceMeta));
 
     log.info("Columns {}", columns);
     return columns;

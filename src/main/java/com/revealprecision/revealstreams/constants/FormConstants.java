@@ -90,7 +90,8 @@ public interface FormConstants {
     String ROUND_1 = "round_one";
     String ROUND_2 = "round_two";
     String ROUND_3 = "round_three";
-    String ROUNDREFUSED = "Refused";
+    String REFUSED = "Refused";
+    String ROUNDREFUSED = REFUSED;
     String ROUND_ONE_REFUSED = "round_one_refused";
     String ROUND_TWO_REFUSED = "round_two_refused";
     String ROUND_THREE_REFUSED = "round_three_refused";
@@ -115,6 +116,7 @@ public interface FormConstants {
     String PARTIALLY_SPRAYED = "Partially Sprayed";
 
 
+
     List<String> IRS_BUSINESS_STATUS = Arrays.asList(NOT_VISITED, NOT_SPRAYED,
         SPRAYED, NOT_SPRAYABLE, COMPLETE, INCOMPLETE, NOT_ELIGIBLE, IN_PROGRESS);
 
@@ -128,13 +130,15 @@ public interface FormConstants {
         INELIGIBLE,
         TASKS_INCOMPLETE, COMPLETE, NOT_ELIGIBLE, FAMILY_NO_TASK_REGISTERED, ALL_TASKS_COMPLETE,
         SPAQ_COMPLETE);
-    String REFUSED_OR_PERMANENTLY_ABSENT = "Refused or Permanently Absent";
-    String REFUSED = "Refused";
+    String REFUSED_OR_PERMANENTLY_ABSENT = REFUSED + " or Permanently Absent";
+
 
     String PERMANENTLY_ABSENT = "Permanently Absent";
     String PARTIALLY_COMPLETE_OR_TEMPORARILY_ABSENT = "Partially complete or Temporarily Absent";
     String PARTIALLY_COMPLETE = "Partially complete";
     String TEMPORARILY_ABSENT = "Temporarily Absent";
+    String NO_ONE_HOME = "No one home";
+    String NO_APPROPRIATE_ADULT_AVAILABLE = "No appropriate adult available";
   }
 
   interface AboveStructureStatus {
