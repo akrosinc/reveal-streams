@@ -177,7 +177,7 @@ public class SurveyDashboardService {
               locationBusinessStateObjPerGeoLevelMap));
 
       columns.put(TOTAL_STRUCTURES_TARGETED,
-          getTotalStructuresTargetedCount(totalStructuresTargetedCountObj,
+          getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
 
 
@@ -561,6 +561,23 @@ public class SurveyDashboardService {
     totalStructuresColumnData.setIsPercentage(false);
     return totalStructuresColumnData;
   }
+
+  private ColumnData getTotalStructuresTargetedCountZam(long totalStructuresTargetedCountObj,
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
+
+    double totalStructuresInPlanLocationCount = 0;
+    totalStructuresInPlanLocationCount = totalStructuresTargetedCountObj;
+
+
+    double totalStructuresInTargetedCount =
+        totalStructuresInPlanLocationCount ;
+
+    ColumnData totalStructuresTargetedColumnData = new ColumnData();
+    totalStructuresTargetedColumnData.setValue(totalStructuresInTargetedCount);
+    totalStructuresTargetedColumnData.setIsPercentage(false);
+    return totalStructuresTargetedColumnData;
+  }
+
 
   private ColumnData getTotalStructuresTargetedCount(long totalStructuresTargetedCountObj,
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
