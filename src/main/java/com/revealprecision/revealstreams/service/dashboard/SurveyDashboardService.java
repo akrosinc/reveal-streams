@@ -337,7 +337,7 @@ public class SurveyDashboardService {
     columnData.setIsPercentage(true);
     double foundStructures = (double) getTotalStructuresFoundCountZam(totalStructuresTargetedCountObj,
         locationBusinessStateObjPerGeoLevelMap).getValue();
-    double targetedStructures = (double) getTotalStructuresTargetedCount(
+    double targetedStructures = (double) getTotalStructuresTargetedCountZam(
         totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
     if (targetedStructures == 0) {
       columnData.setValue(0d);
@@ -364,7 +364,7 @@ public class SurveyDashboardService {
       completedStructuresCount = 0L;
     }
 
-    double targetedStructures = (double) getTotalStructuresTargetedCount(
+    double targetedStructures = (double) getTotalStructuresTargetedCountZam(
         totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
     if (targetedStructures == 0) {
       columnData.setValue(0d);
