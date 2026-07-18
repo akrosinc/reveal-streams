@@ -224,7 +224,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "                            CAST(ARRAY ['rdt','rcd_barcode','individual'] as text[])) with ordinality arr(val, pos)\n"
       + "\n"
       + "               where e.event_type = 'rcd'\n"
-      + "                 and arr.val ->> 'rdt' IS NOT NULL\n"
+      + "                 and arr.val ->> 'rdt' IS NOT NULL and e.plan_identifier = :planIdentifier\n"
       + "              ) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -242,7 +242,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "WHERE pl.location_property ->> 'geographicLevel'= :geographicLevel and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,p.parName, p.parGeo", nativeQuery = true)
-  List<GdrsCountsProjection> getRCDCounts(String geographicLevel);
+  List<GdrsCountsProjection> getRCDCounts(String geographicLevel,UUID planIdentifier);
 
   @Query(value = "SELECT p.rdt,\n"
       + "       CAST(p.parIdentifier as VARCHAR) as parIdentifier,\n"
@@ -268,7 +268,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "                            CAST(ARRAY ['rdt','rcd_barcode','individual'] as text[])) with ordinality arr(val, pos)\n"
       + "\n"
       + "               where e.event_type = 'rcd'\n"
-      + "                 and arr.val ->> 'rdt' IS NOT NULL\n"
+      + "                 and arr.val ->> 'rdt' IS NOT NULL and e.plan_identifier = :planIdentifier\n"
       + "              ) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -286,7 +286,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "WHERE pl.location_property ->> 'geographicLevel' is null and p.parIdentifier IS NOT NULL\n"
       + "group by p.rdt,\n"
       + "         p.parIdentifier,p.parName, p.parGeo", nativeQuery = true)
-  List<GdrsCountsProjection> getHighestLevelRCDCounts();
+  List<GdrsCountsProjection> getHighestLevelRCDCounts(UUID planIdentifier);
 
 
   @Query(value = "SELECT p.rdt,\n"
@@ -324,7 +324,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "                                        CAST(ARRAY ['rdt','cluster','rcd_barcode','individual'] as text[])) with ordinality arr(val, pos)\n"
       + "                                    left join location l on l.name = arr.val ->> 'cluster'\n"
       + "                           WHERE e.event_type = 'passive_case_detection'\n"
-      + "                             and arr.val ->> 'rdt' is not null\n"
+      + "                             and arr.val ->> 'rdt' is not null and e.plan_identifier = :planIdentifier\n"
       + "                       ) as t) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -344,7 +344,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "         p.parIdentifier,\n"
       + "         p.parName,\n"
       + "         p.parGeo;",nativeQuery = true)
-  List<GdrsCountsProjection> getHighestLevelPassiveCounts();
+  List<GdrsCountsProjection> getHighestLevelPassiveCounts(UUID planIdentifier);
 
   @Query(value = "SELECT p.rdt,\n"
       + "       CAST(p.parIdentifier as VARCHAR) as parIdentifier,\n"
@@ -381,7 +381,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "                                        CAST(ARRAY ['rdt','cluster','rcd_barcode','individual'] as text[])) with ordinality arr(val, pos)\n"
       + "                                    left join location l on l.name = arr.val ->> 'cluster'\n"
       + "                           WHERE e.event_type = 'passive_case_detection'\n"
-      + "                             and arr.val ->> 'rdt' is not null\n"
+      + "                             and arr.val ->> 'rdt' is not null  and e.plan_identifier = :planIdentifier\n"
       + "                       ) as t) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -401,7 +401,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "         p.parIdentifier,\n"
       + "         p.parName,\n"
       + "         p.parGeo;",nativeQuery = true)
-  List<GdrsCountsProjection> getPassiveCounts(String geographicLevel);
+  List<GdrsCountsProjection> getPassiveCounts(String geographicLevel,UUID planIdentifier);
 
   @Query(value = "SELECT CAST(p.parIdentifier as VARCHAR) as parIdentifier,\n"
       + "       p.parName,\n"
@@ -425,7 +425,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "\n"
       + "                  WHERE e.event_type in\n"
       + "                        ('index_case_member',\n"
-      + "                         'secondary_index_case_member')\n"
+      + "                         'secondary_index_case_member')  and e.plan_identifier = :planIdentifier\n"
       + "              ) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -442,7 +442,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
       + "WHERE pl.location_property ->> 'geographicLevel' IS NULL and p.parIdentifier IS NOT NULL\n"
       + "group by p.parIdentifier,p.parName, p.parGeo;",nativeQuery = true)
-  List<GdrsCountsProjection> getHighestLevelIndexCounts();
+  List<GdrsCountsProjection> getHighestLevelIndexCounts(UUID planIdentifier);
 
   @Query(value = "SELECT CAST(p.parIdentifier as VARCHAR) as parIdentifier,\n"
       + "       p.parName,\n"
@@ -466,7 +466,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "\n"
       + "                  WHERE e.event_type in\n"
       + "                        ('index_case_member',\n"
-      + "                         'secondary_index_case_member')\n"
+      + "                         'secondary_index_case_member')  and e.plan_identifier = :planIdentifier\n"
       + "              ) as g\n"
       + "                  left join location l\n"
       + "                            on cast(l.identifier as varchar) = g.locationIdentifier\n"
@@ -483,7 +483,7 @@ public interface HdssCompoundsRepository extends EntityGraphJpaRepository<HdssCo
       + "         left join location pl on pl.identifier = pplr.parent_identifier\n"
       + "WHERE pl.location_property ->> 'geographicLevel' = :geographicLevel and p.parIdentifier IS NOT NULL\n"
       + "group by p.parIdentifier,p.parName, p.parGeo;",nativeQuery = true)
-  List<GdrsCountsProjection> getIndexCounts(String geographicLevel);
+  List<GdrsCountsProjection> getIndexCounts(String geographicLevel,UUID planIdentifier);
 
 
 

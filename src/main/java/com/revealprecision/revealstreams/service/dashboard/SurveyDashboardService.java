@@ -759,13 +759,13 @@ public class SurveyDashboardService {
     List<GdrsCountsProjection> arr = new ArrayList<>();
 
     List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getRCDCounts(
-        parentLocation.getGeographicLevel().getName());
+        parentLocation.getGeographicLevel().getName(), plan.getIdentifier());
 
     List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getPassiveCounts(
-        parentLocation.getGeographicLevel().getName());
+        parentLocation.getGeographicLevel().getName(), plan.getIdentifier());
 
     List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getIndexCounts(
-        parentLocation.getGeographicLevel().getName());
+        parentLocation.getGeographicLevel().getName(), plan.getIdentifier());
 
     arr.addAll(rcdCounts);
     arr.addAll(passiveCounts);
@@ -879,11 +879,11 @@ public class SurveyDashboardService {
 
     List<GdrsCountsProjection> arr = new ArrayList<>();
 
-    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getHighestLevelRCDCounts();
+    List<GdrsCountsProjection> rcdCounts = hdssCompoundsRepository.getHighestLevelRCDCounts(plan.getIdentifier());
 
-    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getHighestLevelPassiveCounts();
+    List<GdrsCountsProjection> passiveCounts = hdssCompoundsRepository.getHighestLevelPassiveCounts(plan.getIdentifier());
 
-    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getHighestLevelIndexCounts();
+    List<GdrsCountsProjection> indexCounts = hdssCompoundsRepository.getHighestLevelIndexCounts(plan.getIdentifier());
 
     arr.addAll(rcdCounts);
     arr.addAll(passiveCounts);
