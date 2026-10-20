@@ -122,7 +122,7 @@ public class LocationBusinessStatusService {
     return totalLocationsByParentAndPlanAndAction.stream()
         .collect(
             Collectors.toMap(
-                LocationBusinessStateCount::getTaskBusinessStatus,
+                LocationBusinessStateCount::getActionTitle,
                 LocationBusinessStateCount::getLocationCount,
                 (a, b) -> b));
   }

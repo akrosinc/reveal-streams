@@ -209,7 +209,8 @@ public class SurveyDashboardService {
           childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
           LocationConstants.STRUCTURE, plan);
 
-      Map<String,Long> totalStructuresTargetedCountObjByAction = locationBusinessStatusService.getTotalLocationsByParentAndPlanAndAction(
+      Map<String,Long> totalStructuresTargetedCountObjByAction
+          = locationBusinessStatusService.getTotalLocationsByParentAndPlanAndAction(
           plan.getIdentifier(),
           childLocation.getIdentifier(),
           plan.getLocationHierarchy().getIdentifier());
