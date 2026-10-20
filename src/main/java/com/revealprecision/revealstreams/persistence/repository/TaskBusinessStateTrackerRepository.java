@@ -80,11 +80,11 @@ public interface TaskBusinessStateTrackerRepository extends
 
   @Query(
       value =
-          "SELECT a.identifier as actionIdentifier\n"
+          "SELECT cast(a.identifier as varchar) as actionIdentifier\n"
               + "     , a.title as actionTitle\n"
-              + "     , t.business_status as taskBusinessStatus\n"
+              + "     , cast(t.business_status as varchar) as taskBusinessStatus\n"
               + "     , arr.loc  as parentLocationIdentifier\n"
-              + "     , t.plan_identifier as planIdentifier"
+              + "     , cast(t.plan_identifier as varchar) as planIdentifier"
               + "     , count(*) as locationCount\n"
               + "FROM task t\n"
               + "         JOIN location_relationship lr\n"
@@ -120,11 +120,13 @@ public interface TaskBusinessStateTrackerRepository extends
   long getTotalLocationsByParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier);
 
-  @Query(value = "SELECT a.identifier\n"
-      + "     , a.title\n"
-      + "     , arr.loc\n"
-      + "     , t.plan_identifier\n"
-      + "     , count(*)\n"
+
+
+  @Query(value = "SELECT cast(a.identifier as varchar) as actionIdentifier\n"
+      + "     , a.title as actionTitle\n"
+      + "     , cast(arr.loc as varchar) as parentLocationIdentifier\n"
+      + "     , cast(t.plan_identifier as varchar) as planIdentifier\n"
+      + "     , count(*) as locationCount\n"
       + "FROM task t\n"
       + "         JOIN location_relationship lr\n"
       + "              ON t.base_entity_identifier = lr.location_identifier\n"

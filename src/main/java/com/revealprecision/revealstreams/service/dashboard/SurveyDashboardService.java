@@ -74,6 +74,9 @@ public class SurveyDashboardService {
   private static final String NO_ONE_HOME_FOllOW_UP = "No one home F";
   private static final String NO_ONE_HOME_DESTRUCTION = "No one home D";
 
+  private static final String REFUSED_FOLLOWUP = "Refused F";
+  private static final String REFUSED_DESTRUCTION = "Refused D";
+
   private static final String NO_APPROPRIATE_ADULT_AVAILABLE_FOLLOWUP = "No appropriate adult available F";
   private static final String NO_APPROPRIATE_ADULT_AVAILABLE_DESTRUCTION = "No appropriate adult available D";
 
@@ -230,6 +233,11 @@ public class SurveyDashboardService {
           locationBusinessStateObjPerGeoLevelMap);
       columns.put(NO_ONE_HOME_FOllOW_UP, noOneHomeFollowup);
 
+      ColumnData refusedFollowup = getTotalStructuresByState(
+          BusinessStatus.REFUSED,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(REFUSED_FOLLOWUP, refusedFollowup);
+
       ColumnData noAppropriateAdultFollowup = getTotalStructuresByState(
           NO_APPROPRIATE_ADULT_AVAILABLE,
           locationBusinessStateObjPerGeoLevelMap);
@@ -261,6 +269,11 @@ public class SurveyDashboardService {
       columns.put(TOTAL_STRUCTURES_TARGETED_Destruction,
           getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObjDestruction,
               locationBusinessStateObjPerGeoLevelMap));
+
+      ColumnData refusedDestruction = getTotalStructuresByState(
+          BusinessStatus.REFUSED,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(REFUSED_DESTRUCTION, refusedDestruction);
 
       ColumnData noOneHomeDestruction = getTotalStructuresByState(
           BusinessStatus.NO_ONE_HOME,
