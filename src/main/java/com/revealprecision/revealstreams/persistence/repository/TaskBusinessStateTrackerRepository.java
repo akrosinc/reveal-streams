@@ -96,7 +96,7 @@ public interface TaskBusinessStateTrackerRepository extends
               + "  and lr.location_hierarchy_identifier = :locationHierarchyIdentifier\n"
               + "  and arr.loc = :parentLocationIdentifier\n"
               + "group by a.identifier, a.title, t.business_status\n"
-              + "       , arr.loc", nativeQuery = true)
+              + "       , arr.loc, t.plan_identifier", nativeQuery = true)
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelByAction(UUID planIdentifier,
       UUID parentLocationIdentifier,
       UUID locationHierarchyIdentifier);
