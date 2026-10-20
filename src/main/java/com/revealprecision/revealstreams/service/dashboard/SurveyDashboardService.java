@@ -74,6 +74,10 @@ public class SurveyDashboardService {
   private static final String NO_ONE_HOME_FOllOW_UP = "No one home F";
   private static final String NO_ONE_HOME_DESTRUCTION = "No one home D";
 
+  private static final String NO_APPROPRIATE_ADULT_AVAILABLE_FOLLOWUP = "No appropriate adult available F";
+  private static final String NO_APPROPRIATE_ADULT_AVAILABLE_DESTRUCTION = "No appropriate adult available D";
+
+
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
@@ -221,29 +225,15 @@ public class SurveyDashboardService {
           getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
 
-      columns.put(TOTAL_STRUCTURES_TARGETED_Destruction,
-          getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObjDestruction,
-              locationBusinessStateObjPerGeoLevelMap));
-
       ColumnData noOneHomeFollowup = getTotalStructuresByState(
           BusinessStatus.NO_ONE_HOME,
           locationBusinessStateObjPerGeoLevelMap);
       columns.put(NO_ONE_HOME_FOllOW_UP, noOneHomeFollowup);
 
-      ColumnData noOneHomeDestruction = getTotalStructuresByState(
-          BusinessStatus.NO_ONE_HOME,
-          locationBusinessStateObjPerGeoLevelMapDestruction);
-      columns.put(NO_ONE_HOME_DESTRUCTION, noOneHomeDestruction);
-
-      ColumnData noAppropriateAdult = getTotalStructuresByState(
+      ColumnData noAppropriateAdultFollowup = getTotalStructuresByState(
           NO_APPROPRIATE_ADULT_AVAILABLE,
           locationBusinessStateObjPerGeoLevelMap);
-      columns.put(NO_APPROPRIATE_ADULT_AVAILABLE, noAppropriateAdult);
-
-      ColumnData noEligible = getTotalStructuresByState(
-          NOT_ELIGIBLE,
-          locationBusinessStateObjPerGeoLevelMap);
-      columns.put(NOT_ELIGIBLE, noEligible);
+      columns.put(NO_APPROPRIATE_ADULT_AVAILABLE_FOLLOWUP, noAppropriateAdultFollowup);
 
       ColumnData notVisited = getTotalStructuresByState(
           NOT_VISITED,
@@ -254,11 +244,6 @@ public class SurveyDashboardService {
           COMPLETE,
           locationBusinessStateObjPerGeoLevelMap);
       columns.put(COMPLETE_FOLLOWUP, completedFollowup);
-
-      ColumnData completedDestruction = getTotalStructuresByState(
-          COMPLETE,
-          locationBusinessStateObjPerGeoLevelMapDestruction);
-      columns.put(COMPLETE_DESTRUCTION, completedDestruction);
 
       columns.put(
           TOTAL_STRUCTURES_VISITED,
@@ -272,6 +257,31 @@ public class SurveyDashboardService {
       columns.put(COMPLETION_COVERAGE,
           getCompletionCoverageZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
+
+      columns.put(TOTAL_STRUCTURES_TARGETED_Destruction,
+          getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObjDestruction,
+              locationBusinessStateObjPerGeoLevelMap));
+
+      ColumnData noOneHomeDestruction = getTotalStructuresByState(
+          BusinessStatus.NO_ONE_HOME,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(NO_ONE_HOME_DESTRUCTION, noOneHomeDestruction);
+
+      ColumnData noAppropriateAdultDestruction = getTotalStructuresByState(
+          NO_APPROPRIATE_ADULT_AVAILABLE,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(NO_APPROPRIATE_ADULT_AVAILABLE_DESTRUCTION, noAppropriateAdultDestruction);
+
+      ColumnData noEligible = getTotalStructuresByState(
+          NOT_ELIGIBLE,
+          locationBusinessStateObjPerGeoLevelMap);
+      columns.put(NOT_ELIGIBLE, noEligible);
+
+      ColumnData completedDestruction = getTotalStructuresByState(
+          COMPLETE,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(COMPLETE_DESTRUCTION, completedDestruction);
+
     } else {
 
       IndividualsByLocationProjection numberOfIndividualsByLocation = hdssCompoundsRepository.getNumberOfIndividualsByLocation(
