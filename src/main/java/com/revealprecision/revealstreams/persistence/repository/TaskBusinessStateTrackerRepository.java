@@ -83,7 +83,7 @@ public interface TaskBusinessStateTrackerRepository extends
           "SELECT cast(a.identifier as varchar) as actionIdentifier\n"
               + "     , a.title as actionTitle\n"
               + "     , cast(t.business_status as varchar) as taskBusinessStatus\n"
-              + "     , arr.loc  as parentLocationIdentifier\n"
+              + "     , cast(arr.loc as varchar)  as parentLocationIdentifier\n"
               + "     , cast(t.plan_identifier as varchar) as planIdentifier"
               + "     , count(*) as locationCount\n"
               + "FROM task t\n"
