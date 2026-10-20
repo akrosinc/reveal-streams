@@ -11,6 +11,7 @@ import com.revealprecision.revealstreams.constants.LocationConstants;
 import com.revealprecision.revealstreams.dto.FeatureSetResponse;
 import com.revealprecision.revealstreams.dto.LocationResponse;
 import com.revealprecision.revealstreams.dto.PlanLocationDetails;
+import com.revealprecision.revealstreams.enums.ActionTitleEnum;
 import com.revealprecision.revealstreams.enums.MdaLiteReportType;
 import com.revealprecision.revealstreams.factory.LocationResponseFactory;
 import com.revealprecision.revealstreams.models.ColumnData;
@@ -66,6 +67,13 @@ public class SurveyDashboardService {
 
   private static final String TOTAL_STRUCTURES = "Total structures";
   private static final String TOTAL_STRUCTURES_TARGETED = "Total Structures Targeted";
+
+  private static final String TOTAL_STRUCTURES_TARGETED_followup = "Total Structures Targeted F";
+  private static final String TOTAL_STRUCTURES_TARGETED_Destruction = "Total Structures Targeted D";
+
+  private static final String NO_ONE_HOME_FOllOW_UP = "No one home F";
+  private static final String NO_ONE_HOME_DESTRUCTION = "No one home D";
+
   private static final String TOTAL_STRUCTURES_VISITED = "Total structures visited";
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
@@ -74,6 +82,9 @@ public class SurveyDashboardService {
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
   public static final String COMPLETE = "Complete";
+  public static final String COMPLETE_FOLLOWUP = "Complete F";
+  public static final String COMPLETE_DESTRUCTION = "Complete D";
+
   public static final String MONTH_THREE_COMPLETE_COUNT = "Month Three Complete";
   public static final String MONTH_SIX_COMPLETE_COUNT = "Month Six Complete";
   public static final String ENROLLED_COUNT = "Enrolled";
@@ -96,6 +107,7 @@ public class SurveyDashboardService {
 
     Map<String, ColumnData> columns = new LinkedHashMap<>();
 
+    if (instanceProperties.getClient().equals("uw")) {
     Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap =
         locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevel(
             plan.getIdentifier(), childLocation.getIdentifier(),
@@ -120,7 +132,7 @@ public class SurveyDashboardService {
     log.debug("child location: {} - {}, totalStructuresTargetedCountObj: {}",
         childLocation.getIdentifier(), childLocation.getName(), totalStructuresTargetedCountObj);
 
-    if (instanceProperties.getClient().equals("uw")) {
+
 
       columns.put(TOTAL_STRUCTURES,
           getTotalStructuresCounts(totalStructuresCountObj,
@@ -172,19 +184,56 @@ public class SurveyDashboardService {
               locationBusinessStateObjPerGeoLevelMap));
     } else if (instanceProperties.getClient().equals("zam")) {
 
+      Map<String, Map<String, LocationBusinessStateCount>> locationBusinessStateObjPerGeoLevelActionMap =
+          locationBusinessStatusService.getLocationBusinessStateObjPerGeoLevelByAction(
+              plan.getIdentifier(), childLocation.getIdentifier(),
+              childLocation.getGeographicLevel().getName(),
+              plan.getLocationHierarchy().getIdentifier());
+
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap
+          = locationBusinessStateObjPerGeoLevelActionMap.get(
+          ActionTitleEnum.FOLLOWUP.getActionTitle());
+
+      Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMapDestruction
+          = locationBusinessStateObjPerGeoLevelActionMap.get(
+          ActionTitleEnum.DESTRUCTION.getActionTitle());
+
+      Long totalStructuresCountObj = locationBusinessStatusService.getLocationCountsForGeoLevelByHierarchyLocationParent(
+          childLocation.getIdentifier(), plan.getLocationHierarchy().getIdentifier(),
+          LocationConstants.STRUCTURE, plan);
+
+      Map<String,Long> totalStructuresTargetedCountObjByAction = locationBusinessStatusService.getTotalLocationsByParentAndPlanAndAction(
+          plan.getIdentifier(),
+          childLocation.getIdentifier(),
+          plan.getLocationHierarchy().getIdentifier());
+
+      long totalStructuresTargetedCountObj =
+          totalStructuresTargetedCountObjByAction.get(ActionTitleEnum.FOLLOWUP.getActionTitle());
+
+      long totalStructuresTargetedCountObjDestruction =
+          totalStructuresTargetedCountObjByAction.get(ActionTitleEnum.FOLLOWUP.getActionTitle());
+
       columns.put(TOTAL_STRUCTURES,
           getTotalStructuresCounts(totalStructuresCountObj,
               locationBusinessStateObjPerGeoLevelMap));
 
-      columns.put(TOTAL_STRUCTURES_TARGETED,
+      columns.put(TOTAL_STRUCTURES_TARGETED_followup,
           getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
 
+      columns.put(TOTAL_STRUCTURES_TARGETED_Destruction,
+          getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObjDestruction,
+              locationBusinessStateObjPerGeoLevelMap));
 
-      ColumnData noOneHome = getTotalStructuresByState(
+      ColumnData noOneHomeFollowup = getTotalStructuresByState(
           BusinessStatus.NO_ONE_HOME,
           locationBusinessStateObjPerGeoLevelMap);
-      columns.put(BusinessStatus.NO_ONE_HOME, noOneHome);
+      columns.put(NO_ONE_HOME_FOllOW_UP, noOneHomeFollowup);
+
+      ColumnData noOneHomeDestruction = getTotalStructuresByState(
+          BusinessStatus.NO_ONE_HOME,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(NO_ONE_HOME_DESTRUCTION, noOneHomeDestruction);
 
       ColumnData noAppropriateAdult = getTotalStructuresByState(
           NO_APPROPRIATE_ADULT_AVAILABLE,
@@ -201,17 +250,20 @@ public class SurveyDashboardService {
           locationBusinessStateObjPerGeoLevelMap);
       columns.put(NOT_VISITED, notVisited);
 
-      ColumnData completed = getTotalStructuresByState(
+      ColumnData completedFollowup = getTotalStructuresByState(
           COMPLETE,
           locationBusinessStateObjPerGeoLevelMap);
-      columns.put(COMPLETE, completed);
+      columns.put(COMPLETE_FOLLOWUP, completedFollowup);
 
+      ColumnData completedDestruction = getTotalStructuresByState(
+          COMPLETE,
+          locationBusinessStateObjPerGeoLevelMapDestruction);
+      columns.put(COMPLETE_DESTRUCTION, completedDestruction);
 
       columns.put(
           TOTAL_STRUCTURES_VISITED,
           getTotalStructuresFoundCountZam(totalStructuresTargetedCountObj,
               locationBusinessStateObjPerGeoLevelMap));
-
 
       columns.put(VISITATION_COVERAGE,
           getFoundCoverageZam(totalStructuresTargetedCountObj,

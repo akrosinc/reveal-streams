@@ -8,5 +8,9 @@ public interface LocationBusinessStateCount {
 
   String getTaskBusinessStatus();
 
+  String getActionTitle();
+
+  String getActionIdentifier();
+
   Long getLocationCount();
 }

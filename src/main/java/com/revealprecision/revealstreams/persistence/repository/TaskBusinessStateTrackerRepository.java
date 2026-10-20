@@ -80,6 +80,29 @@ public interface TaskBusinessStateTrackerRepository extends
 
   @Query(
       value =
+          "SELECT a.identifier as actionIdentifier\n"
+              + "     , a.title as actionTitle\n"
+              + "     , t.business_status as taskBusinessStatus\n"
+              + "     , arr.loc  as parentLocationIdentifier\n"
+              + "     , t.plan_identifier as planIdentifier"
+              + "     , count(*) as locationCount\n"
+              + "FROM task t\n"
+              + "         JOIN location_relationship lr\n"
+              + "              ON t.base_entity_identifier = lr.location_identifier\n"
+              + "         CROSS JOIN LATERAL unnest(lr.ancestry) WITH ORDINALITY AS arr(loc, pos)\n"
+              + "         left join action a on a.identifier = t.action_identifier\n"
+              + "WHERE t.parent_task_identifier IS NULL\n"
+              + "  and t.plan_identifier = :planIdentifier\n"
+              + "  and lr.location_hierarchy_identifier = :locationHierarchyIdentifier\n"
+              + "  and arr.loc = :parentLocationIdentifier\n"
+              + "group by a.identifier, a.title, t.business_status\n"
+              + "       , arr.loc", nativeQuery = true)
+  Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelByAction(UUID planIdentifier,
+      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier);
+
+  @Query(
+      value =
           "SELECT CAST(ebsaet.parent as varchar) as parentLocationIdentifier, CAST(ebsaet.plan_identifier as varchar) as planIdentifier,\n"
               + "       ebsaet.businessStatus as taskBusinessStatus, count(*) as locationCount\n"
               + "from event_business_state_and_event_tracker ebsaet\n"
@@ -96,5 +119,24 @@ public interface TaskBusinessStateTrackerRepository extends
       + "where tbst.parent_location_identifier = :parentLocationIdentifier and tbst.plan_identifier = :planIdentifier", nativeQuery = true)
   long getTotalLocationsByParentAndPlan(UUID planIdentifier,
       UUID parentLocationIdentifier);
+
+  @Query(value = "SELECT a.identifier\n"
+      + "     , a.title\n"
+      + "     , arr.loc\n"
+      + "     , t.plan_identifier\n"
+      + "     , count(*)\n"
+      + "FROM task t\n"
+      + "         JOIN location_relationship lr\n"
+      + "              ON t.base_entity_identifier = lr.location_identifier\n"
+      + "         CROSS JOIN LATERAL unnest(lr.ancestry) WITH ORDINALITY AS arr(loc, pos)\n"
+      + "         left join action a on a.identifier = t.action_identifier\n"
+      + "WHERE t.parent_task_identifier IS NULL\n"
+      + "  and t.plan_identifier = :planIdentifier\n"
+      + "  and lr.location_hierarchy_identifier = :locationHierarchyIdentifier\n"
+      + "  and arr.loc = :parentLocationIdentifier\n"
+      + "group by a.identifier, a.title, t.plan_identifier\n"
+      + "       , arr.loc;", nativeQuery = true)
+  Set<LocationBusinessStateCount> getTotalLocationsByParentAndPlanAndAction(UUID planIdentifier,
+      UUID parentLocationIdentifier,UUID locationHierarchyIdentifier);
 
 }

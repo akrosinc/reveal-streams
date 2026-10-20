@@ -111,6 +111,21 @@ public class LocationBusinessStatusService {
         parentLocationIdentifier);
   }
 
+  public Map<String,Long> getTotalLocationsByParentAndPlanAndAction(UUID planIdentifier,
+      UUID parentLocationIdentifier,UUID locationHierarchyIdentifier) {
+
+    Set<LocationBusinessStateCount> totalLocationsByParentAndPlanAndAction = taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlanAndAction(
+        planIdentifier,
+        parentLocationIdentifier, locationHierarchyIdentifier);
+
+    return totalLocationsByParentAndPlanAndAction.stream()
+        .collect(
+            Collectors.toMap(
+                LocationBusinessStateCount::getTaskBusinessStatus,
+                LocationBusinessStateCount::getLocationCount,
+                (a, b) -> b));
+  }
+
 
   public LocationBusinessStateCount getLocationBusinessStateObjPerBusinessStatusAndGeoLevelForNonWaterBodies(
       UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
@@ -175,6 +190,31 @@ public class LocationBusinessStatusService {
         Collectors.toMap(LocationBusinessStateCount::getTaskBusinessStatus,
             locationBusinessStateCount -> locationBusinessStateCount, (a, b) -> b));
 
+  }
+
+  public Map<String,Map<String, LocationBusinessStateCount>> getLocationBusinessStateObjPerGeoLevelByAction(
+      UUID planIdentifier, UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID locationHierarchyIdentifier) {
+
+    log.debug("planIdentifier: {} parentLocationIdentifier: {}, locationHierarchyIdentifier: {}",
+        planIdentifier, parentLocationIdentifier, locationHierarchyIdentifier);
+
+    Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel
+        = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevelByAction(
+        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        locationHierarchyIdentifier);
+
+    locationBusinessStateObjPerGeoLevel.forEach(
+        locationBusinessStateCount -> log.debug("{} - locationBusinessStateObjPerGeoLevel({})",
+            parentLocationIdentifier, locationBusinessStateCount.getTaskBusinessStatus()));
+
+    return locationBusinessStateObjPerGeoLevel.stream()
+        .collect(Collectors.groupingBy(
+            LocationBusinessStateCount::getActionTitle,
+            Collectors.toMap(
+                LocationBusinessStateCount::getTaskBusinessStatus,
+                locationBusinessStateCount -> locationBusinessStateCount,
+                (a, b) -> b)));
   }
 
   public Map<String, LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelFromEventTracker(
