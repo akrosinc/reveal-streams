@@ -98,7 +98,7 @@ public interface TaskBusinessStateTrackerRepository extends
               + "group by a.identifier, a.title, t.business_status\n"
               + "       , arr.loc", nativeQuery = true)
   Set<LocationBusinessStateCount> getLocationBusinessStateObjPerGeoLevelByAction(UUID planIdentifier,
-      UUID parentLocationIdentifier, String taskLocationGeographicLevelName,
+      UUID parentLocationIdentifier,
       UUID locationHierarchyIdentifier);
 
   @Query(

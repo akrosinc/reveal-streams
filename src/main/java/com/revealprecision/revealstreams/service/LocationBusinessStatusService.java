@@ -114,7 +114,8 @@ public class LocationBusinessStatusService {
   public Map<String,Long> getTotalLocationsByParentAndPlanAndAction(UUID planIdentifier,
       UUID parentLocationIdentifier,UUID locationHierarchyIdentifier) {
 
-    Set<LocationBusinessStateCount> totalLocationsByParentAndPlanAndAction = taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlanAndAction(
+    Set<LocationBusinessStateCount> totalLocationsByParentAndPlanAndAction
+        = taskBusinessStateTrackerRepository.getTotalLocationsByParentAndPlanAndAction(
         planIdentifier,
         parentLocationIdentifier, locationHierarchyIdentifier);
 
@@ -201,7 +202,7 @@ public class LocationBusinessStatusService {
 
     Set<LocationBusinessStateCount> locationBusinessStateObjPerGeoLevel
         = taskBusinessStateTrackerRepository.getLocationBusinessStateObjPerGeoLevelByAction(
-        planIdentifier, parentLocationIdentifier, LocationConstants.STRUCTURE,
+        planIdentifier, parentLocationIdentifier,
         locationHierarchyIdentifier);
 
     locationBusinessStateObjPerGeoLevel.forEach(
