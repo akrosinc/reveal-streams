@@ -287,7 +287,7 @@ public class SurveyDashboardService {
 
       ColumnData noEligible = getTotalStructuresByState(
           NOT_ELIGIBLE,
-          locationBusinessStateObjPerGeoLevelMap);
+          locationBusinessStateObjPerGeoLevelMapDestruction);
       columns.put(NOT_ELIGIBLE, noEligible);
 
       ColumnData completedDestruction = getTotalStructuresByState(
