@@ -197,6 +197,8 @@ public class SurveyDashboardService {
               childLocation.getGeographicLevel().getName(),
               plan.getLocationHierarchy().getIdentifier());
 
+      if (locationBusinessStateObjPerGeoLevelActionMap==null) return null;
+
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap
           = locationBusinessStateObjPerGeoLevelActionMap.get(
           ActionTitleEnum.FOLLOWUP.getActionTitle());
@@ -214,6 +216,8 @@ public class SurveyDashboardService {
           plan.getIdentifier(),
           childLocation.getIdentifier(),
           plan.getLocationHierarchy().getIdentifier());
+
+      if (totalStructuresTargetedCountObjByAction==null) return null;
 
       long totalStructuresTargetedCountObj =
           totalStructuresTargetedCountObjByAction.get(ActionTitleEnum.FOLLOWUP.getActionTitle());
@@ -269,7 +273,7 @@ public class SurveyDashboardService {
 
       columns.put(TOTAL_STRUCTURES_TARGETED_Destruction,
           getTotalStructuresTargetedCountZam(totalStructuresTargetedCountObjDestruction,
-              locationBusinessStateObjPerGeoLevelMap));
+              locationBusinessStateObjPerGeoLevelMapDestruction));
 
       ColumnData refusedDestruction = getTotalStructuresByState(
           BusinessStatus.REFUSED,
