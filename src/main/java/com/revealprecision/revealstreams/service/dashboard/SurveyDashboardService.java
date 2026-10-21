@@ -74,7 +74,7 @@ public class SurveyDashboardService {
   private static final String NO_ONE_HOME_FOllOW_UP = "No one home F";
   private static final String NO_ONE_HOME_DESTRUCTION = "No one home D";
 
-  private static final String REFUSED_FOLLOWUP = "Refused F";
+  private static final String REFUSED_FOLLOWUP = "declined and wish to withdraw from study";
   private static final String REFUSED_DESTRUCTION = "Refused D";
 
   private static final String NO_APPROPRIATE_ADULT_AVAILABLE_FOLLOWUP = "No appropriate adult available F";
@@ -85,7 +85,7 @@ public class SurveyDashboardService {
   private static final String TOTAL_STRUCTURES_MDA_COMPLETE_OR_PARTIALLY_COMPLETE = "Total Structures MDA Complete or Partially complete MDA";
   private static final String STRUCTURE_STATUS = "Structure Status";
   public static final String VISITATION_COVERAGE = "Visitation Coverage (Visited/Target)";
-  public static final String COMPLETION_COVERAGE = "Completion Coverage (Visited/Target)";
+  public static final String COMPLETION_COVERAGE = "Completion Coverage (Complete/Target)";
   public static final String DISTRIBUTION_COVERAGE = "Distribution Coverage (MDA Completed/Visited)";
 
   public static final String COMPLETE = "Complete";
