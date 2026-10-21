@@ -417,6 +417,7 @@ public class SurveyDashboardService {
       Map<String, LocationBusinessStateCount> locationBusinessStateObjPerGeoLevelMap) {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
+
     double foundStructures = (double) getTotalStructuresFoundCountZam(totalStructuresTargetedCountObj,
         locationBusinessStateObjPerGeoLevelMap).getValue();
     double targetedStructures = (double) getTotalStructuresTargetedCountZam(
@@ -437,15 +438,16 @@ public class SurveyDashboardService {
     ColumnData columnData = new ColumnData();
     columnData.setIsPercentage(true);
 
-    double completedStructuresCount;
-    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        COMPLETE);
-    if (completedStructuresCountObjCount != null) {
-      completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
-    } else {
-      completedStructuresCount = 0L;
+    double completedStructuresCount = 0L;
+    if (locationBusinessStateObjPerGeoLevelMap!=null) {
+      LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+          COMPLETE);
+      if (completedStructuresCountObjCount != null) {
+        completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
+      } else {
+        completedStructuresCount = 0L;
+      }
     }
-
     double targetedStructures = (double) getTotalStructuresTargetedCountZam(
         totalStructuresTargetedCountObj, locationBusinessStateObjPerGeoLevelMap).getValue();
     if (targetedStructures == 0) {
@@ -479,13 +481,15 @@ public class SurveyDashboardService {
 
     ColumnData columnData = new ColumnData();
 
-    double completedStructuresCount;
-    LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        businessState);
-    if (completedStructuresCountObjCount != null) {
-      completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
-    } else {
-      completedStructuresCount = 0L;
+    double completedStructuresCount = 0L;
+    if (locationBusinessStateObjPerGeoLevelMap!=null) {
+      LocationBusinessStateCount completedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+          businessState);
+      if (completedStructuresCountObjCount != null) {
+        completedStructuresCount = completedStructuresCountObjCount.getLocationCount();
+      } else {
+        completedStructuresCount = 0L;
+      }
     }
 
     columnData.setValue(completedStructuresCount);
@@ -623,11 +627,13 @@ public class SurveyDashboardService {
 
     Long notEligibleStructuresCountObj = null;
 
-    LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        BusinessStatus.NOT_ELIGIBLE);
+    if (locationBusinessStateObjPerGeoLevelMap!=null){
+      LocationBusinessStateCount notEligibleStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+          BusinessStatus.NOT_ELIGIBLE);
 
-    if (notEligibleStructuresCountObjCount != null) {
-      notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+      if (notEligibleStructuresCountObjCount != null) {
+        notEligibleStructuresCountObj = notEligibleStructuresCountObjCount.getLocationCount();
+      }
     }
 
     double notEligibleStructuresCount = 0;
@@ -739,13 +745,14 @@ public class SurveyDashboardService {
 
 
     Long notVisitedStructuresCountObj = null;
-    LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
-        BusinessStatus.NOT_VISITED);
+    if (locationBusinessStateObjPerGeoLevelMap!=null) {
+      LocationBusinessStateCount notVisitedStructuresCountObjCount = locationBusinessStateObjPerGeoLevelMap.get(
+          BusinessStatus.NOT_VISITED);
 
-    if (notVisitedStructuresCountObjCount != null) {
-      notVisitedStructuresCountObj = notVisitedStructuresCountObjCount.getLocationCount();
+      if (notVisitedStructuresCountObjCount != null) {
+        notVisitedStructuresCountObj = notVisitedStructuresCountObjCount.getLocationCount();
+      }
     }
-
     double notVisitedStructuresCount = 0;
     if (notVisitedStructuresCountObj != null) {
       notVisitedStructuresCount = notVisitedStructuresCountObj;
