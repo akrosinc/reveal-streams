@@ -220,10 +220,12 @@ public class SurveyDashboardService {
       if (totalStructuresTargetedCountObjByAction==null) return null;
 
       long totalStructuresTargetedCountObj =
-          totalStructuresTargetedCountObjByAction.get(ActionTitleEnum.FOLLOWUP.getActionTitle());
+          totalStructuresTargetedCountObjByAction.getOrDefault(
+              ActionTitleEnum.FOLLOWUP.getActionTitle(), 0L);
 
       long totalStructuresTargetedCountObjDestruction =
-          totalStructuresTargetedCountObjByAction.get(ActionTitleEnum.FOLLOWUP.getActionTitle());
+          totalStructuresTargetedCountObjByAction.getOrDefault(
+              ActionTitleEnum.DESTRUCTION.getActionTitle(), 0L);
 
       columns.put(TOTAL_STRUCTURES,
           getTotalStructuresCounts(totalStructuresCountObj,
